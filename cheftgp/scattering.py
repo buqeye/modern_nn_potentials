@@ -1,5 +1,6 @@
 import numpy as np
 from .constants import *
+import scipy
 def E_to_p(E_lab, interaction = "np", **kwargs):
     """Returns p in MeV.
 
