@@ -10,3 +10,7 @@ dependencies:
   - seaborn=0.12.2
   - scikit-learn=1.2.1
   - pandas=1.5.3
+  - ray=2.3.0
+  - gsum
+  - h5py=3.8.0
+  - sklearn=0.0.post1
