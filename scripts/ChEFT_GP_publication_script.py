@@ -134,35 +134,35 @@ online_data_dict = {
 
 # for each choice of scale and scheme, sets the total possible orders and nomenclature
 EKM0p8fm = ScaleSchemeBunch(
-    "scattering_observables_EKM_R-0p8fm.h5",
+    "observables_data/scattering_observables_EKM_R-0p8fm.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "SCS",
     "0p8fm",
 )
 EKM0p9fm = ScaleSchemeBunch(
-    "scattering_observables_EKM_R-0p9fm.h5",
+    "observables_data/scattering_observables_EKM_R-0p9fm.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "SCS",
     "0p9fm",
 )
 EKM1p0fm = ScaleSchemeBunch(
-    "scattering_observables_EKM_R-1p0fm.h5",
+    "observables_data/scattering_observables_EKM_R-1p0fm.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "SCS",
     "1p0fm",
 )
 EKM1p1fm = ScaleSchemeBunch(
-    "scattering_observables_EKM_R-1p1fm.h5",
+    "observables_data/scattering_observables_EKM_R-1p1fm.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "SCS",
     "1p1fm",
 )
 EKM1p2fm = ScaleSchemeBunch(
-    "scattering_observables_EKM_R-1p2fm.h5",
+    "observables_data/scattering_observables_EKM_R-1p2fm.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "SCS",
@@ -170,28 +170,28 @@ EKM1p2fm = ScaleSchemeBunch(
 )
 
 RKE400MeV = ScaleSchemeBunch(
-    "scattering_observables_RKE_L-400MeV.h5",
+    "observables_data/scattering_observables_RKE_L-400MeV.h5",
     np.array([0, 2, 3, 4, 5, 6]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds", "Purples"]],
     "SMS",
     "400MeV",
 )
 RKE450MeV = ScaleSchemeBunch(
-    "scattering_observables_RKE_L-450MeV.h5",
+    "observables_data/scattering_observables_RKE_L-450MeV.h5",
     np.array([0, 2, 3, 4, 5, 6]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds", "Purples"]],
     "SMS",
     "450MeV",
 )
 RKE500MeV = ScaleSchemeBunch(
-    "scattering_observables_RKE_L-500MeV.h5",
+    "observables_data/scattering_observables_RKE_L-500MeV.h5",
     np.array([0, 2, 3, 4, 5, 6]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds", "Purples"]],
     "SMS",
     "500MeV",
 )
 RKE550MeV = ScaleSchemeBunch(
-    "scattering_observables_RKE_L-550MeV.h5",
+    "observables_data/scattering_observables_RKE_L-550MeV.h5",
     np.array([0, 2, 3, 4, 5, 6]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds", "Purples"]],
     "SMS",
@@ -199,21 +199,21 @@ RKE550MeV = ScaleSchemeBunch(
 )
 
 EMN450MeV = ScaleSchemeBunch(
-    "scattering_observables_EM-450MeV.h5",
+    "observables_data/scattering_observables_EM-450MeV.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "EMN",
     "450MeV",
 )
 EMN500MeV = ScaleSchemeBunch(
-    "scattering_observables_EM-500MeV.h5",
+    "observables_data/scattering_observables_EM-500MeV.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "EMN",
     "500MeV",
 )
 EMN550MeV = ScaleSchemeBunch(
-    "scattering_observables_EM-550MeV.h5",
+    "observables_data/scattering_observables_EM-550MeV.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "EMN",
@@ -221,28 +221,28 @@ EMN550MeV = ScaleSchemeBunch(
 )
 
 GT0p9fm = ScaleSchemeBunch(
-    "scattering_observables_Gezerlis-0p9fm.h5",
+    "observables_data/scattering_observables_Gezerlis-0p9fm.h5",
     np.array([0, 2, 3]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens"]],
     "GT",
     "0p9fm",
 )
 GT1p0fm = ScaleSchemeBunch(
-    "scattering_observables_Gezerlis-1p0fm.h5",
+    "observables_data/scattering_observables_Gezerlis-1p0fm.h5",
     np.array([0, 2, 3]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens"]],
     "GT",
     "1p0fm",
 )
 GT1p1fm = ScaleSchemeBunch(
-    "scattering_observables_Gezerlis-1p1fm.h5",
+    "observables_data/scattering_observables_Gezerlis-1p1fm.h5",
     np.array([0, 2, 3]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens"]],
     "GT",
     "1p1fm",
 )
 GT1p2fm = ScaleSchemeBunch(
-    "scattering_observables_Gezerlis-1p2fm.h5",
+    "observables_data/scattering_observables_Gezerlis-1p2fm.h5",
     np.array([0, 2, 3]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens"]],
     "GT",
@@ -1123,3 +1123,42 @@ def gp_analysis(
         print("Available train/test splits: " + str(traintest_current_list))
         print("Available length scales: " + str(lengthscale_current_list))
         print("************************************")
+
+gp_analysis(
+    scale_scheme_bunch_array=[RKE450MeV],
+    observable_input=["DSG"],
+    E_input_array=[50],
+    deg_input_array=[0],
+    Q_param_method_array=["sum"],
+    p_param_method_array=["Qofprel"],
+    input_space_input=["cos"],
+    train_test_split_array=[Fullspaceanglessplit1],
+    orders_input="all",
+    orders_names_dict=None,
+    orders_labels_dict=None,
+    length_scale_input=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
+    fixed_sd=None,
+    m_pi_eff=138,
+    Lambdab=600,
+    print_all_classes=False,
+    savefile_type="png",
+    plot_coeffs_bool=True,
+    plot_md_bool=True,
+    plot_pc_bool=True,
+    plot_ci_bool=True,
+    plot_pdf_bool=False,
+    plot_trunc_bool=False,
+    plot_lambdapost_pointwise_bool=False,
+    plot_lambdapost_curvewise_bool=True,
+    plot_plotzilla_bool=False,
+    save_coeffs_bool=False,
+    save_md_bool=False,
+    save_pc_bool=False,
+    save_ci_bool=False,
+    save_pdf_bool=False,
+    save_trunc_bool=False,
+    save_lambdapost_pointwise_bool=False,
+    save_lambdapost_curvewise_bool=False,
+    save_plotzilla_bool=False,
+    filename_addendum="",
+)

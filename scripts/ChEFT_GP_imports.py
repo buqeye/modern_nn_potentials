@@ -1278,6 +1278,8 @@ class GSUMDiagnostics:
         ax.text(np.min(self.x) + 0.74 * (np.max(self.x) - np.min(self.x)), 
                 -1.2 * self.underlying_std, r'$\sigma_{\mathrm{fit}}$', fontsize= 14, 
                 horizontalalignment='center', verticalalignment='bottom', zorder = 5 * i)
+
+        plt.show()
         
         if 'fig' in locals() and whether_save:
             fig.tight_layout()
@@ -1302,49 +1304,49 @@ class GSUMDiagnostics:
         -------
         Figure with plot.
         """
-        try:
-            # calculates and plots the squared Mahalanobis distance
-            self.gp.kernel_
+        # try:
+        # calculates and plots the squared Mahalanobis distance
+        self.gp.kernel_
+
+        if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
+            dX = np.array([[self.x[i]] for i in self.constraint[0]])
+            self.mean, self.cov = self.gp.predict(self.X_test,
+                                            Xc = dX,
+                                            y = np.array(self.constraint[1]),
+                                            return_std = False,
+                                            return_cov = True)
+        else:
+            self.mean = self.gp.mean(self.X_test)
+            self.cov = self.gp.cov(self.X_test)
+        self.gr_dgn = gm.GraphicalDiagnostic(self.coeffs_test,
+                                        self.mean,
+                                        self.cov,
+                                        colors = self.colors,
+                                        gray = gray,
+                                        black = softblack)
+
+        if ax is None:
+            # fig, ax = plt.subplots(figsize=(1, 3.2))
+            fig, ax = plt.subplots(figsize=(0.7, 4.2))
+
+        self.gr_dgn.md_squared(type = 'box', trim = False, title = None,
+                        xlabel=r'$\mathrm{D}_{\mathrm{MD}}^2$', ax = ax,
+                        **{"size" : 10})
+        offset_xlabel(ax)
+        plt.show()
+
+        if 'fig' in locals() and whether_save:
+            fig.tight_layout();
+
+            fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' + self.observable_name + \
+                    '_' + 'md' + '_' + str(self.fixed_quantity_value) + str(self.fixed_quantity_units) + '_' + \
+                    self.scheme + '_' + self.scale + '_Q' + self.Q_param + '_' + self.vs_what + \
+                    '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' + \
+                    self.train_pts_loc + '_' + self.p_param +
+                    self.filename_addendum).replace('_0MeVlab_', '_'))
             
-            if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
-                dX = np.array([[self.x[i]] for i in self.constraint[0]])
-                self.mean, self.cov = self.gp.predict(self.X_test, 
-                                                Xc = dX, 
-                                                y = np.array(self.constraint[1]),
-                                                return_std = False, 
-                                                return_cov = True)
-            else:
-                self.mean = self.gp.mean(self.X_test)
-                self.cov = self.gp.cov(self.X_test)
-            self.gr_dgn = gm.GraphicalDiagnostic(self.coeffs_test, 
-                                            self.mean, 
-                                            self.cov, 
-                                            colors = self.colors, 
-                                            gray = gray, 
-                                            black = softblack)
-    
-            if ax is None:
-                # fig, ax = plt.subplots(figsize=(1, 3.2))
-                fig, ax = plt.subplots(figsize=(0.7, 4.2))
-                
-            self.gr_dgn.md_squared(type = 'box', trim = False, title = None, 
-                            xlabel=r'$\mathrm{D}_{\mathrm{MD}}^2$', ax = ax, 
-                            **{"size" : 10})
-            offset_xlabel(ax)
-            # ax.set_ylim(0, 100)
-            
-            if 'fig' in locals() and whether_save:
-                fig.tight_layout();
-            
-                fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' + self.observable_name + \
-                        '_' + 'md' + '_' + str(self.fixed_quantity_value) + str(self.fixed_quantity_units) + '_' + \
-                        self.scheme + '_' + self.scale + '_Q' + self.Q_param + '_' + self.vs_what + \
-                        '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' + \
-                        self.train_pts_loc + '_' + self.p_param + 
-                        self.filename_addendum).replace('_0MeVlab_', '_'))
-            
-        except:
-            print("Error in calculating or plotting the Mahalanobis distance.")
+        # except:
+        #     print("Error in calculating or plotting the Mahalanobis distance.")
 
     def plot_pc(self, ax = None, whether_save = True):
         """
@@ -1359,51 +1361,54 @@ class GSUMDiagnostics:
         -------
         Figure with plot.
         """
-        try:
-            # calculates and plots the pivoted Cholesky decomposition
-            self.gp.kernel_
-            
-            if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
-                dX = np.array([[self.x[i]] for i in self.constraint[0]])
-                self.mean, self.cov = self.gp.predict(self.X_test, 
-                                                Xc = dX, 
-                                                y = np.array(self.constraint[1]),
-                                                return_std = False, 
-                                                return_cov = True)
-            else:
-                self.mean = self.gp.mean(self.X_test)
-                self.cov = self.gp.cov(self.X_test)
-            self.gr_dgn = gm.GraphicalDiagnostic(self.coeffs_test, 
-                                                     self.mean, 
-                                                     self.cov, 
-                                                     colors = self.colors, 
-                                                     gray = gray, 
-                                                     black = softblack)
+        # try:
+        # calculates and plots the pivoted Cholesky decomposition
+        self.gp.kernel_
 
-            with plt.rc_context({"text.usetex": True, "text.latex.preview": True}):
-                if ax is None:
-                    # fig, ax = plt.subplots(figsize=(3.2, 3.2))
-                    fig, ax = plt.subplots(figsize=(2.1, 2.1))
-                    
-                self.gr_dgn.pivoted_cholesky_errors(ax = ax, title = None)
-                ax.set_xticks(np.arange(2, self.n_test_pts + 1, 2))
-                ax.set_xticks(np.arange(1, self.n_test_pts + 1, 2), minor = True)
-                ax.text(0.05, 0.95, r'$\mathrm{D}_{\mathrm{PC}}$', bbox = text_bbox, 
-                        transform = ax.transAxes, va='top', ha='left')
-                ax.set_ylim(-6, 6)
-                
-                if 'fig' in locals() and whether_save:
-                    fig.tight_layout()
-                    
-                    fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' + self.observable_name + \
-                            '_' + 'pc_vs_index' + '_' + str(self.fixed_quantity_value) + str(self.fixed_quantity_units) + '_' + \
-                            self.scheme + '_' + self.scale + '_Q' + self.Q_param + '_' + self.vs_what + \
-                            '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' + \
-                            self.train_pts_loc + '_' + self.p_param + 
-                            self.filename_addendum).replace('_0MeVlab_', '_'))
+        if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
+            dX = np.array([[self.x[i]] for i in self.constraint[0]])
+            self.mean, self.cov = self.gp.predict(self.X_test,
+                                            Xc = dX,
+                                            y = np.array(self.constraint[1]),
+                                            return_std = False,
+                                            return_cov = True)
+        else:
+            self.mean = self.gp.mean(self.X_test)
+            self.cov = self.gp.cov(self.X_test)
+        self.gr_dgn = gm.GraphicalDiagnostic(self.coeffs_test,
+                                                 self.mean,
+                                                 self.cov,
+                                                 colors = self.colors,
+                                                 gray = gray,
+                                                 black = softblack)
+
+        # with plt.rc_context({"text.usetex": True, "text.latex.preview": True}):
+        with plt.rc_context({"text.usetex": True}):
+            if ax is None:
+                # fig, ax = plt.subplots(figsize=(3.2, 3.2))
+                fig, ax = plt.subplots(figsize=(2.1, 2.1))
+
+            self.gr_dgn.pivoted_cholesky_errors(ax = ax, title = None)
+            ax.set_xticks(np.arange(2, self.n_test_pts + 1, 2))
+            ax.set_xticks(np.arange(1, self.n_test_pts + 1, 2), minor = True)
+            ax.text(0.05, 0.95, r'$\mathrm{D}_{\mathrm{PC}}$', bbox = text_bbox,
+                    transform = ax.transAxes, va='top', ha='left')
+            ax.set_ylim(-6, 6)
+
+            plt.show()
+
+            if 'fig' in locals() and whether_save:
+                fig.tight_layout()
+
+                fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' + self.observable_name + \
+                        '_' + 'pc_vs_index' + '_' + str(self.fixed_quantity_value) + str(self.fixed_quantity_units) + '_' + \
+                        self.scheme + '_' + self.scale + '_Q' + self.Q_param + '_' + self.vs_what + \
+                        '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' + \
+                        self.train_pts_loc + '_' + self.p_param +
+                        self.filename_addendum).replace('_0MeVlab_', '_'))
     
-        except:
-            print("Error in calculating or plotting the pivoted Cholesky decomposition.")
+        # except:
+        #     print("Error in calculating or plotting the pivoted Cholesky decomposition.")
 
     def plot_posterior_pdf(self, ax_joint = None, ax_marg_x = None, 
                          ax_marg_y = None, whether_save = True):
@@ -1776,6 +1781,8 @@ class GSUMDiagnostics:
             ax.set_xticklabels([0, 20, 40, 60, 80, 100])
             ax.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1])
             ax.set_yticklabels([0, 20, 40, 60, 80, 100])
+
+            plt.show()
             
             if 'fig' in locals() and whether_save:
                 fig.tight_layout()
@@ -2505,55 +2512,6 @@ class GSUMDiagnostics:
                         whether_plot_lambda = True, whether_plot_mpi = True, 
                         whether_plot_corner = True, whether_save = True):
         
-        # functions for interpolating the ratio in the TruncationGP
-        def interp_f_ratio_Lb_mpi(x_map, x_interp, x_interp_Q, Q_param, mpi_var, lambda_var):
-            X = np.ravel(x_map)
-        
-            return (interp1d( x_interp, Q_approx(x_interp_Q, Q_param, Lambda_b = lambda_var, m_pi = mpi_var) 
-                             * np.ones(len(x_interp)) ))(X)
-        
-        def make_likelihood_filename(
-            folder,
-            order_name,
-            logpriors_names, 
-            random_vars_array,
-        ):
-            filename = (
-                str(folder)
-                + "/"
-                + "posterior_pdf_curvewise"
-                + "_"
-                + str(self.observable_name)
-                + "_"
-                + str(self.scheme)
-                + "_"
-                + str(self.scale)
-                + "_"
-                + str(order_name)
-                + "_"
-                + "Q"
-                + str(self.Q_param)
-                + "_"
-                + str(self.p_param)
-                + "_"
-                + str(self.vs_what)
-            )
-
-            for logprior in logpriors_names:
-                filename += "_" + str(logprior)
-            for random_var in random_vars_array:
-                filename += (
-                    "_"
-                    + str(random_var.name)
-                    + str(len(random_var.var))
-                    + "pts"
-                    # + f"{min(random_var.var):.2f}"
-                    # + "to"
-                    # + f"{max(random_var.var):.2f}"
-                )
-            print(filename)
-            return str(filename.replace("__", "_") + ".txt")
-        
         # sets the number of orders and the corresponding colors
         order_num = int(orders)
         Lb_colors = self.light_colors[-1 * order_num:]
@@ -2658,7 +2616,7 @@ class GSUMDiagnostics:
                     # creates and fits the TruncationGP object
                     gp_post_sgt_nho = gm.TruncationGP(self.kernel, 
                                                 ref = sgt_data[0], 
-                                                ratio = interp_f_ratio_Lb_mpi, 
+                                                ratio = interp_f_ratio_posterior,
                                                 center = self.center, 
                                                 disp = self.disp, 
                                                 df = self.df, 
@@ -2710,7 +2668,7 @@ class GSUMDiagnostics:
                         # creates and fits the TruncationGP object
                         gp_post_dsg_nho = gm.TruncationGP(self.kernel, 
                                                     ref = dsg_data[0], 
-                                                    ratio = interp_f_ratio_Lb_mpi, 
+                                                    ratio = interp_f_ratio_posterior,
                                                     center = self.center, 
                                                     disp = self.disp, 
                                                     df = self.df, 
@@ -2768,7 +2726,7 @@ class GSUMDiagnostics:
                             # creates and fits the TruncationGP object
                             gp_fits_spins_nho.append(gm.TruncationGP(self.kernel, 
                                                         ref = np.ones((len(degrees_pts))), 
-                                                        ratio = interp_f_ratio_Lb_mpi, 
+                                                        ratio = interp_f_ratio_posterior,
                                                         center = self.center, 
                                                         disp = self.disp, 
                                                         df = self.df, 
@@ -4712,3 +4670,52 @@ class GSUMDiagnostics:
                         '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' + \
                         self.train_pts_loc + '_' + self.p_param + 
                         self.filename_addendum).replace('_0MeVlab_', '_'))
+
+# functions for interpolating the ratio in the TruncationGP
+def interp_f_ratio_posterior(x_map, x_interp, x_interp_Q, Q_param, mpi_var, lambda_var):
+    X = np.ravel(x_map)
+
+    return (interp1d(x_interp, Q_approx(x_interp_Q, Q_param, Lambda_b=lambda_var, m_pi=mpi_var)
+                     * np.ones(len(x_interp))))(X)
+
+def make_likelihood_filename(
+        folder,
+        order_name,
+        logpriors_names,
+        random_vars_array,
+):
+    filename = (
+            str(folder)
+            + "/"
+            + "posterior_pdf_curvewise"
+            + "_"
+            + str(self.observable_name)
+            + "_"
+            + str(self.scheme)
+            + "_"
+            + str(self.scale)
+            + "_"
+            + str(order_name)
+            + "_"
+            + "Q"
+            + str(self.Q_param)
+            + "_"
+            + str(self.p_param)
+            + "_"
+            + str(self.vs_what)
+    )
+
+    for logprior in logpriors_names:
+        filename += "_" + str(logprior)
+    for random_var in random_vars_array:
+        filename += (
+                "_"
+                + str(random_var.name)
+                + str(len(random_var.var))
+                + "pts"
+            # + f"{min(random_var.var):.2f}"
+            # + "to"
+            # + f"{max(random_var.var):.2f}"
+        )
+    print(filename)
+    return str(filename.replace("__", "_") + ".txt")
