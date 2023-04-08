@@ -26,6 +26,7 @@ from .gaussianprocess import Interpolation
 from .gaussianprocess import TrainTestSplit
 from .gaussianprocess import ScaleSchemeBunch
 from .gaussianprocess import LengthScale
+from .gaussianprocess import GSUMDiagnostics
 
 from .scattering import E_to_p
 

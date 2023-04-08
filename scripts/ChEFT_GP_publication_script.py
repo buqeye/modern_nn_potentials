@@ -14,38 +14,45 @@ import numpy as np
 # import math
 # import re
 import gc
-from ChEFT_GP_imports import (
-    joint_plot,
-    offset_xlabel,
-    m_p,
-    m_n,
-    hbarc,
-    E_to_p,
-    Q_approx,
-    p_approx,
-    deg_fn,
-    neg_cos,
-    deg_to_qcm,
-    deg_to_qcm2,
-    sin_thing,
-    Elab_fn,
-    softmax_mom,
-    GPHyperparameters,
-    FileNaming,
-    PosteriorBounds,
-    OrderInfo,
-    versatile_train_test_split,
-    InputSpaceBunch,
-    ObservableBunch,
-    Interpolation,
-    TrainTestSplit,
-    ScaleSchemeBunch,
-    LengthScale,
-    GSUMDiagnostics,
-)
+# from ChEFT_GP_imports_forked import (
+#     joint_plot,
+#     offset_xlabel,
+#     m_p,
+#     m_n,
+#     hbarc,
+#     E_to_p,
+#     Q_approx,
+#     p_approx,
+#     deg_fn,
+#     neg_cos,
+#     deg_to_qcm,
+#     deg_to_qcm2,
+#     sin_thing,
+#     Elab_fn,
+#     softmax_mom,
+#     GPHyperparameters,
+#     FileNaming,
+#     PosteriorBounds,
+#     OrderInfo,
+#     versatile_train_test_split,
+#     InputSpaceBunch,
+#     ObservableBunch,
+#     Interpolation,
+#     TrainTestSplit,
+#     ScaleSchemeBunch,
+#     LengthScale,
+#     GSUMDiagnostics,
+# )
 import copy as cp
 import urllib
 import tables
+
+from cheftgp.constants import *
+from cheftgp.eft import *
+from cheftgp.gaussianprocess import *
+from cheftgp.graphs import *
+from cheftgp.scattering import *
+from cheftgp.utils import *
 
 # import warnings
 # warnings.filterwarnings("error")
@@ -134,35 +141,35 @@ online_data_dict = {
 
 # for each choice of scale and scheme, sets the total possible orders and nomenclature
 EKM0p8fm = ScaleSchemeBunch(
-    "observables_data/scattering_observables_EKM_R-0p8fm.h5",
+    "scattering_observables_EKM_R-0p8fm.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "SCS",
     "0p8fm",
 )
 EKM0p9fm = ScaleSchemeBunch(
-    "observables_data/scattering_observables_EKM_R-0p9fm.h5",
+    "scattering_observables_EKM_R-0p9fm.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "SCS",
     "0p9fm",
 )
 EKM1p0fm = ScaleSchemeBunch(
-    "observables_data/scattering_observables_EKM_R-1p0fm.h5",
+    "scattering_observables_EKM_R-1p0fm.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "SCS",
     "1p0fm",
 )
 EKM1p1fm = ScaleSchemeBunch(
-    "observables_data/scattering_observables_EKM_R-1p1fm.h5",
+    "scattering_observables_EKM_R-1p1fm.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "SCS",
     "1p1fm",
 )
 EKM1p2fm = ScaleSchemeBunch(
-    "observables_data/scattering_observables_EKM_R-1p2fm.h5",
+    "scattering_observables_EKM_R-1p2fm.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "SCS",
@@ -170,14 +177,14 @@ EKM1p2fm = ScaleSchemeBunch(
 )
 
 RKE400MeV = ScaleSchemeBunch(
-    "observables_data/scattering_observables_RKE_L-400MeV.h5",
+    "scattering_observables_RKE_L-400MeV.h5",
     np.array([0, 2, 3, 4, 5, 6]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds", "Purples"]],
     "SMS",
     "400MeV",
 )
 RKE450MeV = ScaleSchemeBunch(
-    "observables_data/scattering_observables_RKE_L-450MeV.h5",
+    "observable_data/scattering_observables_RKE_L-450MeV.h5",
     np.array([0, 2, 3, 4, 5, 6]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds", "Purples"]],
     "SMS",
@@ -191,7 +198,7 @@ RKE500MeV = ScaleSchemeBunch(
     "500MeV",
 )
 RKE550MeV = ScaleSchemeBunch(
-    "observables_data/scattering_observables_RKE_L-550MeV.h5",
+    "scattering_observables_RKE_L-550MeV.h5",
     np.array([0, 2, 3, 4, 5, 6]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds", "Purples"]],
     "SMS",
@@ -199,21 +206,21 @@ RKE550MeV = ScaleSchemeBunch(
 )
 
 EMN450MeV = ScaleSchemeBunch(
-    "observables_data/scattering_observables_EM-450MeV.h5",
+    "observable_data/scattering_observables_EM-450MeV.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "EMN",
     "450MeV",
 )
 EMN500MeV = ScaleSchemeBunch(
-    "observables_data/scattering_observables_EM-500MeV.h5",
+    "scattering_observables_EM-500MeV.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "EMN",
     "500MeV",
 )
 EMN550MeV = ScaleSchemeBunch(
-    "observables_data/scattering_observables_EM-550MeV.h5",
+    "scattering_observables_EM-550MeV.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "EMN",
@@ -221,28 +228,28 @@ EMN550MeV = ScaleSchemeBunch(
 )
 
 GT0p9fm = ScaleSchemeBunch(
-    "observables_data/scattering_observables_Gezerlis-0p9fm.h5",
+    "scattering_observables_Gezerlis-0p9fm.h5",
     np.array([0, 2, 3]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens"]],
     "GT",
     "0p9fm",
 )
 GT1p0fm = ScaleSchemeBunch(
-    "observables_data/scattering_observables_Gezerlis-1p0fm.h5",
+    "scattering_observables_Gezerlis-1p0fm.h5",
     np.array([0, 2, 3]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens"]],
     "GT",
     "1p0fm",
 )
 GT1p1fm = ScaleSchemeBunch(
-    "observables_data/scattering_observables_Gezerlis-1p1fm.h5",
+    "scattering_observables_Gezerlis-1p1fm.h5",
     np.array([0, 2, 3]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens"]],
     "GT",
     "1p1fm",
 )
 GT1p2fm = ScaleSchemeBunch(
-    "observables_data/scattering_observables_Gezerlis-1p2fm.h5",
+    "scattering_observables_Gezerlis-1p2fm.h5",
     np.array([0, 2, 3]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens"]],
     "GT",
@@ -376,6 +383,7 @@ traintestsplit_vsenergy_array = [
 
 
 def gp_analysis(
+    nn_interaction="np",
     scale_scheme_bunch_array=[RKE450MeV],
     observable_input=["DSG"],
     E_input_array=[150],
@@ -384,7 +392,7 @@ def gp_analysis(
     p_param_method_array=["Qofprel"],
     input_space_input=["cos"],
     train_test_split_array=[Fullspaceanglessplit1],
-    orders_input="all",
+    orders_excluded = [], 
     orders_names_dict=None,
     orders_labels_dict=None,
     length_scale_input=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
@@ -414,6 +422,10 @@ def gp_analysis(
     filename_addendum="",
 ):
     """
+    nn_interaction (str): what pair of nucleons are interacting?
+    Built-in options: "nn", "np", "pp"
+    Default: "np"
+    
     scale_scheme_bunch_array (ScaleSchemeBunch list): potential/cutoff 
         combinations for evaluation.
     Built-in options: 
@@ -471,12 +483,9 @@ def gp_analysis(
         Backwardanglessplit for all other observables
     Default: Fullspaceanglessplit
 
-    orders_input (int list, or str if "all"): orders for evaluation. May be 
-        any list containing 2, 3, 4, 5, 6 in any order. May be "all" to 
-        evaluate all orders for all potentials.
-    Built-in options: [0, 2, 3, 4, 5] for EKM; [0, 2, 3, 4, 5, 6] for RKE; 
-        [0, 2, 3, 4, 5] for EMN; [0, 2, 3] for GT+.
-    Default: "all"
+    orders_excluded (int list): list of *coefficient* orders to be excluded from 
+        the fitting procedure. 2 corresponds to c2, 3 to c3, etc.
+    Default: []
     
     orders_names_dict (dict): dictionary method linking the numerical indices (int) 
         of EFT orders and their corresponding abbreviations (str)
@@ -607,35 +616,6 @@ def gp_analysis(
 
         observable_array = [b for b in observable_array if b.name in observable_input]
 
-        # turns the string argument for orders into an array for orders
-        if orders_input == "all":
-            orders_input_array = ScaleScheme.orders_full
-        else:
-            orders_input_array = np.array(orders_input.copy())
-            orders_input_array.sort()
-
-        # turns the array for orders into an array for colors
-        colors_index_array = orders_input_array.copy()
-        for i, o in enumerate(colors_index_array):
-            colors_index_array[i] = o - 2
-        # print(colors_index_array)
-
-        # adds a 0 as the first entry in the array for orders if one is not already there
-        if orders_input_array[0] != 0:
-            orders_input_array = [0] + orders_input_array
-        # print(orders_input_array)
-
-        # creates a mask for orders and colors
-        mask_orders = np.zeros(len(ScaleScheme.cmaps), dtype=bool)
-        for i, o in enumerate(colors_index_array):
-            mask_orders[o] = True
-        # print(mask_orders)
-
-        # This ensures we only analyze the non-trivial information at
-        # O(Q^2), O(Q^3), O(Q^4), and O(Q^5)
-        excluded = [0]
-        mask_full = ~np.isin(ScaleScheme.orders_full, excluded)
-
         # runs through the observables
         for m, Observable in enumerate(observable_array):
             # runs through the parametrizations of p in Q(p)
@@ -647,7 +627,7 @@ def gp_analysis(
                         "deg",
                         # lambda x: x,
                         deg_fn,
-                        p_approx(PParamMethod, E_to_p(E_lab, "np"), degrees),
+                        p_approx(PParamMethod, E_to_p(E_lab, interaction = nn_interaction), degrees),
                         r"$\theta$ (deg)",
                         [
                             r"$",
@@ -661,7 +641,7 @@ def gp_analysis(
                         "cos",
                         # lambda x: -np.cos(np.radians(x)),
                         neg_cos,
-                        p_approx(PParamMethod, E_to_p(E_lab, "np"), degrees),
+                        p_approx(PParamMethod, E_to_p(E_lab, interaction = nn_interaction), degrees),
                         r"$-\mathrm{cos}(\theta)$",
                         [
                             r"$",
@@ -674,7 +654,7 @@ def gp_analysis(
                     SinBunch = InputSpaceBunch(
                         "sin",
                         lambda x: sin_thing(x),
-                        p_approx(PParamMethod, E_to_p(E_lab, "np"), degrees),
+                        p_approx(PParamMethod, E_to_p(E_lab, interaction = nn_interaction), degrees),
                         r"$\mathrm{sin}(\theta)$",
                         [
                             r"$",
@@ -686,9 +666,9 @@ def gp_analysis(
                     )
                     QcmBunch = InputSpaceBunch(
                         "qcm",
-                        # lambda x: deg_to_qcm(E_to_p(E_lab, "np"), x),
+                        # lambda x: deg_to_qcm(E_to_p(E_lab, interaction = nn_interaction), x),
                         deg_to_qcm,
-                        p_approx(PParamMethod, E_to_p(E_lab, "np"), degrees),
+                        p_approx(PParamMethod, E_to_p(E_lab, interaction = nn_interaction), degrees),
                         r"$q_{\mathrm{cm}}$ (MeV)",
                         [
                             r"$",
@@ -700,9 +680,9 @@ def gp_analysis(
                     )
                     Qcm2Bunch = InputSpaceBunch(
                         "qcm2",
-                        # lambda x: deg_to_qcm2(E_to_p(E_lab, "np"), x),
+                        # lambda x: deg_to_qcm2(E_to_p(E_lab, interaction = nn_interaction), x),
                         deg_to_qcm2,
-                        p_approx(PParamMethod, E_to_p(E_lab, "np"), degrees),
+                        p_approx(PParamMethod, E_to_p(E_lab, interaction = nn_interaction), degrees),
                         r"$q_{\mathrm{cm}}^{2}$ (MeV$^{2}$)",
                         [
                             r"$",
@@ -740,16 +720,16 @@ def gp_analysis(
                             MyPosteriorBounds = PosteriorBounds(
                                 (
                                     max(VsQuantity.input_space(**{"deg_input" : degrees, 
-                                                              "p_input" : E_to_p(E_lab, "np")}))
+                                                              "p_input" : E_to_p(E_lab, interaction = nn_interaction)}))
                                     - min(VsQuantity.input_space(**{"deg_input" : degrees, 
-                                                              "p_input" : E_to_p(E_lab, "np")}))
+                                                              "p_input" : E_to_p(E_lab, interaction = nn_interaction)}))
                                 )
                                 / 9,
                                 (
                                     max(VsQuantity.input_space(**{"deg_input" : degrees, 
-                                                              "p_input" : E_to_p(E_lab, "np")}))
+                                                              "p_input" : E_to_p(E_lab, interaction = nn_interaction)}))
                                     - min(VsQuantity.input_space(**{"deg_input" : degrees, 
-                                                              "p_input" : E_to_p(E_lab, "np")}))
+                                                              "p_input" : E_to_p(E_lab, interaction = nn_interaction)}))
                                 )
                                 / 2,
                                 100,
@@ -764,7 +744,7 @@ def gp_analysis(
                                 # conforms the training and testing masks to each input space
                                 TrainingTestingSplit.make_masks(
                                     VsQuantity.input_space(**{"deg_input" : degrees, 
-                                                              "p_input" : E_to_p(E_lab, "np")}), 
+                                                              "p_input" : E_to_p(E_lab, interaction = nn_interaction)}), 
                                     Observable.data
                                 )
                                 # print("data = " + str(observable.data))
@@ -773,7 +753,7 @@ def gp_analysis(
                                 LengthScaleGuess = length_scale_input
                                 LengthScaleGuess.make_guess(
                                     VsQuantity.input_space(**{"deg_input" : degrees, 
-                                                              "p_input" : E_to_p(E_lab, "np")})
+                                                              "p_input" : E_to_p(E_lab, interaction = nn_interaction)})
                                 )
 
                                 # creates the GP with all its hyperparameters
@@ -810,17 +790,26 @@ def gp_analysis(
                                 # information on the orders for each potential
                                 Orders = OrderInfo(
                                     ScaleScheme.orders_full,
-                                    mask_full,
+                                    [0] + orders_excluded,
                                     ScaleScheme.colors,
                                     ScaleScheme.light_colors,
-                                    orders_restricted=orders_input_array,
-                                    mask_restricted=mask_orders,
                                     orders_names_dict=orders_names_dict,
                                     orders_labels_dict = orders_labels_dict,
                                 )
+                                # Orders = OrderInfo(
+                                #     ScaleScheme.orders_full,
+                                #     mask_full,
+                                #     ScaleScheme.colors,
+                                #     ScaleScheme.light_colors,
+                                #     orders_restricted=orders_input_array,
+                                #     mask_restricted=mask_orders,
+                                #     orders_names_dict=orders_names_dict,
+                                #     orders_labels_dict = orders_labels_dict,
+                                # )
 
                                 # creates the object used to generate and plot statistical diagnostics
                                 MyPlot = GSUMDiagnostics(
+                                    nn_interaction,
                                     Observable,
                                     Lambdab,
                                     VsQuantity,
@@ -896,7 +885,7 @@ def gp_analysis(
                                         ls_true = None, 
                                         mpi_true=m_pi_eff,
                                         whether_save=save_lambdapost_curvewise_bool,
-                                        orders=3,
+                                        orders=2,
                                     )
                                 if plot_plotzilla_bool:
                                     MyPlot.plotzilla(whether_save=save_plotzilla_bool)
@@ -907,16 +896,16 @@ def gp_analysis(
                         "Elab",
                         # lambda x: x,
                         Elab_fn,
-                        p_approx("Qofprel", E_to_p(t_lab, "np"), degrees),
+                        p_approx("Qofprel", E_to_p(t_lab, interaction = nn_interaction), degrees),
                         r"$E_{\mathrm{lab}}$ (MeV)",
                         [r"$", Observable.title, r"(E_{\mathrm{lab}})$"],
                     )
 
                     PrelBunch = InputSpaceBunch(
                         "prel",
-                        # lambda x: E_to_p(x, "np"),
+                        # lambda x: E_to_p(x),
                         E_to_p,
-                        p_approx("Qofprel", E_to_p(t_lab, "np"), degrees),
+                        p_approx("Qofprel", E_to_p(t_lab, interaction = nn_interaction), degrees),
                         r"$p_{\mathrm{rel}}$ (MeV)",
                         [r"$", Observable.title, r"(p_{\mathrm{rel}})$"],
                     )
@@ -940,13 +929,17 @@ def gp_analysis(
                             # length
                             MyPosteriorBounds = PosteriorBounds(
                                 (
-                                    max(VsQuantity.input_space(**{"E_lab" : t_lab}))
-                                    - min(VsQuantity.input_space(**{"E_lab" : t_lab}))
+                                    max(VsQuantity.input_space(**{"E_lab" : t_lab, 
+                                                                  "interaction" : nn_interaction}))
+                                    - min(VsQuantity.input_space(**{"E_lab" : t_lab, 
+                                                                  "interaction" : nn_interaction}))
                                 )
                                 / 9,
                                 (
-                                    max(VsQuantity.input_space(**{"E_lab" : t_lab}))
-                                    - min(VsQuantity.input_space(**{"E_lab" : t_lab}))
+                                    max(VsQuantity.input_space(**{"E_lab" : t_lab, 
+                                                                  "interaction" : nn_interaction}))
+                                    - min(VsQuantity.input_space(**{"E_lab" : t_lab, 
+                                                                  "interaction" : nn_interaction}))
                                 )
                                 / 2,
                                 100,
@@ -961,18 +954,21 @@ def gp_analysis(
                                 # conforms the training and testing masks to each input space
                                 try:
                                     TrainingTestingSplit.make_masks(
-                                        VsQuantity.input_space(**{"E_lab" : t_lab}),
+                                        VsQuantity.input_space(**{"E_lab" : t_lab, 
+                                                                      "interaction" : nn_interaction}),
                                         Observable.data.swapaxes(1, 2),
                                     )
                                 except:
                                     TrainingTestingSplit.make_masks(
-                                        VsQuantity.input_space(**{"E_lab" : t_lab}), Observable.data
+                                        VsQuantity.input_space(**{"E_lab" : t_lab, 
+                                                                      "interaction" : nn_interaction}), Observable.data
                                     )
 
                                 # chooses a starting guess for the GP length scale optimization procedure
                                 LengthScaleGuess = length_scale_input
                                 LengthScaleGuess.make_guess(
-                                    VsQuantity.input_space(**{"E_lab" : t_lab})
+                                    VsQuantity.input_space(**{"E_lab" : t_lab, 
+                                                                  "interaction" : nn_interaction})
                                 )
 
                                 # creates the GP with all its hyperparameters
@@ -1009,17 +1005,26 @@ def gp_analysis(
                                 # information on the orders for each potential
                                 Orders = OrderInfo(
                                     ScaleScheme.orders_full,
-                                    mask_full,
+                                    [0] + orders_excluded,
                                     ScaleScheme.colors,
                                     ScaleScheme.light_colors,
-                                    orders_restricted=orders_input_array,
-                                    mask_restricted=mask_orders,
                                     orders_names_dict=orders_names_dict,
                                     orders_labels_dict = orders_labels_dict,
                                 )
+                                # Orders = OrderInfo(
+                                #     ScaleScheme.orders_full,
+                                #     mask_full,
+                                #     ScaleScheme.colors,
+                                #     ScaleScheme.light_colors,
+                                #     orders_restricted=orders_input_array,
+                                #     mask_restricted=mask_orders,
+                                #     orders_names_dict=orders_names_dict,
+                                #     orders_labels_dict = orders_labels_dict,
+                                # )
 
                                 # creates the object used to generate and plot statistical diagnostics
                                 MyPlot = GSUMDiagnostics(
+                                    nn_interaction,
                                     Observable,
                                     Lambdab,
                                     VsQuantity,
@@ -1087,7 +1092,7 @@ def gp_analysis(
                                         ls_true = None, 
                                         mpi_true=m_pi_eff,
                                         whether_save=save_lambdapost_curvewise_bool,
-                                        orders=3,
+                                        orders=2,
                                     )
                                 if plot_plotzilla_bool:
                                     MyPlot.plotzilla(whether_save=save_plotzilla_bool)
@@ -1125,15 +1130,16 @@ def gp_analysis(
         print("************************************")
 
 gp_analysis(
-    scale_scheme_bunch_array=[RKE450MeV],
-    observable_input=["DSG"],
+    nn_interaction="np",
+    scale_scheme_bunch_array=[RKE500MeV],
+    observable_input=["AY"],
     E_input_array=[50],
     deg_input_array=[0],
-    Q_param_method_array=["sum"],
+    Q_param_method_array=["smoothmax"],
     p_param_method_array=["Qofprel"],
     input_space_input=["cos"],
     train_test_split_array=[Fullspaceanglessplit1],
-    orders_input="all",
+    orders_excluded = [3],
     orders_names_dict=None,
     orders_labels_dict=None,
     length_scale_input=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
@@ -1141,7 +1147,7 @@ gp_analysis(
     m_pi_eff=138,
     Lambdab=600,
     print_all_classes=False,
-    savefile_type="png",
+    savefile_type="pdf",
     plot_coeffs_bool=True,
     plot_md_bool=True,
     plot_pc_bool=True,

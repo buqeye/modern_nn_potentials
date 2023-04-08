@@ -1,7 +1,8 @@
 import numpy as np
 import math
 
-def Q_approx(p, Q_parametrization, Lambda_b, m_pi=138, interaction='np',
+
+def Q_approx(p, Q_parametrization, Lambda_b, m_pi=138,
              single_expansion=False):
     """
     Returns the dimensionless expansion parameter Q.
@@ -11,14 +12,9 @@ def Q_approx(p, Q_parametrization, Lambda_b, m_pi=138, interaction='np',
     p (float or array) : momentum (in MeV)
     Q_parametrization (str) : can be "smoothmax", "max", or "sum"
     Lambda_b (float) : value for the cutoff (in MeV)
-    interaction (str) : can be "np", "nn", or "pp"
     """
     if single_expansion:
         m_pi = 0
-    # else:
-    #     m_pi = 200  # Set to 0 to just return p/Lambda_b
-
-    #     p = E_to_p(E, interaction)
 
     if Q_parametrization == "smoothmax":
         # Interpolate to smooth the transition from m_pi to p with a ratio
