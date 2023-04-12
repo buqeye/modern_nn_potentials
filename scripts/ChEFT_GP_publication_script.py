@@ -1,49 +1,4 @@
-from sys import argv
-
-# import sys
-# import gsum as gm
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-import numpy as np
-
-# import scipy.stats as stats
-# from scipy.interpolate import interp1d
-# import os
-# import h5py
-# from sklearn.gaussian_process.kernels import RBF, WhiteKernel
-# import math
-# import re
 import gc
-# from ChEFT_GP_imports_forked import (
-#     joint_plot,
-#     offset_xlabel,
-#     m_p,
-#     m_n,
-#     hbarc,
-#     E_to_p,
-#     Q_approx,
-#     p_approx,
-#     deg_fn,
-#     neg_cos,
-#     deg_to_qcm,
-#     deg_to_qcm2,
-#     sin_thing,
-#     Elab_fn,
-#     softmax_mom,
-#     GPHyperparameters,
-#     FileNaming,
-#     PosteriorBounds,
-#     OrderInfo,
-#     versatile_train_test_split,
-#     InputSpaceBunch,
-#     ObservableBunch,
-#     Interpolation,
-#     TrainTestSplit,
-#     ScaleSchemeBunch,
-#     LengthScale,
-#     GSUMDiagnostics,
-# )
-import copy as cp
 import urllib
 import tables
 
@@ -53,9 +8,6 @@ from cheftgp.gaussianprocess import *
 from cheftgp.graphs import *
 from cheftgp.scattering import *
 from cheftgp.utils import *
-
-# import warnings
-# warnings.filterwarnings("error")
 
 # See: https://ianstormtaylor.com/design-tip-never-use-black/
 # softblack = '#262626'
@@ -141,35 +93,35 @@ online_data_dict = {
 
 # for each choice of scale and scheme, sets the total possible orders and nomenclature
 EKM0p8fm = ScaleSchemeBunch(
-    "scattering_observables_EKM_R-0p8fm.h5",
+    "../observables_data/scattering_observables_EKM_R-0p8fm.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "SCS",
     "0p8fm",
 )
 EKM0p9fm = ScaleSchemeBunch(
-    "scattering_observables_EKM_R-0p9fm.h5",
+    "../observables_data/scattering_observables_EKM_R-0p9fm.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "SCS",
     "0p9fm",
 )
 EKM1p0fm = ScaleSchemeBunch(
-    "scattering_observables_EKM_R-1p0fm.h5",
+    "../observables_data/scattering_observables_EKM_R-1p0fm.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "SCS",
     "1p0fm",
 )
 EKM1p1fm = ScaleSchemeBunch(
-    "scattering_observables_EKM_R-1p1fm.h5",
+    "../observables_data/scattering_observables_EKM_R-1p1fm.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "SCS",
     "1p1fm",
 )
 EKM1p2fm = ScaleSchemeBunch(
-    "scattering_observables_EKM_R-1p2fm.h5",
+    "../observables_data/scattering_observables_EKM_R-1p2fm.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "SCS",
@@ -177,28 +129,28 @@ EKM1p2fm = ScaleSchemeBunch(
 )
 
 RKE400MeV = ScaleSchemeBunch(
-    "scattering_observables_RKE_L-400MeV.h5",
+    "../observables_data/scattering_observables_RKE_L-400MeV.h5",
     np.array([0, 2, 3, 4, 5, 6]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds", "Purples"]],
     "SMS",
     "400MeV",
 )
 RKE450MeV = ScaleSchemeBunch(
-    "observable_data/scattering_observables_RKE_L-450MeV.h5",
+    "../observables_data/scattering_observables_RKE_L-450MeV.h5",
     np.array([0, 2, 3, 4, 5, 6]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds", "Purples"]],
     "SMS",
     "450MeV",
 )
 RKE500MeV = ScaleSchemeBunch(
-    "observables_data/scattering_observables_RKE_L-500MeV.h5",
+    "../observables_data/scattering_observables_RKE_L-500MeV.h5",
     np.array([0, 2, 3, 4, 5, 6]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds", "Purples"]],
     "SMS",
     "500MeV",
 )
 RKE550MeV = ScaleSchemeBunch(
-    "scattering_observables_RKE_L-550MeV.h5",
+    "../observables_data/scattering_observables_RKE_L-550MeV.h5",
     np.array([0, 2, 3, 4, 5, 6]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds", "Purples"]],
     "SMS",
@@ -206,21 +158,21 @@ RKE550MeV = ScaleSchemeBunch(
 )
 
 EMN450MeV = ScaleSchemeBunch(
-    "observable_data/scattering_observables_EM-450MeV.h5",
+    "../observables_data/observable_data/scattering_observables_EM-450MeV.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "EMN",
     "450MeV",
 )
 EMN500MeV = ScaleSchemeBunch(
-    "scattering_observables_EM-500MeV.h5",
+    "../observables_data/scattering_observables_EM-500MeV.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "EMN",
     "500MeV",
 )
 EMN550MeV = ScaleSchemeBunch(
-    "scattering_observables_EM-550MeV.h5",
+    "../observables_data/scattering_observables_EM-550MeV.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "EMN",
@@ -228,38 +180,33 @@ EMN550MeV = ScaleSchemeBunch(
 )
 
 GT0p9fm = ScaleSchemeBunch(
-    "scattering_observables_Gezerlis-0p9fm.h5",
+    "../observables_data/scattering_observables_Gezerlis-0p9fm.h5",
     np.array([0, 2, 3]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens"]],
     "GT",
     "0p9fm",
 )
 GT1p0fm = ScaleSchemeBunch(
-    "scattering_observables_Gezerlis-1p0fm.h5",
+    "../observables_data/scattering_observables_Gezerlis-1p0fm.h5",
     np.array([0, 2, 3]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens"]],
     "GT",
     "1p0fm",
 )
 GT1p1fm = ScaleSchemeBunch(
-    "scattering_observables_Gezerlis-1p1fm.h5",
+    "../observables_data/scattering_observables_Gezerlis-1p1fm.h5",
     np.array([0, 2, 3]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens"]],
     "GT",
     "1p1fm",
 )
 GT1p2fm = ScaleSchemeBunch(
-    "scattering_observables_Gezerlis-1p2fm.h5",
+    "../observables_data/scattering_observables_Gezerlis-1p2fm.h5",
     np.array([0, 2, 3]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens"]],
     "GT",
     "1p2fm",
 )
-
-# scale_scheme_bunch_array = [EKM0p8fm, EKM0p9fm, EKM1p0fm, EKM1p1fm, EKM1p2fm,
-#             RKE400MeV, RKE450MeV, RKE500MeV, RKE550MeV,
-#             EMN450MeV, EMN500MeV, EMN550MeV,
-# GT0p9fm, GT1p0fm, GT1p1fm, GT1p2fm]
 
 # creates the training and testing masks for observables plotted against angle
 Fullspaceanglessplit = TrainTestSplit(
@@ -625,7 +572,6 @@ def gp_analysis(
                     # creates the bunches for the vs-angle input spaces
                     DegBunch = InputSpaceBunch(
                         "deg",
-                        # lambda x: x,
                         deg_fn,
                         p_approx(PParamMethod, E_to_p(E_lab, interaction = nn_interaction), degrees),
                         r"$\theta$ (deg)",
@@ -639,7 +585,6 @@ def gp_analysis(
                     )
                     CosBunch = InputSpaceBunch(
                         "cos",
-                        # lambda x: -np.cos(np.radians(x)),
                         neg_cos,
                         p_approx(PParamMethod, E_to_p(E_lab, interaction = nn_interaction), degrees),
                         r"$-\mathrm{cos}(\theta)$",
@@ -666,7 +611,6 @@ def gp_analysis(
                     )
                     QcmBunch = InputSpaceBunch(
                         "qcm",
-                        # lambda x: deg_to_qcm(E_to_p(E_lab, interaction = nn_interaction), x),
                         deg_to_qcm,
                         p_approx(PParamMethod, E_to_p(E_lab, interaction = nn_interaction), degrees),
                         r"$q_{\mathrm{cm}}$ (MeV)",
@@ -680,7 +624,6 @@ def gp_analysis(
                     )
                     Qcm2Bunch = InputSpaceBunch(
                         "qcm2",
-                        # lambda x: deg_to_qcm2(E_to_p(E_lab, interaction = nn_interaction), x),
                         deg_to_qcm2,
                         p_approx(PParamMethod, E_to_p(E_lab, interaction = nn_interaction), degrees),
                         r"$q_{\mathrm{cm}}^{2}$ (MeV$^{2}$)",
@@ -747,7 +690,6 @@ def gp_analysis(
                                                               "p_input" : E_to_p(E_lab, interaction = nn_interaction)}), 
                                     Observable.data
                                 )
-                                # print("data = " + str(observable.data))
 
                                 # chooses a starting guess for the GP length scale optimization procedure
                                 LengthScaleGuess = length_scale_input
@@ -796,16 +738,6 @@ def gp_analysis(
                                     orders_names_dict=orders_names_dict,
                                     orders_labels_dict = orders_labels_dict,
                                 )
-                                # Orders = OrderInfo(
-                                #     ScaleScheme.orders_full,
-                                #     mask_full,
-                                #     ScaleScheme.colors,
-                                #     ScaleScheme.light_colors,
-                                #     orders_restricted=orders_input_array,
-                                #     mask_restricted=mask_orders,
-                                #     orders_names_dict=orders_names_dict,
-                                #     orders_labels_dict = orders_labels_dict,
-                                # )
 
                                 # creates the object used to generate and plot statistical diagnostics
                                 MyPlot = GSUMDiagnostics(
@@ -859,16 +791,6 @@ def gp_analysis(
                                         whether_save=save_lambdapost_pointwise_bool,
                                     )
                                 if plot_lambdapost_curvewise_bool:
-                                    # MyPlot.PlotLambdaPosteriorCurvewise(SGT = SGT,
-                                    #                            DSG = DSG,
-                                    #                            AY = AY,
-                                    #                            A = A,
-                                    #                            D = D,
-                                    #                            AXX = AXX,
-                                    #                            AYY = AYY,
-                                    #                            t_lab = t_lab,
-                                    #                            degrees = degrees,
-                                    #                            whether_save = save_lambdapost_curvewise_bool)
                                     MyPlot.plot_posteriors_curvewise(
                                         SGT=SGT,
                                         DSG=DSG,
@@ -894,7 +816,6 @@ def gp_analysis(
                     # creates the bunches for the vs-energy input spaces
                     ElabBunch = InputSpaceBunch(
                         "Elab",
-                        # lambda x: x,
                         Elab_fn,
                         p_approx("Qofprel", E_to_p(t_lab, interaction = nn_interaction), degrees),
                         r"$E_{\mathrm{lab}}$ (MeV)",
@@ -903,7 +824,6 @@ def gp_analysis(
 
                     PrelBunch = InputSpaceBunch(
                         "prel",
-                        # lambda x: E_to_p(x),
                         E_to_p,
                         p_approx("Qofprel", E_to_p(t_lab, interaction = nn_interaction), degrees),
                         r"$p_{\mathrm{rel}}$ (MeV)",
@@ -1011,16 +931,6 @@ def gp_analysis(
                                     orders_names_dict=orders_names_dict,
                                     orders_labels_dict = orders_labels_dict,
                                 )
-                                # Orders = OrderInfo(
-                                #     ScaleScheme.orders_full,
-                                #     mask_full,
-                                #     ScaleScheme.colors,
-                                #     ScaleScheme.light_colors,
-                                #     orders_restricted=orders_input_array,
-                                #     mask_restricted=mask_orders,
-                                #     orders_names_dict=orders_names_dict,
-                                #     orders_labels_dict = orders_labels_dict,
-                                # )
 
                                 # creates the object used to generate and plot statistical diagnostics
                                 MyPlot = GSUMDiagnostics(
@@ -1066,16 +976,6 @@ def gp_analysis(
                                         residual_plot=False,
                                     )
                                 if plot_lambdapost_curvewise_bool:
-                                    # MyPlot.PlotLambdaPosteriorCurvewise(SGT = SGT,
-                                    #                            DSG = DSG,
-                                    #                            AY = AY,
-                                    #                            A = A,
-                                    #                            D = D,
-                                    #                            AXX = AXX,
-                                    #                            AYY = AYY,
-                                    #                            t_lab = t_lab,
-                                    #                            degrees = degrees,
-                                    #                            whether_save = save_lambdapost_curvewise_bool)
                                     MyPlot.plot_posteriors_curvewise(
                                         SGT=SGT,
                                         DSG=DSG,
@@ -1131,15 +1031,15 @@ def gp_analysis(
 
 gp_analysis(
     nn_interaction="np",
-    scale_scheme_bunch_array=[RKE500MeV],
-    observable_input=["AY"],
+    scale_scheme_bunch_array=[RKE450MeV, RKE500MeV],
+    observable_input=["D"],
     E_input_array=[50],
     deg_input_array=[0],
-    Q_param_method_array=["smoothmax"],
+    Q_param_method_array=["smoothmax", "sum"],
     p_param_method_array=["Qofprel"],
     input_space_input=["cos"],
     train_test_split_array=[Fullspaceanglessplit1],
-    orders_excluded = [3],
+    orders_excluded = [],
     orders_names_dict=None,
     orders_labels_dict=None,
     length_scale_input=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
@@ -1147,7 +1047,7 @@ gp_analysis(
     m_pi_eff=138,
     Lambdab=600,
     print_all_classes=False,
-    savefile_type="pdf",
+    savefile_type="png",
     plot_coeffs_bool=True,
     plot_md_bool=True,
     plot_pc_bool=True,
@@ -1157,14 +1057,14 @@ gp_analysis(
     plot_lambdapost_pointwise_bool=False,
     plot_lambdapost_curvewise_bool=True,
     plot_plotzilla_bool=False,
-    save_coeffs_bool=False,
+    save_coeffs_bool=True,
     save_md_bool=False,
     save_pc_bool=False,
     save_ci_bool=False,
     save_pdf_bool=False,
     save_trunc_bool=False,
     save_lambdapost_pointwise_bool=False,
-    save_lambdapost_curvewise_bool=False,
+    save_lambdapost_curvewise_bool=True,
     save_plotzilla_bool=False,
     filename_addendum="",
 )

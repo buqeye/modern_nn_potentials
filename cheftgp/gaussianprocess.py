@@ -1,3 +1,5 @@
+import os.path
+
 import numpy as np
 from scipy.interpolate import interp1d
 from .utils import versatile_train_test_split, compute_posterior_intervals, sig_figs, correlation_coefficient, \
@@ -324,8 +326,9 @@ class TrainTestSplit:
 
 
 class ScaleSchemeBunch:
+    # os.path.join(os.path.abspath(__file__), os.pardir)
     def __init__(self, file_name, orders_full, cmaps, potential_string, cutoff_string,
-                 dir_path="./"):
+                 dir_path=""):
         self.file_name = file_name
         self.orders_full = orders_full
         self.cmaps = cmaps
@@ -2055,14 +2058,14 @@ class GSUMDiagnostics:
 
         # sets the meshes for the random variable arrays
         # mpi_vals = np.linspace(mpi_true / 3.1, mpi_true * 3.1, 24)
-        mpi_vals = np.linspace(50, 350, 49, dtype=np.dtype('f4'))
+        mpi_vals = np.linspace(50, 350, 24, dtype=np.dtype('f4'))
         if self.observable_name == "SGT":
-            ls_vals = self.inputspace.input_space(**{"E_lab": np.linspace(1, 300, 50, dtype=np.dtype('f4')),
+            ls_vals = self.inputspace.input_space(**{"E_lab": np.linspace(1, 300, 25, dtype=np.dtype('f4')),
                                                      "interaction": self.nn_interaction})
         else:
-            ls_vals = np.linspace(0.02, 2.00, 50, dtype=np.dtype('f'))
+            ls_vals = np.linspace(0.02, 2.00, 25, dtype=np.dtype('f'))
         # lambda_vals = np.linspace(0.5 * np.max(mpi_vals), 1500, 26)
-        lambda_vals = np.linspace(420, 1500, 51, dtype=np.dtype('f4'))
+        lambda_vals = np.linspace(420, 1500, 26, dtype=np.dtype('f4'))
         mesh_cart = gm.cartesian(lambda_vals, np.log(ls_vals), mpi_vals)
 
         # sets the RandomVariable objects
@@ -2444,7 +2447,8 @@ class GSUMDiagnostics:
                 fig.tight_layout()
 
                 fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' +
-                             variable.name + '_posterior_pdf_curvewise' + '_' + self.scheme + '_' +
+                             variable.name + '_posterior_pdf_curvewise' + '_' + obs_name_corner +
+                             '_' + self.scheme + '_' +
                              self.scale + '_Q' + self.Q_param + '_' + self.vs_what +
                              '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' +
                              self.train_pts_loc + '_' + self.p_param +
@@ -2564,7 +2568,7 @@ class GSUMDiagnostics:
                     fig.tight_layout()
 
                     fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' +
-                                 variable.name + '_corner_plot_curvewise' + '_' + self.scheme + '_' +
+                                 'corner_plot_curvewise' + '_' + obs_name_corner + '_' + self.scheme + '_' +
                                  self.scale + '_Q' + self.Q_param + '_' + self.vs_what +
                                  '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' +
                                  self.train_pts_loc + '_' + self.p_param +
