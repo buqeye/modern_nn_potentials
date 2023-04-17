@@ -2047,10 +2047,11 @@ class GSUMDiagnostics:
 
     def plot_posteriors_curvewise(self, SGT, DSG, AY, A, D, AXX, AYY,
                                   t_lab, t_lab_pts, degrees, degrees_pts,
-                                  Lambda_b_true, ls_true, mpi_true, orders=2, ax=None, whether_plot_joint_Lbls=True,
-                                  whether_plot_joint_mpils=True, whether_plot_joint_Lbmpi=True,
-                                  whether_plot_lambda=True, whether_plot_mpi=True,
-                                  whether_plot_corner=True, whether_save=True):
+                                  Lambda_b_true, ls_true, mpi_true, orders=2, ax=None,
+                                  whether_plot_posteriors = True,
+                                  whether_plot_corner=True,
+                                  whether_save=True,
+                                  whether_save_opt=False,):
 
         # sets the number of orders and the corresponding colors
         order_num = int(orders)
@@ -2140,9 +2141,9 @@ class GSUMDiagnostics:
 
         BATCH_SIZE = 100
 
-        try:
-            like_list = []
+        like_list = []
 
+        try:
             # generates names for files and searches for whether they exist
             for order_counter in range(1, order_num + 1):
                 order = np.max(self.nn_orders) - order_num + order_counter
@@ -2160,8 +2161,6 @@ class GSUMDiagnostics:
                 ))
 
         except:
-            like_list = []
-
             for order_counter in range(1, order_num + 1):
                 # sets the order number
                 order = np.max(self.nn_orders) - order_num + order_counter
@@ -2394,65 +2393,65 @@ class GSUMDiagnostics:
 
                 joint_post_list.append(joint_post)
 
-        print(np.shape(marg_post_list))
-        print(np.shape(joint_post_list))
+        # print(np.shape(marg_post_list))
+        # print(np.shape(joint_post_list))
         marg_post_array = np.reshape(marg_post_list, (len(variables_array), order_num), order='F')
         joint_post_array = np.reshape(joint_post_list,
                                       (len(variables_array) * (len(variables_array) - 1) // 2, order_num), order='F')
+        if whether_plot_posteriors:
+            for (variable, result) in zip(variables_array, marg_post_array):
+                # Plot each posterior and its summary statistics
+                fig, ax = plt.subplots(1, 1, figsize=(3.4, 3.4))
 
-        for (variable, result) in zip(variables_array, marg_post_array):
-            # Plot each posterior and its summary statistics
-            fig, ax = plt.subplots(1, 1, figsize=(3.4, 3.4))
+                for i, posterior_raw in enumerate(result):
+                    # scales the posteriors so they're all the same height
+                    # print(posterior_raw)
+                    posterior = posterior_raw / (1.2 * np.max(posterior_raw))
+                    # Make the lines taper off
+                    vals_restricted = variable.var[posterior > 1e-2]
+                    posterior = posterior[posterior > 1e-2]
+                    # Plot and fill posterior, and add summary statistics
+                    ax.plot(vals_restricted, posterior - i, c='gray')
 
-            for i, posterior_raw in enumerate(result):
-                # scales the posteriors so they're all the same height
-                print(posterior_raw)
-                posterior = posterior_raw / (1.2 * np.max(posterior_raw))
-                # Make the lines taper off
-                vals_restricted = variable.var[posterior > 1e-2]
-                posterior = posterior[posterior > 1e-2]
-                # Plot and fill posterior, and add summary statistics
-                ax.plot(vals_restricted, posterior - i, c='gray')
+                    ax.fill_between(vals_restricted, -i, posterior - i, facecolor=Lb_colors[i])
 
-                ax.fill_between(vals_restricted, -i, posterior - i, facecolor=Lb_colors[i])
+                    bounds = np.zeros((2, 2))
+                    for j, p in enumerate([0.68, 0.95]):
+                        bounds[j] = gm.hpd_pdf(pdf=posterior_raw, alpha=p, x=variable.var)
 
-                bounds = np.zeros((2, 2))
-                for j, p in enumerate([0.68, 0.95]):
-                    bounds[j] = gm.hpd_pdf(pdf=posterior_raw, alpha=p, x=variable.var)
+                    median = gm.median_pdf(pdf=posterior_raw, x=variable.var)
 
-                median = gm.median_pdf(pdf=posterior_raw, x=variable.var)
+                    draw_summary_statistics(*bounds, median, ax=ax, height=-i)
 
-                draw_summary_statistics(*bounds, median, ax=ax, height=-i)
+                # Plot formatting
+                ax.set_yticks([0])
+                ax.set_yticklabels([posterior_label])
+                ax.tick_params(axis='both', which='both', direction='in')
+                ax.tick_params(which='major', length=0)
+                ax.tick_params(which='minor', length=7, right=True)
+                ax.set_xticks(variable.ticks)
+                ax.set_xlabel((r'$' + variable.label + r'$ (' + variable.units + ')').replace('()', ''))
+                ax.legend(title=r'$\mathrm{pr}(' + variable.label + r' \, | \, \vec{\mathbf{y}}_{k}, \mathbf{f})$',
+                          handles=[Patch(facecolor=Lb_colors[o],
+                                         edgecolor='gray',
+                                         linewidth=1,
+                                         label=self.orders_labels_dict[(np.sort(self.nn_orders))[-1 - o]])
+                                   for o in range(0, order_num)])
+                ax.grid(axis='x')
+                ax.set_axisbelow(True)
 
-            # Plot formatting
-            ax.set_yticks([0])
-            ax.set_yticklabels([posterior_label])
-            ax.tick_params(axis='both', which='both', direction='in')
-            ax.tick_params(which='major', length=0)
-            ax.tick_params(which='minor', length=7, right=True)
-            ax.set_xticks(variable.ticks)
-            ax.set_xlabel((r'$' + variable.label + r'$ (' + variable.units + ')').replace('()', ''))
-            ax.legend(title=r'$\mathrm{pr}(' + variable.label + r' \, | \, \vec{\mathbf{y}}_{k}, \mathbf{f})$',
-                      handles=[Patch(facecolor=Lb_colors[o],
-                                     edgecolor='gray',
-                                     linewidth=1,
-                                     label=self.orders_labels_dict[(np.sort(self.nn_orders))[-1 - o]])
-                               for o in range(0, order_num)])
-            ax.grid(axis='x')
-            ax.set_axisbelow(True)
+                plt.show()
 
-            plt.show()
+                if 'fig' in locals() and whether_save:
+                    fig.tight_layout()
 
-            if 'fig' in locals() and whether_save:
-                fig.tight_layout()
-
-                fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' +
-                             variable.name + '_posterior_pdf_curvewise' + '_' + obs_name_corner +
-                             '_' + self.scheme + '_' +
-                             self.scale + '_Q' + self.Q_param + '_' + self.vs_what +
-                             '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' +
-                             self.train_pts_loc + '_' + self.p_param +
-                             self.filename_addendum).replace('_0MeVlab_', '_'))
+                    fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' +
+                                 variable.name + '_posterior_pdf_curvewise' + '_' + obs_name_corner +
+                                 '_' + self.scheme + '_' +
+                                 self.scale + '_Q' + self.Q_param + '_' + self.vs_what +
+                                 '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' +
+                                 self.train_pts_loc + '_' + self.p_param +
+                                 self.filename_addendum).replace('_0MeVlab_', '_'))
 
         if whether_plot_corner:
             with plt.rc_context({"text.usetex": True}):
@@ -2629,9 +2628,9 @@ class GSUMDiagnostics:
             self.coeffs_train = (self.coeffs_train.T[self.mask_restricted]).T
             self.coeffs_test = (self.coeffs_test.T[self.mask_restricted]).T
 
-            self.plot_coefficients(whether_save=False)
-            self.plot_md(whether_save=False)
-            self.plot_pc(whether_save=False)
+            self.plot_coefficients(whether_save=whether_save_opt)
+            self.plot_md(whether_save=whether_save_opt)
+            self.plot_pc(whether_save=whether_save_opt)
 
             # except:
             #     print("Error in plotting the curvewise posterior PDF.")

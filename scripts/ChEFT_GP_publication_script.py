@@ -791,24 +791,14 @@ def gp_analysis(
                                         whether_save=save_lambdapost_pointwise_bool,
                                     )
                                 if plot_lambdapost_curvewise_bool:
-                                    MyPlot.plot_posteriors_curvewise(
-                                        SGT=SGT,
-                                        DSG=DSG,
-                                        AY=AY,
-                                        A=A,
-                                        D=D,
-                                        AXX=AXX,
-                                        AYY=AYY,
-                                        t_lab=t_lab,
-                                        t_lab_pts=np.array([5, 21, 48, 85, 133, 192]),
-                                        degrees=degrees,
-                                        degrees_pts=np.array([26, 51, 77, 103, 129, 154]),
-                                        Lambda_b_true=Lambdab,
-                                        ls_true = None, 
-                                        mpi_true=m_pi_eff,
-                                        whether_save=save_lambdapost_curvewise_bool,
-                                        orders=2,
-                                    )
+                                    MyPlot.plot_posteriors_curvewise(SGT=SGT, DSG=DSG, AY=AY, A=A, D=D, AXX=AXX,
+                                                                     AYY=AYY, t_lab=t_lab,
+                                                                     t_lab_pts=np.array([5, 21, 48, 85, 133, 192]),
+                                                                     degrees=degrees,
+                                                                     degrees_pts=np.array([26, 51, 77, 103, 129, 154]),
+                                                                     Lambda_b_true=Lambdab, ls_true=None,
+                                                                     mpi_true=m_pi_eff, orders=2,
+                                                                     whether_save=save_lambdapost_curvewise_bool)
                                 if plot_plotzilla_bool:
                                     MyPlot.plotzilla(whether_save=save_plotzilla_bool)
 
@@ -976,24 +966,14 @@ def gp_analysis(
                                         residual_plot=False,
                                     )
                                 if plot_lambdapost_curvewise_bool:
-                                    MyPlot.plot_posteriors_curvewise(
-                                        SGT=SGT,
-                                        DSG=DSG,
-                                        AY=AY,
-                                        A=A,
-                                        D=D,
-                                        AXX=AXX,
-                                        AYY=AYY,
-                                        t_lab=t_lab,
-                                        t_lab_pts=np.array([5, 21, 48, 85, 133, 192]),
-                                        degrees=degrees,
-                                        degrees_pts=np.array([26, 51, 77, 103, 129, 154]),
-                                        Lambda_b_true=Lambdab,
-                                        ls_true = None, 
-                                        mpi_true=m_pi_eff,
-                                        whether_save=save_lambdapost_curvewise_bool,
-                                        orders=2,
-                                    )
+                                    MyPlot.plot_posteriors_curvewise(SGT=SGT, DSG=DSG, AY=AY, A=A, D=D, AXX=AXX,
+                                                                     AYY=AYY, t_lab=t_lab,
+                                                                     t_lab_pts=np.array([5, 21, 48, 85, 133, 192]),
+                                                                     degrees=degrees,
+                                                                     degrees_pts=np.array([26, 51, 77, 103, 129, 154]),
+                                                                     Lambda_b_true=Lambdab, ls_true=None,
+                                                                     mpi_true=m_pi_eff, orders=2,
+                                                                     whether_save=save_lambdapost_curvewise_bool)
                                 if plot_plotzilla_bool:
                                     MyPlot.plotzilla(whether_save=save_plotzilla_bool)
     # except:
