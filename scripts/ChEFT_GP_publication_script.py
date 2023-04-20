@@ -339,7 +339,7 @@ def gp_analysis(
     p_param_method_array=["Qofprel"],
     input_space_input=["cos"],
     train_test_split_array=[Fullspaceanglessplit1],
-    orders_excluded = [], 
+    orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
     length_scale_input=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
@@ -372,105 +372,105 @@ def gp_analysis(
     nn_interaction (str): what pair of nucleons are interacting?
     Built-in options: "nn", "np", "pp"
     Default: "np"
-    
-    scale_scheme_bunch_array (ScaleSchemeBunch list): potential/cutoff 
+
+    scale_scheme_bunch_array (ScaleSchemeBunch list): potential/cutoff
         combinations for evaluation.
-    Built-in options: 
-        EKM0p8fm, EKM0p9fm, EKM1p0fm, EKM1p1fm, EKM1p2fm 
+    Built-in options:
+        EKM0p8fm, EKM0p9fm, EKM1p0fm, EKM1p1fm, EKM1p2fm
         ( https://doi.org/10.1140/epja/i2015-15053-8 );
-        RKE400MeV, RKE450MeV, RKE500MeV, RKE550MeV 
+        RKE400MeV, RKE450MeV, RKE500MeV, RKE550MeV
         ( https://doi.org/10.1140/epja/i2018-12516-4 );
-        EMN450MeV, EMN500MeV, EMN550MeV 
+        EMN450MeV, EMN500MeV, EMN550MeV
         ( https://doi.org/10.1103/PhysRevC.96.024004 );
-        GT0p9fm, GT1p0fm, GT1p1fm, GT1p2fm 
+        GT0p9fm, GT1p0fm, GT1p1fm, GT1p2fm
         ( https://doi.org/10.1103/PhysRevC.90.054323 )
     Default: [EKM0p9fm]
 
-    observable_input (str list): observables for evaluation. Note that SGT 
+    observable_input (str list): observables for evaluation. Note that SGT
         should not be in the same list as other observables.
     Built-in options: "SGT", "DSG", "AY", "A", "D", "AXX", "AYY"
     Default: ["DSG"]
 
-    E_input_array (int list): lab energies in MeV for evaluation. Note that SGT 
-        must be treated differently since it is not evaluated at one energy at 
+    E_input_array (int list): lab energies in MeV for evaluation. Note that SGT
+        must be treated differently since it is not evaluated at one energy at
         a time.
     May be any integer x such that 1 <= x <= 350
     Must be [0] for SGT
     If no evaluation at fixed lab energy is desired, set equal to [0]
     Default: [150]
-    
+
     deg_input_array (int list): angles in degrees for evaluation.
     May be any integer x such that 1 <= x <= 179
     Must be [0] for SGT
     If no evaluation at fixed angle measure is desired, set equal to [0]
     Default: []
 
-    Q_param_method_array (str list): methods of parametrizing the dimensionless 
+    Q_param_method_array (str list): methods of parametrizing the dimensionless
         expansion parameter Q for evaluation.
     Built-in options: "smoothmax", "max", "sum"
     Default: ["smoothmax"]
-    
-    p_param_method_array (str list): methods of parametrizing the characteristic 
+
+    p_param_method_array (str list): methods of parametrizing the characteristic
         momentum p in Q(p) for evaluation.
     Built-in options: "Qofprel", "Qofqcm", "Qofpq"
     Default: ["Qofpq"]
 
-    input_space_input (str list): input spaces for evaluation. Note that SGT 
-        must be treated differently since it is not evaluated at one energy at 
+    input_space_input (str list): input spaces for evaluation. Note that SGT
+        must be treated differently since it is not evaluated at one energy at
         a time.
     Built-in options: "Elab", "prel" for SGT
     Built-in options: "deg", "cos", "qcm", "qcm2" for all other observables
     Default: ["cos"]
 
-    train_test_split_array (TrainTestSplit list): splits of training and 
-        testing points for evaluation. Note that SGT must be treated 
+    train_test_split_array (TrainTestSplit list): splits of training and
+        testing points for evaluation. Note that SGT must be treated
         differently since it is not evaluated at one energy at a time.
     Built-in options: Nolowenergysplit, Yeslowenergysplit for SGT
-    Built-in options: Fullspaceanglessplit, Forwardanglessplit, 
+    Built-in options: Fullspaceanglessplit, Forwardanglessplit,
         Backwardanglessplit for all other observables
     Default: Fullspaceanglessplit
 
-    orders_excluded (int list): list of *coefficient* orders to be excluded from 
+    orders_excluded (int list): list of *coefficient* orders to be excluded from
         the fitting procedure. 2 corresponds to c2, 3 to c3, etc.
     Default: []
-    
-    orders_names_dict (dict): dictionary method linking the numerical indices (int) 
+
+    orders_names_dict (dict): dictionary method linking the numerical indices (int)
         of EFT orders and their corresponding abbreviations (str)
-    
-    Default: None
-    
-    orders_labels_dict (dict): dictionary method linking the numerical indices (int) 
-        of EFT orders and their corresponding math-mode-formatted labels (str)
-    
+
     Default: None
 
-    length_scale_input (LengthScale): initial guess for the correlation 
-        length in the kernel (as a factor of the total size of the input space) 
-        plus boundaries of the fit procedure as factors of the initial guess 
-        for the correlation length. Fitting may be bypassed when whether_fit = 
+    orders_labels_dict (dict): dictionary method linking the numerical indices (int)
+        of EFT orders and their corresponding math-mode-formatted labels (str)
+
+    Default: None
+
+    length_scale_input (LengthScale): initial guess for the correlation
+        length in the kernel (as a factor of the total size of the input space)
+        plus boundaries of the fit procedure as factors of the initial guess
+        for the correlation length. Fitting may be bypassed when whether_fit =
         False.
     Default: LengthScale(0.25, 0.25, 4, whether_fit = True)
 
-    fixed_sd (float): fixed standard deviation for the Gaussian process fit. 
-        May be any positive float. If None, then there is no fixed standard 
+    fixed_sd (float): fixed standard deviation for the Gaussian process fit.
+        May be any positive float. If None, then there is no fixed standard
         deviation and it is calculated by the fitting procedure.
     Default: None
-    
+
     m_pi_eff (float): effective pion mass for the theory (in MeV).
     Default: 138
-    
+
     Lambdab (float): breakdown scale for the theory (in MeV).
     Default: 600
-    
+
     savefile_type (str): string for specifying the type of file to be saved.
     Default: 'png'
-    
+
     plot_..._bool (bool): boolean for whether to plot different figures
     Default: True
-    
+
     save_..._bool (bool): boolean for whether to save different figures
     Default: True
-    
+
     filename_addendum (str): string for distinguishing otherwise similarly named
         files.
     Default: ''
@@ -573,7 +573,11 @@ def gp_analysis(
                     DegBunch = InputSpaceBunch(
                         "deg",
                         deg_fn,
-                        p_approx(PParamMethod, E_to_p(E_lab, interaction = nn_interaction), degrees),
+                        p_approx(
+                            PParamMethod,
+                            E_to_p(E_lab, interaction=nn_interaction),
+                            degrees,
+                        ),
                         r"$\theta$ (deg)",
                         [
                             r"$",
@@ -586,7 +590,11 @@ def gp_analysis(
                     CosBunch = InputSpaceBunch(
                         "cos",
                         neg_cos,
-                        p_approx(PParamMethod, E_to_p(E_lab, interaction = nn_interaction), degrees),
+                        p_approx(
+                            PParamMethod,
+                            E_to_p(E_lab, interaction=nn_interaction),
+                            degrees,
+                        ),
                         r"$-\mathrm{cos}(\theta)$",
                         [
                             r"$",
@@ -599,7 +607,11 @@ def gp_analysis(
                     SinBunch = InputSpaceBunch(
                         "sin",
                         lambda x: sin_thing(x),
-                        p_approx(PParamMethod, E_to_p(E_lab, interaction = nn_interaction), degrees),
+                        p_approx(
+                            PParamMethod,
+                            E_to_p(E_lab, interaction=nn_interaction),
+                            degrees,
+                        ),
                         r"$\mathrm{sin}(\theta)$",
                         [
                             r"$",
@@ -612,7 +624,11 @@ def gp_analysis(
                     QcmBunch = InputSpaceBunch(
                         "qcm",
                         deg_to_qcm,
-                        p_approx(PParamMethod, E_to_p(E_lab, interaction = nn_interaction), degrees),
+                        p_approx(
+                            PParamMethod,
+                            E_to_p(E_lab, interaction=nn_interaction),
+                            degrees,
+                        ),
                         r"$q_{\mathrm{cm}}$ (MeV)",
                         [
                             r"$",
@@ -625,7 +641,11 @@ def gp_analysis(
                     Qcm2Bunch = InputSpaceBunch(
                         "qcm2",
                         deg_to_qcm2,
-                        p_approx(PParamMethod, E_to_p(E_lab, interaction = nn_interaction), degrees),
+                        p_approx(
+                            PParamMethod,
+                            E_to_p(E_lab, interaction=nn_interaction),
+                            degrees,
+                        ),
                         r"$q_{\mathrm{cm}}^{2}$ (MeV$^{2}$)",
                         [
                             r"$",
@@ -662,17 +682,49 @@ def gp_analysis(
                             # length
                             MyPosteriorBounds = PosteriorBounds(
                                 (
-                                    max(VsQuantity.input_space(**{"deg_input" : degrees, 
-                                                              "p_input" : E_to_p(E_lab, interaction = nn_interaction)}))
-                                    - min(VsQuantity.input_space(**{"deg_input" : degrees, 
-                                                              "p_input" : E_to_p(E_lab, interaction = nn_interaction)}))
+                                    max(
+                                        VsQuantity.input_space(
+                                            **{
+                                                "deg_input": degrees,
+                                                "p_input": E_to_p(
+                                                    E_lab, interaction=nn_interaction
+                                                ),
+                                            }
+                                        )
+                                    )
+                                    - min(
+                                        VsQuantity.input_space(
+                                            **{
+                                                "deg_input": degrees,
+                                                "p_input": E_to_p(
+                                                    E_lab, interaction=nn_interaction
+                                                ),
+                                            }
+                                        )
+                                    )
                                 )
                                 / 9,
                                 (
-                                    max(VsQuantity.input_space(**{"deg_input" : degrees, 
-                                                              "p_input" : E_to_p(E_lab, interaction = nn_interaction)}))
-                                    - min(VsQuantity.input_space(**{"deg_input" : degrees, 
-                                                              "p_input" : E_to_p(E_lab, interaction = nn_interaction)}))
+                                    max(
+                                        VsQuantity.input_space(
+                                            **{
+                                                "deg_input": degrees,
+                                                "p_input": E_to_p(
+                                                    E_lab, interaction=nn_interaction
+                                                ),
+                                            }
+                                        )
+                                    )
+                                    - min(
+                                        VsQuantity.input_space(
+                                            **{
+                                                "deg_input": degrees,
+                                                "p_input": E_to_p(
+                                                    E_lab, interaction=nn_interaction
+                                                ),
+                                            }
+                                        )
+                                    )
                                 )
                                 / 2,
                                 100,
@@ -680,22 +732,75 @@ def gp_analysis(
                                 Lambdab * 1.5,
                                 100,
                             )
+
+                            # sets the meshes for the random variable arrays
+                            mpi_vals = np.linspace(10, 400, 49, dtype=np.dtype('f4'))
+                            if Observable.name == "SGT":
+                                ls_vals = VsQuantity.input_space(
+                                    **{"E_lab": np.linspace(1, 300, 50, dtype=np.dtype('f4')),
+                                       "interaction": nn_interaction})
+                            else:
+                                ls_vals = np.linspace(0.02, 4.00, 50, dtype=np.dtype('f'))
+                            lambda_vals = np.linspace(250, 1000, 51, dtype=np.dtype('f4'))
+
+                            mesh_cart = gm.cartesian(lambda_vals, np.log(ls_vals), mpi_vals)
+
+                            # sets the RandomVariable objects
+                            LambdabVariable = RandomVariable(var=lambda_vals,
+                                                             user_val=Lambdab,
+                                                             name='Lambdab',
+                                                             label="\Lambda_{b}",
+                                                             units="MeV",
+                                                             ticks=[300, 600, 900, 1200],
+                                                             logprior=Lb_logprior(lambda_vals),
+                                                             logprior_name="Lambdab_uniformlogprior")
+                            # this will need to change for SGT vs. other observables
+                            LsVariable = RandomVariable(var=ls_vals,
+                                                        user_val=None,
+                                                        name='ls',
+                                                        label="\ell",
+                                                        units="",
+                                                        ticks=[],
+                                                        logprior=np.zeros(len(ls_vals)),
+                                                        logprior_name="ls_nologprior")
+                            MpieffVariable = RandomVariable(var=mpi_vals,
+                                                            user_val=m_pi_eff,
+                                                            name='mpieff',
+                                                            label="m_{\pi}",
+                                                            units="MeV",
+                                                            ticks=[50, 100, 150, 200, 250, 300, 350],
+                                                            logprior=mpieff_logprior(mpi_vals),
+                                                            logprior_name="mpieff_uniformlogprior")
+                            variables_array = np.array([LambdabVariable, LsVariable, MpieffVariable])
+
                             # runs through the training and testing masks
                             for l, TrainingTestingSplit in enumerate(
                                 train_test_split_array
                             ):
                                 # conforms the training and testing masks to each input space
                                 TrainingTestingSplit.make_masks(
-                                    VsQuantity.input_space(**{"deg_input" : degrees, 
-                                                              "p_input" : E_to_p(E_lab, interaction = nn_interaction)}), 
-                                    Observable.data
+                                    VsQuantity.input_space(
+                                        **{
+                                            "deg_input": degrees,
+                                            "p_input": E_to_p(
+                                                E_lab, interaction=nn_interaction
+                                            ),
+                                        }
+                                    ),
+                                    Observable.data,
                                 )
 
                                 # chooses a starting guess for the GP length scale optimization procedure
                                 LengthScaleGuess = length_scale_input
                                 LengthScaleGuess.make_guess(
-                                    VsQuantity.input_space(**{"deg_input" : degrees, 
-                                                              "p_input" : E_to_p(E_lab, interaction = nn_interaction)})
+                                    VsQuantity.input_space(
+                                        **{
+                                            "deg_input": degrees,
+                                            "p_input": E_to_p(
+                                                E_lab, interaction=nn_interaction
+                                            ),
+                                        }
+                                    )
                                 )
 
                                 # creates the GP with all its hyperparameters
@@ -736,7 +841,7 @@ def gp_analysis(
                                     ScaleScheme.colors,
                                     ScaleScheme.light_colors,
                                     orders_names_dict=orders_names_dict,
-                                    orders_labels_dict = orders_labels_dict,
+                                    orders_labels_dict=orders_labels_dict,
                                 )
 
                                 # creates the object used to generate and plot statistical diagnostics
@@ -791,14 +896,33 @@ def gp_analysis(
                                         whether_save=save_lambdapost_pointwise_bool,
                                     )
                                 if plot_lambdapost_curvewise_bool:
-                                    MyPlot.plot_posteriors_curvewise(SGT=SGT, DSG=DSG, AY=AY, A=A, D=D, AXX=AXX,
-                                                                     AYY=AYY, t_lab=t_lab,
-                                                                     t_lab_pts=np.array([5, 21, 48, 85, 133, 192]),
-                                                                     degrees=degrees,
-                                                                     degrees_pts=np.array([26, 51, 77, 103, 129, 154]),
-                                                                     Lambda_b_true=Lambdab, ls_true=None,
-                                                                     mpi_true=m_pi_eff, orders=2,
-                                                                     whether_save=save_lambdapost_curvewise_bool)
+                                    MyPlot.plot_posteriors_curvewise(
+                                        SGT=SGT,
+                                        DSG=DSG,
+                                        AY=AY,
+                                        A=A,
+                                        D=D,
+                                        AXX=AXX,
+                                        AYY=AYY,
+                                        t_lab=t_lab,
+                                        # t_lab_pts=np.array([5, 21, 48, 85, 133, 192]),
+                                        # t_lab_pts=np.array([1, 5, 12, 21, 33, 48]),
+                                        t_lab_pts=np.array([1, 10, 25, 48]),
+                                        # t_lab_pts=np.array([1, 10, 25]),
+                                        # t_lab_pts=np.array([65, 85, 108, 133, 161, 192]),
+                                        # t_lab_pts=np.array([65, 100, 143, 192]),
+                                        # t_lab_pts=np.array([100, 143, 192]),
+                                        degrees=degrees,
+                                        degrees_pts=np.array(
+                                            [26, 51, 77, 103, 129, 154]
+                                        ),
+                                        variables_array=variables_array,
+                                        mesh_cart=mesh_cart,
+                                        Lambda_b_true=Lambdab,
+                                        mpi_true=m_pi_eff,
+                                        orders=2,
+                                        whether_save=save_lambdapost_curvewise_bool,
+                                    )
                                 if plot_plotzilla_bool:
                                     MyPlot.plotzilla(whether_save=save_plotzilla_bool)
 
@@ -807,7 +931,11 @@ def gp_analysis(
                     ElabBunch = InputSpaceBunch(
                         "Elab",
                         Elab_fn,
-                        p_approx("Qofprel", E_to_p(t_lab, interaction = nn_interaction), degrees),
+                        p_approx(
+                            "Qofprel",
+                            E_to_p(t_lab, interaction=nn_interaction),
+                            degrees,
+                        ),
                         r"$E_{\mathrm{lab}}$ (MeV)",
                         [r"$", Observable.title, r"(E_{\mathrm{lab}})$"],
                     )
@@ -815,7 +943,11 @@ def gp_analysis(
                     PrelBunch = InputSpaceBunch(
                         "prel",
                         E_to_p,
-                        p_approx("Qofprel", E_to_p(t_lab, interaction = nn_interaction), degrees),
+                        p_approx(
+                            "Qofprel",
+                            E_to_p(t_lab, interaction=nn_interaction),
+                            degrees,
+                        ),
                         r"$p_{\mathrm{rel}}$ (MeV)",
                         [r"$", Observable.title, r"(p_{\mathrm{rel}})$"],
                     )
@@ -839,17 +971,41 @@ def gp_analysis(
                             # length
                             MyPosteriorBounds = PosteriorBounds(
                                 (
-                                    max(VsQuantity.input_space(**{"E_lab" : t_lab, 
-                                                                  "interaction" : nn_interaction}))
-                                    - min(VsQuantity.input_space(**{"E_lab" : t_lab, 
-                                                                  "interaction" : nn_interaction}))
+                                    max(
+                                        VsQuantity.input_space(
+                                            **{
+                                                "E_lab": t_lab,
+                                                "interaction": nn_interaction,
+                                            }
+                                        )
+                                    )
+                                    - min(
+                                        VsQuantity.input_space(
+                                            **{
+                                                "E_lab": t_lab,
+                                                "interaction": nn_interaction,
+                                            }
+                                        )
+                                    )
                                 )
                                 / 9,
                                 (
-                                    max(VsQuantity.input_space(**{"E_lab" : t_lab, 
-                                                                  "interaction" : nn_interaction}))
-                                    - min(VsQuantity.input_space(**{"E_lab" : t_lab, 
-                                                                  "interaction" : nn_interaction}))
+                                    max(
+                                        VsQuantity.input_space(
+                                            **{
+                                                "E_lab": t_lab,
+                                                "interaction": nn_interaction,
+                                            }
+                                        )
+                                    )
+                                    - min(
+                                        VsQuantity.input_space(
+                                            **{
+                                                "E_lab": t_lab,
+                                                "interaction": nn_interaction,
+                                            }
+                                        )
+                                    )
                                 )
                                 / 2,
                                 100,
@@ -857,6 +1013,47 @@ def gp_analysis(
                                 Lambdab * 1.5,
                                 100,
                             )
+
+                            # sets the meshes for the random variable arrays
+                            mpi_vals = np.linspace(100, 400, 49, dtype=np.dtype('f4'))
+                            if Observable.name == "SGT":
+                                ls_vals = VsQuantity.input_space(
+                                    **{"E_lab": np.linspace(1, 300, 50, dtype=np.dtype('f4')),
+                                       "interaction": nn_interaction})
+                            else:
+                                ls_vals = np.linspace(0.02, 4.00, 50, dtype=np.dtype('f'))
+                            lambda_vals = np.linspace(250, 1000, 51, dtype=np.dtype('f4'))
+
+                            mesh_cart = gm.cartesian(lambda_vals, np.log(ls_vals), mpi_vals)
+
+                            # sets the RandomVariable objects
+                            LambdabVariable = RandomVariable(var=lambda_vals,
+                                                             user_val=Lambdab,
+                                                             name='Lambdab',
+                                                             label="\Lambda_{b}",
+                                                             units="MeV",
+                                                             ticks=[300, 600, 900, 1200],
+                                                             logprior=Lb_logprior(lambda_vals),
+                                                             logprior_name="Lambdab_uniformlogprior")
+                            # this will need to change for SGT vs. other observables
+                            LsVariable = RandomVariable(var=ls_vals,
+                                                        user_val=None,
+                                                        name='ls',
+                                                        label="\ell",
+                                                        units="",
+                                                        ticks=[],
+                                                        logprior=np.zeros(len(ls_vals)),
+                                                        logprior_name="ls_nologprior")
+                            MpieffVariable = RandomVariable(var=mpi_vals,
+                                                            user_val=m_pi_eff,
+                                                            name='mpieff',
+                                                            label="m_{\pi}",
+                                                            units="MeV",
+                                                            ticks=[50, 100, 150, 200, 250, 300, 350],
+                                                            logprior=mpieff_logprior(mpi_vals),
+                                                            logprior_name="mpieff_uniformlogprior")
+                            variables_array = np.array([LambdabVariable, LsVariable, MpieffVariable])
+
                             # runs through the training and testing masks
                             for l, TrainingTestingSplit in enumerate(
                                 train_test_split_array
@@ -864,21 +1061,34 @@ def gp_analysis(
                                 # conforms the training and testing masks to each input space
                                 try:
                                     TrainingTestingSplit.make_masks(
-                                        VsQuantity.input_space(**{"E_lab" : t_lab, 
-                                                                      "interaction" : nn_interaction}),
+                                        VsQuantity.input_space(
+                                            **{
+                                                "E_lab": t_lab,
+                                                "interaction": nn_interaction,
+                                            }
+                                        ),
                                         Observable.data.swapaxes(1, 2),
                                     )
                                 except:
                                     TrainingTestingSplit.make_masks(
-                                        VsQuantity.input_space(**{"E_lab" : t_lab, 
-                                                                      "interaction" : nn_interaction}), Observable.data
+                                        VsQuantity.input_space(
+                                            **{
+                                                "E_lab": t_lab,
+                                                "interaction": nn_interaction,
+                                            }
+                                        ),
+                                        Observable.data,
                                     )
 
                                 # chooses a starting guess for the GP length scale optimization procedure
                                 LengthScaleGuess = length_scale_input
                                 LengthScaleGuess.make_guess(
-                                    VsQuantity.input_space(**{"E_lab" : t_lab, 
-                                                                  "interaction" : nn_interaction})
+                                    VsQuantity.input_space(
+                                        **{
+                                            "E_lab": t_lab,
+                                            "interaction": nn_interaction,
+                                        }
+                                    )
                                 )
 
                                 # creates the GP with all its hyperparameters
@@ -919,7 +1129,7 @@ def gp_analysis(
                                     ScaleScheme.colors,
                                     ScaleScheme.light_colors,
                                     orders_names_dict=orders_names_dict,
-                                    orders_labels_dict = orders_labels_dict,
+                                    orders_labels_dict=orders_labels_dict,
                                 )
 
                                 # creates the object used to generate and plot statistical diagnostics
@@ -966,14 +1176,33 @@ def gp_analysis(
                                         residual_plot=False,
                                     )
                                 if plot_lambdapost_curvewise_bool:
-                                    MyPlot.plot_posteriors_curvewise(SGT=SGT, DSG=DSG, AY=AY, A=A, D=D, AXX=AXX,
-                                                                     AYY=AYY, t_lab=t_lab,
-                                                                     t_lab_pts=np.array([5, 21, 48, 85, 133, 192]),
-                                                                     degrees=degrees,
-                                                                     degrees_pts=np.array([26, 51, 77, 103, 129, 154]),
-                                                                     Lambda_b_true=Lambdab, ls_true=None,
-                                                                     mpi_true=m_pi_eff, orders=2,
-                                                                     whether_save=save_lambdapost_curvewise_bool)
+                                    MyPlot.plot_posteriors_curvewise(
+                                        SGT=SGT,
+                                        DSG=DSG,
+                                        AY=AY,
+                                        A=A,
+                                        D=D,
+                                        AXX=AXX,
+                                        AYY=AYY,
+                                        t_lab=t_lab,
+                                        # t_lab_pts=np.array([5, 21, 48, 85, 133, 192]),
+                                        # t_lab_pts=np.array([1, 5, 12, 21, 33, 48]),
+                                        # t_lab_pts=np.array([1, 10, 25, 48]),
+                                        # t_lab_pts=np.array([1, 10, 25]),
+                                        # t_lab_pts=np.array([65, 85, 108, 133, 161, 192]),
+                                        # t_lab_pts=np.array([65, 100, 143, 192]),
+                                        t_lab_pts=np.array([100, 143, 192]),
+                                        degrees=degrees,
+                                        degrees_pts=np.array(
+                                            [26, 51, 77, 103, 129, 154]
+                                        ),
+                                        variables_array=variables_array,
+                                        mesh_cart=mesh_cart,
+                                        Lambda_b_true=Lambdab,
+                                        mpi_true=m_pi_eff,
+                                        orders=2,
+                                        whether_save=save_lambdapost_curvewise_bool,
+                                    )
                                 if plot_plotzilla_bool:
                                     MyPlot.plotzilla(whether_save=save_plotzilla_bool)
     # except:
@@ -1009,17 +1238,18 @@ def gp_analysis(
         print("Available length scales: " + str(lengthscale_current_list))
         print("************************************")
 
+
 gp_analysis(
     nn_interaction="np",
-    scale_scheme_bunch_array=[RKE450MeV, RKE500MeV],
+    scale_scheme_bunch_array=[RKE500MeV],
     observable_input=["D"],
     E_input_array=[50],
     deg_input_array=[0],
-    Q_param_method_array=["smoothmax", "sum"],
+    Q_param_method_array=["smoothmax"],
     p_param_method_array=["Qofprel"],
     input_space_input=["cos"],
     train_test_split_array=[Fullspaceanglessplit1],
-    orders_excluded = [],
+    orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
     length_scale_input=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
@@ -1038,13 +1268,13 @@ gp_analysis(
     plot_lambdapost_curvewise_bool=True,
     plot_plotzilla_bool=False,
     save_coeffs_bool=True,
-    save_md_bool=False,
-    save_pc_bool=False,
-    save_ci_bool=False,
+    save_md_bool=True,
+    save_pc_bool=True,
+    save_ci_bool=True,
     save_pdf_bool=False,
     save_trunc_bool=False,
     save_lambdapost_pointwise_bool=False,
-    save_lambdapost_curvewise_bool=True,
+    save_lambdapost_curvewise_bool=False,
     save_plotzilla_bool=False,
-    filename_addendum="",
+    filename_addendum="_lowenergyslices2",
 )

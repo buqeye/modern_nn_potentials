@@ -2047,7 +2047,9 @@ class GSUMDiagnostics:
 
     def plot_posteriors_curvewise(self, SGT, DSG, AY, A, D, AXX, AYY,
                                   t_lab, t_lab_pts, degrees, degrees_pts,
-                                  Lambda_b_true, ls_true, mpi_true, orders=2, ax=None,
+                                  variables_array, mesh_cart,
+                                  Lambda_b_true, mpi_true,
+                                  orders=2, ax=None,
                                   whether_plot_posteriors = True,
                                   whether_plot_corner=True,
                                   whether_save=True,
@@ -2057,45 +2059,44 @@ class GSUMDiagnostics:
         order_num = int(orders)
         Lb_colors = self.light_colors[-1 * order_num:]
 
-        # sets the meshes for the random variable arrays
-        # mpi_vals = np.linspace(mpi_true / 3.1, mpi_true * 3.1, 24)
-        mpi_vals = np.linspace(50, 425, 49, dtype=np.dtype('f4'))
-        if self.observable_name == "SGT":
-            ls_vals = self.inputspace.input_space(**{"E_lab": np.linspace(1, 300, 50, dtype=np.dtype('f4')),
-                                                     "interaction": self.nn_interaction})
-        else:
-            ls_vals = np.linspace(0.02, 2.00, 50, dtype=np.dtype('f'))
-        # lambda_vals = np.linspace(0.5 * np.max(mpi_vals), 1500, 26)
-        lambda_vals = np.linspace(250, 1000, 51, dtype=np.dtype('f4'))
-        mesh_cart = gm.cartesian(lambda_vals, np.log(ls_vals), mpi_vals)
-
-        # sets the RandomVariable objects
-        LambdabVariable = RandomVariable(var=lambda_vals,
-                                         user_val=Lambda_b_true,
-                                         name='Lambdab',
-                                         label="\Lambda_{b}",
-                                         units="MeV",
-                                         ticks=[300, 600, 900, 1200],
-                                         logprior=Lb_logprior(lambda_vals),
-                                         logprior_name="Lambdab_uniformlogprior")
-        # this will need to change for SGT vs. other observables
-        LsVariable = RandomVariable(var=ls_vals,
-                                    user_val=ls_true,
-                                    name='ls',
-                                    label="\ell",
-                                    units="",
-                                    ticks=[],
-                                    logprior=np.zeros(len(ls_vals)),
-                                    logprior_name="ls_nologprior")
-        MpieffVariable = RandomVariable(var=mpi_vals,
-                                        user_val=mpi_true,
-                                        name='mpieff',
-                                        label="m_{\pi}",
-                                        units="MeV",
-                                        ticks=[50, 100, 150, 200, 250, 300, 350],
-                                        logprior=mpieff_logprior(mpi_vals),
-                                        logprior_name="mpieff_uniformlogprior")
-        variables_array = np.array([LambdabVariable, LsVariable, MpieffVariable])
+        # # sets the meshes for the random variable arrays
+        # mpi_vals = np.linspace(50, 425, 49, dtype=np.dtype('f4'))
+        # if self.observable_name == "SGT":
+        #     ls_vals = self.inputspace.input_space(**{"E_lab": np.linspace(1, 300, 50, dtype=np.dtype('f4')),
+        #                                              "interaction": self.nn_interaction})
+        # else:
+        #     ls_vals = np.linspace(0.02, 2.00, 50, dtype=np.dtype('f'))
+        # lambda_vals = np.linspace(250, 1000, 51, dtype=np.dtype('f4'))
+        #
+        # mesh_cart = gm.cartesian(lambda_vals, np.log(ls_vals), mpi_vals)
+        #
+        # # sets the RandomVariable objects
+        # LambdabVariable = RandomVariable(var=lambda_vals,
+        #                                  user_val=Lambda_b_true,
+        #                                  name='Lambdab',
+        #                                  label="\Lambda_{b}",
+        #                                  units="MeV",
+        #                                  ticks=[300, 600, 900, 1200],
+        #                                  logprior=Lb_logprior(lambda_vals),
+        #                                  logprior_name="Lambdab_uniformlogprior")
+        # # this will need to change for SGT vs. other observables
+        # LsVariable = RandomVariable(var=ls_vals,
+        #                             user_val=ls_true,
+        #                             name='ls',
+        #                             label="\ell",
+        #                             units="",
+        #                             ticks=[],
+        #                             logprior=np.zeros(len(ls_vals)),
+        #                             logprior_name="ls_nologprior")
+        # MpieffVariable = RandomVariable(var=mpi_vals,
+        #                                 user_val=mpi_true,
+        #                                 name='mpieff',
+        #                                 label="m_{\pi}",
+        #                                 units="MeV",
+        #                                 ticks=[50, 100, 150, 200, 250, 300, 350],
+        #                                 logprior=mpieff_logprior(mpi_vals),
+        #                                 logprior_name="mpieff_uniformlogprior")
+        # variables_array = np.array([LambdabVariable, LsVariable, MpieffVariable])
 
         # # unit test for marginalization code
         # # set the seed
@@ -2203,19 +2204,21 @@ class GSUMDiagnostics:
                     t_lab_mom_ray = ray.put(E_to_p(t_lab, interaction=self.nn_interaction))
 
                     # calculates the posterior using ray
-                    log_like_ids = []
-                    for i in range(0, len(mesh_cart), BATCH_SIZE):
-                        batch = mesh_cart[i: i + BATCH_SIZE]
-                        log_like_ids.append(log_likelihood.remote(gp_post_nho_ray,
-                                                                  t_lab_input, t_lab_mom_ray, batch))
-                    log_like = list(itertools.chain(*ray.get(log_like_ids)))
-                    obs_loglike = np.reshape(log_like, (len(lambda_vals), len(ls_vals), len(mpi_vals)))
+                    log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_nho_ray,
+                                                t_lab_input, t_lab_mom_ray)
+                    # log_like_ids = []
+                    # for i in range(0, len(mesh_cart), BATCH_SIZE):
+                    #     batch = mesh_cart[i: i + BATCH_SIZE]
+                    #     log_like_ids.append(log_likelihood.remote(gp_post_nho_ray,
+                    #                                               t_lab_input, t_lab_mom_ray, batch))
+                    # log_like = list(itertools.chain(*ray.get(log_like_ids)))
+                    obs_loglike = np.reshape(log_like, tuple(len(random_var.var) for random_var in variables_array))
 
                 elif self.observable_name == "DSG":
                     obs_name_corner = "DSG"
                     posterior_label = r'$\displaystyle\frac{d\sigma}{d\Omega}$'
 
-                    obs_loglike = np.zeros((len(lambda_vals), len(ls_vals), len(mpi_vals)))
+                    obs_loglike = np.zeros(tuple(len(random_var.var) for random_var in variables_array))
 
                     for t_lab_pt, t_lab_mom_pt in zip(t_lab_pts, E_to_p(t_lab_pts, interaction=self.nn_interaction)):
                         # converts the points in t_lab_pts to the current input space
@@ -2258,13 +2261,15 @@ class GSUMDiagnostics:
                         gp_post_nho_ray = ray.put(gp_post_dsg_nho)
 
                         # calculates the posterior using ray
-                        log_like_ids = []
-                        for i in range(0, len(mesh_cart), BATCH_SIZE):
-                            batch = mesh_cart[i: i + BATCH_SIZE]
-                            log_like_ids.append(log_likelihood.remote(gp_post_nho_ray,
-                                                                      degrees_input_ray, ratio_points_ray, batch))
-                        log_like = list(itertools.chain(*ray.get(log_like_ids)))
-                        obs_loglike += np.reshape(log_like, (len(lambda_vals), len(ls_vals), len(mpi_vals)))
+                        log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_nho_ray,
+                                                    degrees_input_ray, ratio_points_ray)
+                        # log_like_ids = []
+                        # for i in range(0, len(mesh_cart), BATCH_SIZE):
+                        #     batch = mesh_cart[i: i + BATCH_SIZE]
+                        #     log_like_ids.append(log_likelihood.remote(gp_post_nho_ray,
+                        #                                               degrees_input_ray, ratio_points_ray, batch))
+                        # log_like = list(itertools.chain(*ray.get(log_like_ids)))
+                        obs_loglike += np.reshape(log_like, tuple(len(random_var.var) for random_var in variables_array))
 
                 elif self.observable_name == "A" or self.observable_name == "AY" or \
                         self.observable_name == "D" or self.observable_name == "AYY" or \
@@ -2272,7 +2277,7 @@ class GSUMDiagnostics:
                     obs_name_corner = "spins"
                     posterior_label = r'$X_{pqik}$'
 
-                    obs_loglike = np.zeros((len(lambda_vals), len(ls_vals), len(mpi_vals)))
+                    obs_loglike = np.zeros(tuple(len(random_var.var) for random_var in variables_array))
                     spin_obs_list = [AY, A, D, AXX, AYY]
 
                     for t_lab_pt, t_lab_mom_pt in zip(t_lab_pts, E_to_p(t_lab_pts, interaction=self.nn_interaction)):
@@ -2322,27 +2327,29 @@ class GSUMDiagnostics:
                             gp_post_nho_ray = ray.put(gp_fit_spins)
 
                             # calculates the posterior using ray
-                            log_like_ids = []
-                            for i in range(0, len(mesh_cart), BATCH_SIZE):
-                                batch = mesh_cart[i: i + BATCH_SIZE]
-                                log_like_ids.append(log_likelihood.remote(gp_post_nho_ray,
-                                                                          degrees_input_ray, ratio_points_ray, batch))
-                            log_like = list(itertools.chain(*ray.get(log_like_ids)))
-                            obs_loglike += np.reshape(log_like, (len(lambda_vals), len(ls_vals), len(mpi_vals)))
+                            log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_nho_ray,
+                                degrees_input_ray, ratio_points_ray)
+                            # log_like_ids = []
+                            # for i in range(0, len(mesh_cart), BATCH_SIZE):
+                            #     batch = mesh_cart[i: i + BATCH_SIZE]
+                            #     log_like_ids.append(log_likelihood.remote(gp_post_nho_ray,
+                            #                                               degrees_input_ray, ratio_points_ray, batch))
+                            # log_like = list(itertools.chain(*ray.get(log_like_ids)))
+                            obs_loglike += np.reshape(log_like, tuple(len(random_var.var) for random_var in variables_array))
 
                 # loglike_list.append(obs_loglike)
 
                 # adds the log-priors to the log-likelihoods
-                for i, logprior in enumerate([variable.logprior for variable in variables_array]):
-                    obs_loglike += np.transpose(np.tile(logprior,
-                                                        (
-                                                            np.shape(obs_loglike)[(i + 1) % len(variables_array)],
-                                                            np.shape(obs_loglike)[(i + 2) % len(variables_array)],
-                                                            1
-                                                        )
-                                                        ),
-                                                np.roll(np.arange(0, len(variables_array), dtype=int), i + 1))
-
+                obs_loglike = add_logpriors(variables_array, obs_loglike)
+                # for i, logprior in enumerate([variable.logprior for variable in variables_array]):
+                #     obs_loglike += np.transpose(np.tile(logprior,
+                #                                         (
+                #                                             np.shape(obs_loglike)[(i + 1) % len(variables_array)],
+                #                                             np.shape(obs_loglike)[(i + 2) % len(variables_array)],
+                #                                             1
+                #                                         )
+                #                                         ),
+                #                                 np.roll(np.arange(0, len(variables_array), dtype=int), i + 1))
                 # Makes sure that the values don't get too big or too small
                 obs_like = np.exp(obs_loglike - np.max(obs_loglike))
                 like_list.append(obs_like)
@@ -2356,91 +2363,95 @@ class GSUMDiagnostics:
                            np.reshape(obs_like, (np.prod([len(random_var.var) for random_var in variables_array]))))
                 # np.savetxt('data/posterior_pdf_curvewise_SGT_SMS_500MeV_N3LO_Qsmoothmax_Qofprel_Elab_Lambdab_uniformlogprior_ls_nologprior_mpieff_uniformlogprior_Lambdab26pts213p90to1500p00_ls25pts1p00to300p00_mpieff24pts44p52to427p80.txt', np.reshape(obs_like, (np.prod([len(random_var.var) for random_var in variables_array]))))
 
-        marg_post_list = []
-        joint_post_list = []
+        marg_post_array, joint_post_array = marginalize_likelihoods(variables_array, like_list, order_num)
+        # marg_post_list = []
+        # joint_post_list = []
+        #
+        # for like_idx, like in enumerate(like_list):
+        #     # creates the normalized fully marginalized posteriors
+        #     for v, var in enumerate(variables_array):
+        #         var_idx_array = np.arange(0, np.shape(variables_array)[0], 1, dtype=int)
+        #         var_idx_array = var_idx_array[var_idx_array != v]
+        #         var_idx_array = np.flip(var_idx_array)
+        #
+        #         marg_post = np.copy(like)
+        #
+        #         for idx in var_idx_array:
+        #             marg_post = np.trapz(marg_post, x=variables_array[idx].var, axis=idx)
+        #
+        #         marg_post /= np.trapz(marg_post, x=variables_array[v].var, axis=0)
+        #
+        #         marg_post_list.append(marg_post)
+        #
+        #     # creates the normalized joint posteriors
+        #     comb_array = np.array(np.meshgrid(np.arange(0, np.shape(variables_array)[0], 1, dtype=int),
+        #                                       np.arange(0, np.shape(variables_array)[0], 1, dtype=int))).T.reshape(-1,
+        #                                                                                                            2)
+        #     comb_array = np.delete(comb_array, [comb[0] >= comb[1] for comb in comb_array], axis=0)
+        #     p = np.argsort(comb_array[:, 1])
+        #     comb_array = np.flip(comb_array[p], axis=0)
+        #
+        #     for v in np.flip(np.roll(np.arange(0, np.shape(variables_array)[0], 1, dtype=int), 1)):
+        #         joint_post = np.trapz(like, x=variables_array[v].var, axis=v)
+        #
+        #         joint_post /= np.trapz(np.trapz(joint_post,
+        #                                         x=variables_array[comb_array[v, 1]].var, axis=1),
+        #                                x=variables_array[comb_array[v, 0]].var, axis=0
+        #                                )
+        #
+        #         joint_post_list.append(joint_post)
+        #
+        # # print(np.shape(marg_post_list))
+        # # print(np.shape(joint_post_list))
+        # marg_post_array = np.reshape(marg_post_list, (len(variables_array), order_num), order='F')
+        # joint_post_array = np.reshape(joint_post_list,
+        #                               (len(variables_array) * (len(variables_array) - 1) // 2, order_num), order='F')
 
-        for like_idx, like in enumerate(like_list):
-            # creates the normalized fully marginalized posteriors
-            for v, var in enumerate(variables_array):
-                var_idx_array = np.arange(0, np.shape(variables_array)[0], 1, dtype=int)
-                var_idx_array = var_idx_array[var_idx_array != v]
-                var_idx_array = np.flip(var_idx_array)
-
-                marg_post = np.copy(like)
-
-                for idx in var_idx_array:
-                    marg_post = np.trapz(marg_post, x=variables_array[idx].var, axis=idx)
-
-                marg_post /= np.trapz(marg_post, x=variables_array[v].var, axis=0)
-
-                marg_post_list.append(marg_post)
-
-            # creates the normalized joint posteriors
-            comb_array = np.array(np.meshgrid(np.arange(0, np.shape(variables_array)[0], 1, dtype=int),
-                                              np.arange(0, np.shape(variables_array)[0], 1, dtype=int))).T.reshape(-1,
-                                                                                                                   2)
-            comb_array = np.delete(comb_array, [comb[0] >= comb[1] for comb in comb_array], axis=0)
-            p = np.argsort(comb_array[:, 1])
-            comb_array = np.flip(comb_array[p], axis=0)
-
-            for v in np.flip(np.roll(np.arange(0, np.shape(variables_array)[0], 1, dtype=int), 1)):
-                joint_post = np.trapz(like, x=variables_array[v].var, axis=v)
-
-                joint_post /= np.trapz(np.trapz(joint_post,
-                                                x=variables_array[comb_array[v, 1]].var, axis=1),
-                                       x=variables_array[comb_array[v, 0]].var, axis=0
-                                       )
-
-                joint_post_list.append(joint_post)
-
-        # print(np.shape(marg_post_list))
-        # print(np.shape(joint_post_list))
-        marg_post_array = np.reshape(marg_post_list, (len(variables_array), order_num), order='F')
-        joint_post_array = np.reshape(joint_post_list,
-                                      (len(variables_array) * (len(variables_array) - 1) // 2, order_num), order='F')
         if whether_plot_posteriors:
             for (variable, result) in zip(variables_array, marg_post_array):
-                # Plot each posterior and its summary statistics
-                fig, ax = plt.subplots(1, 1, figsize=(3.4, 3.4))
-
-                for i, posterior_raw in enumerate(result):
-                    # scales the posteriors so they're all the same height
-                    # print(posterior_raw)
-                    posterior = posterior_raw / (1.2 * np.max(posterior_raw))
-                    # Make the lines taper off
-                    vals_restricted = variable.var[posterior > 1e-2]
-                    posterior = posterior[posterior > 1e-2]
-                    # Plot and fill posterior, and add summary statistics
-                    ax.plot(vals_restricted, posterior - i, c='gray')
-
-                    ax.fill_between(vals_restricted, -i, posterior - i, facecolor=Lb_colors[i])
-
-                    bounds = np.zeros((2, 2))
-                    for j, p in enumerate([0.68, 0.95]):
-                        bounds[j] = gm.hpd_pdf(pdf=posterior_raw, alpha=p, x=variable.var)
-
-                    median = gm.median_pdf(pdf=posterior_raw, x=variable.var)
-
-                    draw_summary_statistics(*bounds, median, ax=ax, height=-i)
-
-                # Plot formatting
-                ax.set_yticks([0])
-                ax.set_yticklabels([posterior_label])
-                ax.tick_params(axis='both', which='both', direction='in')
-                ax.tick_params(which='major', length=0)
-                ax.tick_params(which='minor', length=7, right=True)
-                ax.set_xticks(variable.ticks)
-                ax.set_xlabel((r'$' + variable.label + r'$ (' + variable.units + ')').replace('()', ''))
-                ax.legend(title=r'$\mathrm{pr}(' + variable.label + r' \, | \, \vec{\mathbf{y}}_{k}, \mathbf{f})$',
-                          handles=[Patch(facecolor=Lb_colors[o],
-                                         edgecolor='gray',
-                                         linewidth=1,
-                                         label=self.orders_labels_dict[(np.sort(self.nn_orders))[-1 - o]])
-                                   for o in range(0, order_num)])
-                ax.grid(axis='x')
-                ax.set_axisbelow(True)
-
-                plt.show()
+                fig = plot_marg_posteriors(variable, result, posterior_label, Lb_colors, order_num,
+                                           self.nn_orders, self.orders_labels_dict)
+            #     # Plot each posterior and its summary statistics
+            #     fig, ax = plt.subplots(1, 1, figsize=(3.4, 3.4))
+            #
+            #     for i, posterior_raw in enumerate(result):
+            #         # scales the posteriors so they're all the same height
+            #         # print(posterior_raw)
+            #         posterior = posterior_raw / (1.2 * np.max(posterior_raw))
+            #         # Make the lines taper off
+            #         vals_restricted = variable.var[posterior > 1e-2]
+            #         posterior = posterior[posterior > 1e-2]
+            #         # Plot and fill posterior, and add summary statistics
+            #         ax.plot(vals_restricted, posterior - i, c='gray')
+            #
+            #         ax.fill_between(vals_restricted, -i, posterior - i, facecolor=Lb_colors[i])
+            #
+            #         bounds = np.zeros((2, 2))
+            #         for j, p in enumerate([0.68, 0.95]):
+            #             bounds[j] = gm.hpd_pdf(pdf=posterior_raw, alpha=p, x=variable.var)
+            #
+            #         median = gm.median_pdf(pdf=posterior_raw, x=variable.var)
+            #
+            #         draw_summary_statistics(*bounds, median, ax=ax, height=-i)
+            #
+            #     # Plot formatting
+            #     ax.set_yticks([0])
+            #     ax.set_yticklabels([posterior_label])
+            #     ax.tick_params(axis='both', which='both', direction='in')
+            #     ax.tick_params(which='major', length=0)
+            #     ax.tick_params(which='minor', length=7, right=True)
+            #     ax.set_xticks(variable.ticks)
+            #     ax.set_xlabel((r'$' + variable.label + r'$ (' + variable.units + ')').replace('()', ''))
+            #     ax.legend(title=r'$\mathrm{pr}(' + variable.label + r' \, | \, \vec{\mathbf{y}}_{k}, \mathbf{f})$',
+            #               handles=[Patch(facecolor=Lb_colors[o],
+            #                              edgecolor='gray',
+            #                              linewidth=1,
+            #                              label=self.orders_labels_dict[(np.sort(self.nn_orders))[-1 - o]])
+            #                        for o in range(0, order_num)])
+            #     ax.grid(axis='x')
+            #     ax.set_axisbelow(True)
+            #
+            #     plt.show()
 
                 if 'fig' in locals() and whether_save:
                     fig.tight_layout()
@@ -2448,129 +2459,126 @@ class GSUMDiagnostics:
                     fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' +
                                  variable.name + '_posterior_pdf_curvewise' + '_' + obs_name_corner +
                                  '_' + self.scheme + '_' +
-                                 self.scale + '_Q' + self.Q_param + '_' + self.vs_what +
-                                 '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' +
-                                 self.train_pts_loc + '_' + self.p_param +
+                                 self.scale + '_Q' + self.Q_param + '_' + self.p_param + '_' + self.vs_what +
                                  self.filename_addendum).replace('_0MeVlab_', '_'))
 
         if whether_plot_corner:
             with plt.rc_context({"text.usetex": True}):
-                cmap_name = 'Blues'
-                cmap = mpl.cm.get_cmap(cmap_name)
-
-                for i in range(order_num):
-                    # sets up axes
-                    n_plots = np.shape(variables_array)[0]
-                    fig, ax_joint_array, ax_marg_array, ax_title = corner_plot(n_plots=n_plots)
-
-                    mean_list = []
-                    stddev_list = []
-
-                    for variable_idx, variable in enumerate(np.roll(variables_array, 1)):
-                        # Now plot the marginal distributions
-                        dist_mean, dist_stddev = mean_and_stddev(variable.var, marg_post_array[variable_idx - 1, i])
-                        ax_marg_array[variable_idx].set_xlim(left=np.max([0, dist_mean - 5 * dist_stddev]),
-                                                             right=dist_mean + 5 * dist_stddev)
-                        mean_list.append(dist_mean)
-                        stddev_list.append(dist_stddev)
-                        dist_mean = sig_figs(dist_mean, 3)
-                        dist_stddev = round_to_same_digits(dist_stddev, dist_mean)
-                        ax_marg_array[variable_idx].set_title(rf'${variable.label}$ = {dist_mean} $\pm$ {dist_stddev}',
-                                                              fontsize=18)
-
-                        ax_marg_array[variable_idx].plot(variable.var, marg_post_array[variable_idx - 1, i],
-                                                         c=cmap(0.8), lw=1)
-                        ax_marg_array[variable_idx].fill_between(variable.var, np.zeros_like(variable.var),
-                                                                 marg_post_array[variable_idx - 1, i],
-                                                                 facecolor=cmap(0.2), lw=1)
-                        try:
-                            ax_marg_array[variable_idx].axvline(
-                                np.roll([variable.user_val for variable in variables_array], 1)[variable_idx], 0, 1,
-                                c=gray, lw=1)
-                        except:
-                            pass
-                        if variable_idx == np.shape(variables_array)[0] - 1:
-                            ax_marg_array[variable_idx].set_xticklabels(variable.ticks)
-
-                    comb_array = np.array(np.meshgrid(np.arange(0, np.shape(variables_array)[0], 1, dtype=int),
-                                                      np.arange(0, np.shape(variables_array)[0], 1,
-                                                                dtype=int))).T.reshape(-1, 2)
-                    comb_array = np.delete(comb_array, [comb[0] >= comb[1] for comb in comb_array], axis=0)
-                    p = np.argsort(comb_array[:, 1])
-                    comb_array = comb_array[p]
-
-                    for joint_idx, joint in enumerate(joint_post_array[:, i]):
-                        # plots contours
-                        ax_joint_array[joint_idx].set_xlim(left=np.max(
-                            [0, mean_list[comb_array[joint_idx, 0]] - 5 * stddev_list[comb_array[joint_idx, 0]]]),
-                                                           right=mean_list[comb_array[joint_idx, 0]] + 5 * stddev_list[
-                                                               comb_array[joint_idx, 0]])
-                        ax_joint_array[joint_idx].set_ylim(bottom=np.max(
-                            [0, mean_list[comb_array[joint_idx, 1]] - 5 * stddev_list[comb_array[joint_idx, 1]]]),
-                                                           top=mean_list[comb_array[joint_idx, 1]] + 5 * stddev_list[
-                                                               comb_array[joint_idx, 1]])
-                        try:
-                            ax_joint_array[joint_idx].contour(np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-                                                              np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-                                                              joint,
-                                                              levels=[np.amax(joint) * level for level in \
-                                                                      ([np.exp(-0.5 * r ** 2) for r in
-                                                                        np.arange(9, 0, -0.5)] + [0.999])],
-                                                              cmap=cmap_name)
-                            corr_coeff = correlation_coefficient(
-                                np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-                                np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-                                joint)
-                        except:
-                            ax_joint_array[joint_idx].contour(np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-                                                              np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-                                                              joint.T,
-                                                              levels=[np.amax(joint.T) * level for level in \
-                                                                      ([np.exp(-0.5 * r ** 2) for r in
-                                                                        np.arange(9, 0, -0.5)] + [0.999])],
-                                                              cmap=cmap_name)
-                            corr_coeff = correlation_coefficient(
-                                np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-                                np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-                                joint.T)
-                        ax_joint_array[joint_idx].text(.99, .99, rf'$\rho$ = {corr_coeff:.2f}',
-                                                       ha='right', va='top',
-                                                       transform=ax_joint_array[joint_idx].transAxes,
-                                                       fontsize=18)
-                        try:
-                            ax_joint_array[joint_idx].axvline(
-                                np.roll([variable.user_val for variable in variables_array], 1)[
-                                    comb_array[joint_idx, 0]], 0, 1, c=gray, lw=1)
-                        except:
-                            pass
-                        try:
-                            ax_joint_array[joint_idx].axhline(
-                                np.roll([variable.user_val for variable in variables_array], 1)[
-                                    comb_array[joint_idx, 1]], 0, 1, c=gray, lw=1)
-                        except:
-                            pass
-
-                    ax_title.text(.99, .99,
-                                  obs_name_corner + '\n' +
-                                  self.scheme + '\,' + self.scale + '\n' +
-                                  r'' + self.orders_labels_dict[max(self.nn_orders) - order_num + 1 + i] + '\n' +
-                                  r'$Q_{\mathrm{' + self.Q_param + '}}$' + '\n' +
-                                  self.p_param + '\n' +
-                                  self.vs_what,
-                                  ha='right', va='top',
-                                  transform=ax_title.transAxes,
-                                  fontsize=25)
-
-                plt.show()
+                fig = plot_corner_posteriors('Blues', order_num, variables_array, marg_post_array, joint_post_array, self, obs_name_corner)
+                # cmap_name = 'Blues'
+                # cmap = mpl.cm.get_cmap(cmap_name)
+                #
+                # for i in range(order_num):
+                #     # sets up axes
+                #     n_plots = np.shape(variables_array)[0]
+                #     fig, ax_joint_array, ax_marg_array, ax_title = corner_plot(n_plots=n_plots)
+                #
+                #     mean_list = []
+                #     stddev_list = []
+                #
+                #     for variable_idx, variable in enumerate(np.roll(variables_array, 1)):
+                #         # Now plot the marginal distributions
+                #         dist_mean, dist_stddev = mean_and_stddev(variable.var, marg_post_array[variable_idx - 1, i])
+                #         ax_marg_array[variable_idx].set_xlim(left=np.max([0, dist_mean - 5 * dist_stddev]),
+                #                                              right=dist_mean + 5 * dist_stddev)
+                #         mean_list.append(dist_mean)
+                #         stddev_list.append(dist_stddev)
+                #         dist_mean = sig_figs(dist_mean, 3)
+                #         dist_stddev = round_to_same_digits(dist_stddev, dist_mean)
+                #         ax_marg_array[variable_idx].set_title(rf'${variable.label}$ = {dist_mean} $\pm$ {dist_stddev}',
+                #                                               fontsize=18)
+                #
+                #         ax_marg_array[variable_idx].plot(variable.var, marg_post_array[variable_idx - 1, i],
+                #                                          c=cmap(0.8), lw=1)
+                #         ax_marg_array[variable_idx].fill_between(variable.var, np.zeros_like(variable.var),
+                #                                                  marg_post_array[variable_idx - 1, i],
+                #                                                  facecolor=cmap(0.2), lw=1)
+                #         try:
+                #             ax_marg_array[variable_idx].axvline(
+                #                 np.roll([variable.user_val for variable in variables_array], 1)[variable_idx], 0, 1,
+                #                 c=gray, lw=1)
+                #         except:
+                #             pass
+                #         if variable_idx == np.shape(variables_array)[0] - 1:
+                #             ax_marg_array[variable_idx].set_xticklabels(variable.ticks)
+                #
+                #     comb_array = np.array(np.meshgrid(np.arange(0, np.shape(variables_array)[0], 1, dtype=int),
+                #                                       np.arange(0, np.shape(variables_array)[0], 1,
+                #                                                 dtype=int))).T.reshape(-1, 2)
+                #     comb_array = np.delete(comb_array, [comb[0] >= comb[1] for comb in comb_array], axis=0)
+                #     p = np.argsort(comb_array[:, 1])
+                #     comb_array = comb_array[p]
+                #
+                #     for joint_idx, joint in enumerate(joint_post_array[:, i]):
+                #         # plots contours
+                #         ax_joint_array[joint_idx].set_xlim(left=np.max(
+                #             [0, mean_list[comb_array[joint_idx, 0]] - 5 * stddev_list[comb_array[joint_idx, 0]]]),
+                #                                            right=mean_list[comb_array[joint_idx, 0]] + 5 * stddev_list[
+                #                                                comb_array[joint_idx, 0]])
+                #         ax_joint_array[joint_idx].set_ylim(bottom=np.max(
+                #             [0, mean_list[comb_array[joint_idx, 1]] - 5 * stddev_list[comb_array[joint_idx, 1]]]),
+                #                                            top=mean_list[comb_array[joint_idx, 1]] + 5 * stddev_list[
+                #                                                comb_array[joint_idx, 1]])
+                #         try:
+                #             ax_joint_array[joint_idx].contour(np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
+                #                                               np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
+                #                                               joint,
+                #                                               levels=[np.amax(joint) * level for level in \
+                #                                                       ([np.exp(-0.5 * r ** 2) for r in
+                #                                                         np.arange(9, 0, -0.5)] + [0.999])],
+                #                                               cmap=cmap_name)
+                #             corr_coeff = correlation_coefficient(
+                #                 np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
+                #                 np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
+                #                 joint)
+                #         except:
+                #             ax_joint_array[joint_idx].contour(np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
+                #                                               np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
+                #                                               joint.T,
+                #                                               levels=[np.amax(joint.T) * level for level in \
+                #                                                       ([np.exp(-0.5 * r ** 2) for r in
+                #                                                         np.arange(9, 0, -0.5)] + [0.999])],
+                #                                               cmap=cmap_name)
+                #             corr_coeff = correlation_coefficient(
+                #                 np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
+                #                 np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
+                #                 joint.T)
+                #         ax_joint_array[joint_idx].text(.99, .99, rf'$\rho$ = {corr_coeff:.2f}',
+                #                                        ha='right', va='top',
+                #                                        transform=ax_joint_array[joint_idx].transAxes,
+                #                                        fontsize=18)
+                #         try:
+                #             ax_joint_array[joint_idx].axvline(
+                #                 np.roll([variable.user_val for variable in variables_array], 1)[
+                #                     comb_array[joint_idx, 0]], 0, 1, c=gray, lw=1)
+                #         except:
+                #             pass
+                #         try:
+                #             ax_joint_array[joint_idx].axhline(
+                #                 np.roll([variable.user_val for variable in variables_array], 1)[
+                #                     comb_array[joint_idx, 1]], 0, 1, c=gray, lw=1)
+                #         except:
+                #             pass
+                #
+                #     ax_title.text(.99, .99,
+                #                   obs_name_corner + '\n' +
+                #                   self.scheme + '\,' + self.scale + '\n' +
+                #                   r'' + self.orders_labels_dict[max(self.nn_orders) - order_num + 1 + i] + '\n' +
+                #                   r'$Q_{\mathrm{' + self.Q_param + '}}$' + '\n' +
+                #                   self.p_param + '\n' +
+                #                   self.vs_what,
+                #                   ha='right', va='top',
+                #                   transform=ax_title.transAxes,
+                #                   fontsize=25)
+                #
+                # plt.show()
 
                 if 'fig' in locals() and whether_save:
                     fig.tight_layout()
 
                     fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' +
                                  'corner_plot_curvewise' + '_' + obs_name_corner + '_' + self.scheme + '_' +
-                                 self.scale + '_Q' + self.Q_param + '_' + self.vs_what +
-                                 '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' +
-                                 self.train_pts_loc + '_' + self.p_param +
+                                 self.scale + '_Q' + self.Q_param + '_' + self.p_param + '_' + self.vs_what +
                                  self.filename_addendum).replace('_0MeVlab_', '_'))
 
             # creates a list of the values of the random variables corresponding to the
@@ -4341,3 +4349,266 @@ def make_likelihood_filename(self,
         )
     print(filename)
     return str(filename.replace("__", "_") + ".txt")
+
+def calc_loglike_ray(mesh_cart, batch_size, log_likelihood, gp_post, input_space, testing_pts):
+    """
+
+    :param mesh_cart:
+    :param batch_size:
+    :param log_likelihood:
+    :param gp_post:
+    :param input_space:
+    :param testing_pts:
+    :param variables_array:
+    :return:
+    """
+    # calculates the posterior using ray
+    log_like_ids = []
+    for i in range(0, len(mesh_cart), batch_size):
+        batch = mesh_cart[i: i + batch_size]
+        log_like_ids.append(log_likelihood.remote(gp_post,
+                                                  input_space, testing_pts, batch))
+    log_like = list(itertools.chain(*ray.get(log_like_ids)))
+    # obs_loglike = np.reshape(log_like, tuple(len(random_var.var) for random_var in variables_array))
+
+    return log_like
+def add_logpriors(variables_array, obs_loglike):
+    """
+
+    :param variables_array:
+    :param obs_loglike:
+    :return:
+    """
+    for i, logprior in enumerate([variable.logprior for variable in variables_array]):
+        obs_loglike += np.transpose(np.tile(logprior,
+                                            (
+                                                np.shape(obs_loglike)[(i + 1) % len(variables_array)],
+                                                np.shape(obs_loglike)[(i + 2) % len(variables_array)],
+                                                1
+                                            )
+                                            ),
+                                    np.roll(np.arange(0, len(variables_array), dtype=int), i + 1))
+
+    return obs_loglike
+
+def marginalize_likelihoods(variables_array, like_list, order_num):
+    marg_post_list = []
+    joint_post_list = []
+
+    for like_idx, like in enumerate(like_list):
+        # creates the normalized fully marginalized posteriors
+        for v, var in enumerate(variables_array):
+            var_idx_array = np.arange(0, np.shape(variables_array)[0], 1, dtype=int)
+            var_idx_array = var_idx_array[var_idx_array != v]
+            var_idx_array = np.flip(var_idx_array)
+
+            marg_post = np.copy(like)
+
+            for idx in var_idx_array:
+                marg_post = np.trapz(marg_post, x=variables_array[idx].var, axis=idx)
+
+            marg_post /= np.trapz(marg_post, x=variables_array[v].var, axis=0)
+
+            marg_post_list.append(marg_post)
+
+        # creates the normalized joint posteriors
+        comb_array = np.array(np.meshgrid(np.arange(0, np.shape(variables_array)[0], 1, dtype=int),
+                                          np.arange(0, np.shape(variables_array)[0], 1, dtype=int))).T.reshape(-1,
+                                                                                                               2)
+        comb_array = np.delete(comb_array, [comb[0] >= comb[1] for comb in comb_array], axis=0)
+        p = np.argsort(comb_array[:, 1])
+        comb_array = np.flip(comb_array[p], axis=0)
+
+        for v in np.flip(np.roll(np.arange(0, np.shape(variables_array)[0], 1, dtype=int), 1)):
+            joint_post = np.trapz(like, x=variables_array[v].var, axis=v)
+
+            joint_post /= np.trapz(np.trapz(joint_post,
+                                            x=variables_array[comb_array[v, 1]].var, axis=1),
+                                   x=variables_array[comb_array[v, 0]].var, axis=0
+                                   )
+
+            joint_post_list.append(joint_post)
+
+    # print(np.shape(marg_post_list))
+    # print(np.shape(joint_post_list))
+    marg_post_array = np.reshape(marg_post_list, (len(variables_array), order_num), order='F')
+    joint_post_array = np.reshape(joint_post_list,
+                                  (len(variables_array) * (len(variables_array) - 1) // 2, order_num), order='F')
+
+    return marg_post_array, joint_post_array
+
+def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_orders, orders_labels_dict):
+    """
+
+    :param variables_array:
+    :param marg_post_array:
+    :param y_label:
+    :param colors_array:
+    :param order_num:
+    :param nn_orders:
+    :param orders_labels_dict:
+    :return:
+    """
+    # Plot each posterior and its summary statistics
+    fig, ax = plt.subplots(1, 1, figsize=(3.4, 3.4))
+
+    for i, posterior_raw in enumerate(result):
+        # scales the posteriors so they're all the same height
+        # print(posterior_raw)
+        posterior = posterior_raw / (1.2 * np.max(posterior_raw))
+        # Make the lines taper off
+        vals_restricted = variable.var[posterior > 1e-2]
+        posterior = posterior[posterior > 1e-2]
+        # Plot and fill posterior, and add summary statistics
+        ax.plot(vals_restricted, posterior - i, c='gray')
+
+        ax.fill_between(vals_restricted, -i, posterior - i, facecolor=colors_array[i])
+
+        bounds = np.zeros((2, 2))
+        for j, p in enumerate([0.68, 0.95]):
+            bounds[j] = gm.hpd_pdf(pdf=posterior_raw, alpha=p, x=variable.var)
+
+        median = gm.median_pdf(pdf=posterior_raw, x=variable.var)
+
+        draw_summary_statistics(*bounds, median, ax=ax, height=-i)
+
+    # Plot formatting
+    ax.set_yticks([0])
+    ax.set_yticklabels([y_label])
+    ax.tick_params(axis='both', which='both', direction='in')
+    ax.tick_params(which='major', length=0)
+    ax.tick_params(which='minor', length=7, right=True)
+    ax.set_xticks(variable.ticks)
+    ax.set_xlabel((r'$' + variable.label + r'$ (' + variable.units + ')').replace('()', ''))
+    ax.legend(title=r'$\mathrm{pr}(' + variable.label + r' \, | \, \vec{\mathbf{y}}_{k}, \mathbf{f})$',
+              handles=[Patch(facecolor=colors_array[o],
+                             edgecolor='gray',
+                             linewidth=1,
+                             label=orders_labels_dict[(np.sort(nn_orders))[-1 - o]])
+                       for o in range(0, order_num)])
+    ax.grid(axis='x')
+    ax.set_axisbelow(True)
+
+    plt.show()
+
+    return fig
+
+def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_array, joint_post_array, GP, obs_name_corner):
+    """
+
+    :param order_num:
+    :param variables_array:
+    :param marg_post_array:
+    :param joint_post_array:
+    :param title:
+    :return:
+    """
+    cmap_name = 'Blues'
+    cmap = mpl.cm.get_cmap(cmap_name)
+
+    for i in range(order_num):
+        # sets up axes
+        n_plots = np.shape(variables_array)[0]
+        fig, ax_joint_array, ax_marg_array, ax_title = corner_plot(n_plots=n_plots)
+
+        mean_list = []
+        stddev_list = []
+
+        for variable_idx, variable in enumerate(np.roll(variables_array, 1)):
+            # Now plot the marginal distributions
+            dist_mean, dist_stddev = mean_and_stddev(variable.var, marg_post_array[variable_idx - 1, i])
+            ax_marg_array[variable_idx].set_xlim(left=np.max([0, dist_mean - 5 * dist_stddev]),
+                                                 right=dist_mean + 5 * dist_stddev)
+            mean_list.append(dist_mean)
+            stddev_list.append(dist_stddev)
+            dist_mean = sig_figs(dist_mean, 3)
+            dist_stddev = round_to_same_digits(dist_stddev, dist_mean)
+            ax_marg_array[variable_idx].set_title(rf'${variable.label}$ = {dist_mean} $\pm$ {dist_stddev}',
+                                                  fontsize=18)
+
+            ax_marg_array[variable_idx].plot(variable.var, marg_post_array[variable_idx - 1, i],
+                                             c=cmap(0.8), lw=1)
+            ax_marg_array[variable_idx].fill_between(variable.var, np.zeros_like(variable.var),
+                                                     marg_post_array[variable_idx - 1, i],
+                                                     facecolor=cmap(0.2), lw=1)
+            try:
+                ax_marg_array[variable_idx].axvline(
+                    np.roll([variable.user_val for variable in variables_array], 1)[variable_idx], 0, 1,
+                    c=gray, lw=1)
+            except:
+                pass
+            if variable_idx == np.shape(variables_array)[0] - 1:
+                ax_marg_array[variable_idx].set_xticklabels(variable.ticks)
+
+        comb_array = np.array(np.meshgrid(np.arange(0, np.shape(variables_array)[0], 1, dtype=int),
+                                          np.arange(0, np.shape(variables_array)[0], 1,
+                                                    dtype=int))).T.reshape(-1, 2)
+        comb_array = np.delete(comb_array, [comb[0] >= comb[1] for comb in comb_array], axis=0)
+        p = np.argsort(comb_array[:, 1])
+        comb_array = comb_array[p]
+
+        for joint_idx, joint in enumerate(joint_post_array[:, i]):
+            # plots contours
+            ax_joint_array[joint_idx].set_xlim(left=np.max(
+                [0, mean_list[comb_array[joint_idx, 0]] - 5 * stddev_list[comb_array[joint_idx, 0]]]),
+                right=mean_list[comb_array[joint_idx, 0]] + 5 * stddev_list[
+                    comb_array[joint_idx, 0]])
+            ax_joint_array[joint_idx].set_ylim(bottom=np.max(
+                [0, mean_list[comb_array[joint_idx, 1]] - 5 * stddev_list[comb_array[joint_idx, 1]]]),
+                top=mean_list[comb_array[joint_idx, 1]] + 5 * stddev_list[
+                    comb_array[joint_idx, 1]])
+            try:
+                ax_joint_array[joint_idx].contour(np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
+                                                  np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
+                                                  joint,
+                                                  levels=[np.amax(joint) * level for level in \
+                                                          ([np.exp(-0.5 * r ** 2) for r in
+                                                            np.arange(9, 0, -0.5)] + [0.999])],
+                                                  cmap=cmap_name)
+                corr_coeff = correlation_coefficient(
+                    np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
+                    np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
+                    joint)
+            except:
+                ax_joint_array[joint_idx].contour(np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
+                                                  np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
+                                                  joint.T,
+                                                  levels=[np.amax(joint.T) * level for level in \
+                                                          ([np.exp(-0.5 * r ** 2) for r in
+                                                            np.arange(9, 0, -0.5)] + [0.999])],
+                                                  cmap=cmap_name)
+                corr_coeff = correlation_coefficient(
+                    np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
+                    np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
+                    joint.T)
+            ax_joint_array[joint_idx].text(.99, .99, rf'$\rho$ = {corr_coeff:.2f}',
+                                           ha='right', va='top',
+                                           transform=ax_joint_array[joint_idx].transAxes,
+                                           fontsize=18)
+            try:
+                ax_joint_array[joint_idx].axvline(
+                    np.roll([variable.user_val for variable in variables_array], 1)[
+                        comb_array[joint_idx, 0]], 0, 1, c=gray, lw=1)
+            except:
+                pass
+            try:
+                ax_joint_array[joint_idx].axhline(
+                    np.roll([variable.user_val for variable in variables_array], 1)[
+                        comb_array[joint_idx, 1]], 0, 1, c=gray, lw=1)
+            except:
+                pass
+
+        ax_title.text(.99, .99,
+                    obs_name_corner + '\n' +
+                    GP.scheme + '\,' + GP.scale + '\n' +
+                    r'' + GP.orders_labels_dict[max(GP.nn_orders) - order_num + 1 + i] + '\n' +
+                    r'$Q_{\mathrm{' + GP.Q_param + '}}$' + '\n' +
+                    GP.p_param + '\n' +
+                    GP.vs_what,
+                    ha='right', va='top',
+                    transform=ax_title.transAxes,
+                    fontsize=25)
+
+    plt.show()
+
+    return fig

@@ -133,3 +133,5 @@ dmypy.json
 
 # data files for posterior pdfs and corner plots
 scripts/data/
+# figures
+scripts/figures/
