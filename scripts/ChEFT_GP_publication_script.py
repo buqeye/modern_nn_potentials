@@ -735,12 +735,7 @@ def gp_analysis(
 
                             # sets the meshes for the random variable arrays
                             mpi_vals = np.linspace(10, 400, 49, dtype=np.dtype('f4'))
-                            if Observable.name == "SGT":
-                                ls_vals = VsQuantity.input_space(
-                                    **{"E_lab": np.linspace(1, 300, 50, dtype=np.dtype('f4')),
-                                       "interaction": nn_interaction})
-                            else:
-                                ls_vals = np.linspace(0.02, 4.00, 50, dtype=np.dtype('f'))
+                            ls_vals = np.linspace(0.02, 4.00, 50, dtype=np.dtype('f'))
                             lambda_vals = np.linspace(250, 1000, 51, dtype=np.dtype('f4'))
 
                             mesh_cart = gm.cartesian(lambda_vals, np.log(ls_vals), mpi_vals)
@@ -916,6 +911,7 @@ def gp_analysis(
                                         degrees_pts=np.array(
                                             [26, 51, 77, 103, 129, 154]
                                         ),
+                                        slice_type="energy",
                                         variables_array=variables_array,
                                         mesh_cart=mesh_cart,
                                         Lambda_b_true=Lambdab,
@@ -1016,12 +1012,9 @@ def gp_analysis(
 
                             # sets the meshes for the random variable arrays
                             mpi_vals = np.linspace(100, 400, 49, dtype=np.dtype('f4'))
-                            if Observable.name == "SGT":
-                                ls_vals = VsQuantity.input_space(
+                            ls_vals = VsQuantity.input_space(
                                     **{"E_lab": np.linspace(1, 300, 50, dtype=np.dtype('f4')),
                                        "interaction": nn_interaction})
-                            else:
-                                ls_vals = np.linspace(0.02, 4.00, 50, dtype=np.dtype('f'))
                             lambda_vals = np.linspace(250, 1000, 51, dtype=np.dtype('f4'))
 
                             mesh_cart = gm.cartesian(lambda_vals, np.log(ls_vals), mpi_vals)
@@ -1185,17 +1178,18 @@ def gp_analysis(
                                         AXX=AXX,
                                         AYY=AYY,
                                         t_lab=t_lab,
-                                        # t_lab_pts=np.array([5, 21, 48, 85, 133, 192]),
+                                        t_lab_pts=np.array([5, 21, 48, 85, 133, 192]),
                                         # t_lab_pts=np.array([1, 5, 12, 21, 33, 48]),
                                         # t_lab_pts=np.array([1, 10, 25, 48]),
                                         # t_lab_pts=np.array([1, 10, 25]),
                                         # t_lab_pts=np.array([65, 85, 108, 133, 161, 192]),
                                         # t_lab_pts=np.array([65, 100, 143, 192]),
-                                        t_lab_pts=np.array([100, 143, 192]),
+                                        # t_lab_pts=np.array([100, 143, 192]),
                                         degrees=degrees,
                                         degrees_pts=np.array(
                                             [26, 51, 77, 103, 129, 154]
                                         ),
+                                        slice_type="angle",
                                         variables_array=variables_array,
                                         mesh_cart=mesh_cart,
                                         Lambda_b_true=Lambdab,
@@ -1243,12 +1237,12 @@ gp_analysis(
     nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
     observable_input=["D"],
-    E_input_array=[50],
-    deg_input_array=[0],
-    Q_param_method_array=["smoothmax"],
+    E_input_array=[0],
+    deg_input_array=[50],
+    Q_param_method_array=["smoothmax", "sum"],
     p_param_method_array=["Qofprel"],
-    input_space_input=["cos"],
-    train_test_split_array=[Fullspaceanglessplit1],
+    input_space_input=["prel", "Elab"],
+    train_test_split_array=[Allenergysplit1],
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
@@ -1274,7 +1268,7 @@ gp_analysis(
     save_pdf_bool=False,
     save_trunc_bool=False,
     save_lambdapost_pointwise_bool=False,
-    save_lambdapost_curvewise_bool=False,
+    save_lambdapost_curvewise_bool=True,
     save_plotzilla_bool=False,
-    filename_addendum="_lowenergyslices2",
+    filename_addendum="_angletest",
 )

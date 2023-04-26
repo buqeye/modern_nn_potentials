@@ -2048,8 +2048,9 @@ class GSUMDiagnostics:
     def plot_posteriors_curvewise(self, SGT, DSG, AY, A, D, AXX, AYY,
                                   t_lab, t_lab_pts, degrees, degrees_pts,
                                   variables_array, mesh_cart,
-                                  Lambda_b_true, mpi_true,
-                                  orders=2, ax=None,
+                                  Lambda_b_true, mpi_true, slice_type,
+                                  orders=2,
+                                  ax=None,
                                   whether_plot_posteriors = True,
                                   whether_plot_corner=True,
                                   whether_save=True,
@@ -2220,56 +2221,121 @@ class GSUMDiagnostics:
 
                     obs_loglike = np.zeros(tuple(len(random_var.var) for random_var in variables_array))
 
-                    for t_lab_pt, t_lab_mom_pt in zip(t_lab_pts, E_to_p(t_lab_pts, interaction=self.nn_interaction)):
-                        # converts the points in t_lab_pts to the current input space
-                        degrees_input = self.inputspace.input_space(**{"deg_input": degrees,
-                                                                       "p_input": t_lab_mom_pt})
-                        degrees_pts_input = self.inputspace.input_space(**{"deg_input": degrees_pts,
+                    if slice_type == "energy":
+                        for t_lab_pt, t_lab_mom_pt in zip(t_lab_pts, E_to_p(t_lab_pts, interaction=self.nn_interaction)):
+                            # converts the points in t_lab_pts to the current input space
+                            degrees_input = self.inputspace.input_space(**{"deg_input": degrees,
                                                                            "p_input": t_lab_mom_pt})
-                        degrees_input_ray = ray.put(degrees_input)
+                            degrees_pts_input = self.inputspace.input_space(**{"deg_input": degrees_pts,
+                                                                               "p_input": t_lab_mom_pt})
+                            degrees_input_ray = ray.put(degrees_input)
 
-                        # not sure why we doubly transformed the energies here before
-                        ratio_points_ray = ray.put(E_to_p(t_lab_pt, interaction=self.nn_interaction))
+                            # not sure why we doubly transformed the energies here before
+                            ratio_points_ray = ray.put(E_to_p(t_lab_pt, interaction=self.nn_interaction))
 
-                        # sieves the data
-                        dsg_data = np.reshape(DSG[:, np.isin(t_lab, t_lab_pt)][..., np.isin(degrees, degrees_pts)],
-                                              (len(self.nn_orders_full), -1))
+                            # sieves the data
+                            print("DSG has shape " + str(np.shape(DSG)))
+                            dsg_data = np.reshape(DSG[:, np.isin(t_lab, t_lab_pt)][..., np.isin(degrees, degrees_pts)],
+                                                  (len(self.nn_orders_full), -1))
 
-                        # creates and fits the TruncationGP object
-                        gp_post_dsg_nho = gm.TruncationGP(self.kernel,
-                                                          ref=dsg_data[0],
-                                                          ratio=interp_f_ratio_posterior,
-                                                          center=self.center,
-                                                          disp=self.disp,
-                                                          df=self.df,
-                                                          scale=self.std_est,
-                                                          excluded=self.excluded,
-                                                          ratio_kws={"x_interp": degrees_input,
-                                                                     "p": t_lab_mom_pt,
-                                                                     "Q_param": self.Q_param,
-                                                                     "mpi_var": mpi_true,
-                                                                     "lambda_var": Lambda_b_true})
-                        # gp_post_dsg_nho.fit(degrees_pts_input[:, None],
-                        #                       dsg_data.T,
-                        #                       orders = self.nn_orders_full,
-                        #                       orders_eval = self.nn_orders[:order])
-                        gp_post_dsg_nho.fit(degrees_pts_input[:, None],
-                                            (dsg_data[:order, :]).T,
-                                            orders=self.nn_orders_full[:order])
+                            # creates and fits the TruncationGP object
+                            gp_post_dsg_nho = gm.TruncationGP(self.kernel,
+                                                              ref=dsg_data[0],
+                                                              ratio=interp_f_ratio_posterior,
+                                                              center=self.center,
+                                                              disp=self.disp,
+                                                              df=self.df,
+                                                              scale=self.std_est,
+                                                              excluded=self.excluded,
+                                                              ratio_kws={"x_interp": degrees_input,
+                                                                         "p": t_lab_mom_pt,
+                                                                         "Q_param": self.Q_param,
+                                                                         "mpi_var": mpi_true,
+                                                                         "lambda_var": Lambda_b_true})
+                            # gp_post_dsg_nho.fit(degrees_pts_input[:, None],
+                            #                       dsg_data.T,
+                            #                       orders = self.nn_orders_full,
+                            #                       orders_eval = self.nn_orders[:order])
+                            gp_post_dsg_nho.fit(degrees_pts_input[:, None],
+                                                (dsg_data[:order, :]).T,
+                                                orders=self.nn_orders_full[:order])
 
-                        # puts important objects into ray objects
-                        gp_post_nho_ray = ray.put(gp_post_dsg_nho)
+                            # puts important objects into ray objects
+                            gp_post_nho_ray = ray.put(gp_post_dsg_nho)
 
-                        # calculates the posterior using ray
-                        log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_nho_ray,
-                                                    degrees_input_ray, ratio_points_ray)
-                        # log_like_ids = []
-                        # for i in range(0, len(mesh_cart), BATCH_SIZE):
-                        #     batch = mesh_cart[i: i + BATCH_SIZE]
-                        #     log_like_ids.append(log_likelihood.remote(gp_post_nho_ray,
-                        #                                               degrees_input_ray, ratio_points_ray, batch))
-                        # log_like = list(itertools.chain(*ray.get(log_like_ids)))
-                        obs_loglike += np.reshape(log_like, tuple(len(random_var.var) for random_var in variables_array))
+                            # calculates the posterior using ray
+                            log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_nho_ray,
+                                                        degrees_input_ray, ratio_points_ray)
+                            # log_like_ids = []
+                            # for i in range(0, len(mesh_cart), BATCH_SIZE):
+                            #     batch = mesh_cart[i: i + BATCH_SIZE]
+                            #     log_like_ids.append(log_likelihood.remote(gp_post_nho_ray,
+                            #                                               degrees_input_ray, ratio_points_ray, batch))
+                            # log_like = list(itertools.chain(*ray.get(log_like_ids)))
+                            obs_loglike += np.reshape(log_like, tuple(len(random_var.var) for random_var in variables_array))
+
+                    elif slice_type == "angle":
+                        for degrees_pt in degrees_pts:
+                            # converts the points in t_lab_pts to the current input space
+                            tlab_input = self.inputspace.input_space(**{"deg_input": degrees_pt,
+                                                                        "p_input": E_to_p(t_lab,
+                                                                                          interaction=self.nn_interaction),
+                                                                        "E_lab": t_lab,
+                                                                        "interaction": self.nn_interaction
+                                                                        })
+                            tlab_pts_input = self.inputspace.input_space(**{"deg_input": degrees_pt,
+                                                                        "p_input": E_to_p(t_lab_pts,
+                                                                                          interaction=self.nn_interaction),
+                                                                        "E_lab": t_lab_pts,
+                                                                        "interaction": self.nn_interaction
+                                                                        })
+                            tlab_mom = E_to_p(t_lab, interaction=self.nn_interaction)
+                            tlab_input_ray = ray.put(tlab_input)
+
+                            # not sure why we doubly transformed the energies here before
+                            ratio_points_ray = ray.put(E_to_p(t_lab, interaction=self.nn_interaction))
+
+                            # sieves the data
+                            dsg_data = np.reshape(DSG[:, np.isin(t_lab, t_lab_pts), np.isin(degrees, degrees_pt)],
+                                                  (len(self.nn_orders_full), -1))
+                            print("dsg_data has shape " + str(np.shape(dsg_data)))
+
+                            # creates and fits the TruncationGP object
+                            gp_post_dsg_nho = gm.TruncationGP(self.kernel,
+                                                              ref=dsg_data[0],
+                                                              ratio=interp_f_ratio_posterior,
+                                                              center=self.center,
+                                                              disp=self.disp,
+                                                              df=self.df,
+                                                              scale=self.std_est,
+                                                              excluded=self.excluded,
+                                                              ratio_kws={"x_interp": tlab_input,
+                                                                         "p": tlab_mom,
+                                                                         "Q_param": self.Q_param,
+                                                                         "mpi_var": mpi_true,
+                                                                         "lambda_var": Lambda_b_true})
+                            # gp_post_dsg_nho.fit(degrees_pts_input[:, None],
+                            #                       dsg_data.T,
+                            #                       orders = self.nn_orders_full,
+                            #                       orders_eval = self.nn_orders[:order])
+                            gp_post_dsg_nho.fit(tlab_pts_input[:, None],
+                                                (dsg_data[:order, :]).T,
+                                                orders=self.nn_orders_full[:order])
+
+                            # puts important objects into ray objects
+                            gp_post_nho_ray = ray.put(gp_post_dsg_nho)
+
+                            # calculates the posterior using ray
+                            log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_nho_ray,
+                                                        tlab_input_ray, ratio_points_ray)
+                            # log_like_ids = []
+                            # for i in range(0, len(mesh_cart), BATCH_SIZE):
+                            #     batch = mesh_cart[i: i + BATCH_SIZE]
+                            #     log_like_ids.append(log_likelihood.remote(gp_post_nho_ray,
+                            #                                               degrees_input_ray, ratio_points_ray, batch))
+                            # log_like = list(itertools.chain(*ray.get(log_like_ids)))
+                            obs_loglike += np.reshape(log_like,
+                                                      tuple(len(random_var.var) for random_var in variables_array))
 
                 elif self.observable_name == "A" or self.observable_name == "AY" or \
                         self.observable_name == "D" or self.observable_name == "AYY" or \
@@ -2280,62 +2346,130 @@ class GSUMDiagnostics:
                     obs_loglike = np.zeros(tuple(len(random_var.var) for random_var in variables_array))
                     spin_obs_list = [AY, A, D, AXX, AYY]
 
-                    for t_lab_pt, t_lab_mom_pt in zip(t_lab_pts, E_to_p(t_lab_pts, interaction=self.nn_interaction)):
-                        # converts the points in t_lab_pts to the current input space
-                        degrees_input = self.inputspace.input_space(**{"deg_input": degrees,
-                                                                       "p_input": t_lab_mom_pt})
-                        degrees_pts_input = self.inputspace.input_space(**{"deg_input": degrees_pts,
+                    if slice_type == "energy":
+                        for t_lab_pt, t_lab_mom_pt in zip(t_lab_pts, E_to_p(t_lab_pts, interaction=self.nn_interaction)):
+                            # converts the points in t_lab_pts to the current input space
+                            degrees_input = self.inputspace.input_space(**{"deg_input": degrees,
                                                                            "p_input": t_lab_mom_pt})
-                        degrees_input_ray = ray.put(degrees_input)
+                            degrees_pts_input = self.inputspace.input_space(**{"deg_input": degrees_pts,
+                                                                               "p_input": t_lab_mom_pt})
+                            degrees_input_ray = ray.put(degrees_input)
 
-                        # not sure why we doubly transformed the energies here before
-                        ratio_points_ray = ray.put(E_to_p(t_lab_pt, interaction=self.nn_interaction))
+                            # not sure why we doubly transformed the energies here before
+                            ratio_points_ray = ray.put(E_to_p(t_lab_pt, interaction=self.nn_interaction))
 
-                        gp_fits_spins_nho = []
-                        # gp_fits_spins_ho = []
+                            gp_fits_spins_nho = []
+                            # gp_fits_spins_ho = []
 
-                        for so, spin_obs in enumerate(spin_obs_list):
-                            # sieves the data
-                            spin_data = np.reshape(
-                                spin_obs[:, np.isin(t_lab, t_lab_pt)][..., np.isin(degrees, degrees_pts)],
-                                (len(self.nn_orders_full), -1))
+                            for so, spin_obs in enumerate(spin_obs_list):
+                                # sieves the data
+                                spin_data = np.reshape(
+                                    spin_obs[:, np.isin(t_lab, t_lab_pt)][..., np.isin(degrees, degrees_pts)],
+                                    (len(self.nn_orders_full), -1))
 
-                            # creates and fits the TruncationGP object
-                            gp_fits_spins_nho.append(gm.TruncationGP(self.kernel,
-                                                                     ref=np.ones((len(degrees_pts))),
-                                                                     ratio=interp_f_ratio_posterior,
-                                                                     center=self.center,
-                                                                     disp=self.disp,
-                                                                     df=self.df,
-                                                                     scale=self.std_est,
-                                                                     excluded=self.excluded,
-                                                                     ratio_kws={"x_interp": degrees_input,
-                                                                                "p": t_lab_mom_pt,
-                                                                                "Q_param": self.Q_param,
-                                                                                "mpi_var": mpi_true,
-                                                                                "lambda_var": Lambda_b_true}))
-                            # gp_fits_spins_nho[so].fit(degrees_pts_input[:, None],
-                            #                       spin_data.T,
-                            #                       orders = self.nn_orders_full,
-                            #                       orders_eval = self.nn_orders[:order])
-                            gp_fits_spins_nho[so].fit(degrees_pts_input[:, None],
-                                                      (spin_data[:order, :]).T,
-                                                      orders=self.nn_orders_full[:order])
+                                # creates and fits the TruncationGP object
+                                gp_fits_spins_nho.append(gm.TruncationGP(self.kernel,
+                                                                         ref=np.ones((len(degrees_pts))),
+                                                                         ratio=interp_f_ratio_posterior,
+                                                                         center=self.center,
+                                                                         disp=self.disp,
+                                                                         df=self.df,
+                                                                         scale=self.std_est,
+                                                                         excluded=self.excluded,
+                                                                         ratio_kws={"x_interp": degrees_input,
+                                                                                    "p": t_lab_mom_pt,
+                                                                                    "Q_param": self.Q_param,
+                                                                                    "mpi_var": mpi_true,
+                                                                                    "lambda_var": Lambda_b_true}))
+                                # gp_fits_spins_nho[so].fit(degrees_pts_input[:, None],
+                                #                       spin_data.T,
+                                #                       orders = self.nn_orders_full,
+                                #                       orders_eval = self.nn_orders[:order])
+                                gp_fits_spins_nho[so].fit(degrees_pts_input[:, None],
+                                                          (spin_data[:order, :]).T,
+                                                          orders=self.nn_orders_full[:order])
 
-                        for gp_fit_spins in gp_fits_spins_nho:
-                            # puts important objects into ray objects
-                            gp_post_nho_ray = ray.put(gp_fit_spins)
+                            for gp_fit_spins in gp_fits_spins_nho:
+                                # puts important objects into ray objects
+                                gp_post_nho_ray = ray.put(gp_fit_spins)
 
-                            # calculates the posterior using ray
-                            log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_nho_ray,
-                                degrees_input_ray, ratio_points_ray)
-                            # log_like_ids = []
-                            # for i in range(0, len(mesh_cart), BATCH_SIZE):
-                            #     batch = mesh_cart[i: i + BATCH_SIZE]
-                            #     log_like_ids.append(log_likelihood.remote(gp_post_nho_ray,
-                            #                                               degrees_input_ray, ratio_points_ray, batch))
-                            # log_like = list(itertools.chain(*ray.get(log_like_ids)))
-                            obs_loglike += np.reshape(log_like, tuple(len(random_var.var) for random_var in variables_array))
+                                # calculates the posterior using ray
+                                log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_nho_ray,
+                                    degrees_input_ray, ratio_points_ray)
+                                # log_like_ids = []
+                                # for i in range(0, len(mesh_cart), BATCH_SIZE):
+                                #     batch = mesh_cart[i: i + BATCH_SIZE]
+                                #     log_like_ids.append(log_likelihood.remote(gp_post_nho_ray,
+                                #                                               degrees_input_ray, ratio_points_ray, batch))
+                                # log_like = list(itertools.chain(*ray.get(log_like_ids)))
+                                obs_loglike += np.reshape(log_like, tuple(len(random_var.var) for random_var in variables_array))
+
+                    elif slice_type == "angle":
+                        for degrees_pt in degrees_pts:
+                            # converts the points in t_lab_pts to the current input space
+                            tlab_input = self.inputspace.input_space(**{"deg_input": degrees_pt,
+                                                                        "p_input": E_to_p(t_lab,
+                                                                                          interaction=self.nn_interaction),
+                                                                        "E_lab": t_lab,
+                                                                        "interaction": self.nn_interaction
+                                                                        })
+                            tlab_pts_input = self.inputspace.input_space(**{"deg_input": degrees_pt,
+                                                                        "p_input": E_to_p(t_lab_pts,
+                                                                                          interaction=self.nn_interaction),
+                                                                        "E_lab": t_lab_pts,
+                                                                        "interaction": self.nn_interaction
+                                                                        })
+                            tlab_mom = E_to_p(t_lab, interaction=self.nn_interaction)
+                            tlab_input_ray = ray.put(tlab_input)
+
+                            # not sure why we doubly transformed the energies here before
+                            ratio_points_ray = ray.put(E_to_p(t_lab, interaction=self.nn_interaction))
+
+                            gp_fits_spins_nho = []
+
+                            for so, spin_obs in enumerate(spin_obs_list):
+                                # sieves the data
+                                spin_data = np.reshape(
+                                    spin_obs[:, np.isin(t_lab, t_lab_pts), np.isin(degrees, degrees_pt)],
+                                                  (len(self.nn_orders_full), -1))
+
+                                # creates and fits the TruncationGP object
+                                gp_fits_spins_nho.append(gm.TruncationGP(self.kernel,
+                                                                  ref=spin_data[0],
+                                                                  ratio=interp_f_ratio_posterior,
+                                                                  center=self.center,
+                                                                  disp=self.disp,
+                                                                  df=self.df,
+                                                                  scale=self.std_est,
+                                                                  excluded=self.excluded,
+                                                                  ratio_kws={"x_interp": tlab_input,
+                                                                         "p": tlab_mom,
+                                                                         "Q_param": self.Q_param,
+                                                                         "mpi_var": mpi_true,
+                                                                         "lambda_var": Lambda_b_true}))
+                                # gp_post_dsg_nho.fit(degrees_pts_input[:, None],
+                                #                       dsg_data.T,
+                                #                       orders = self.nn_orders_full,
+                                #                       orders_eval = self.nn_orders[:order])
+                                gp_fits_spins_nho[so].fit(tlab_pts_input[:, None],
+                                                    (spin_data[:order, :]).T,
+                                                    orders=self.nn_orders_full[:order])
+
+                            for gp_fit_spins in gp_fits_spins_nho:
+                                # puts important objects into ray objects
+                                gp_post_nho_ray = ray.put(gp_fit_spins)
+
+                                # calculates the posterior using ray
+                                log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_nho_ray,
+                                                            tlab_input_ray, ratio_points_ray)
+                                # log_like_ids = []
+                                # for i in range(0, len(mesh_cart), BATCH_SIZE):
+                                #     batch = mesh_cart[i: i + BATCH_SIZE]
+                                #     log_like_ids.append(log_likelihood.remote(gp_post_nho_ray,
+                                #                                               degrees_input_ray, ratio_points_ray, batch))
+                                # log_like = list(itertools.chain(*ray.get(log_like_ids)))
+                                obs_loglike += np.reshape(log_like,
+                                                          tuple(len(random_var.var) for random_var in variables_array))
 
                 # loglike_list.append(obs_loglike)
 
