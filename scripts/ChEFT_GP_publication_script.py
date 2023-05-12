@@ -19,7 +19,7 @@ mpl.rcParams["font.size"] = 9
 mpl.rcParams["text.usetex"] = True
 mpl.rcParams["font.family"] = "serif"
 
-mpl.rcParams["axes.labelsize"] = 14  # 9
+mpl.rcParams["axes.labelsize"] = 9  # 14
 mpl.rcParams["axes.edgecolor"] = softblack
 mpl.rcParams["axes.xmargin"] = 0
 mpl.rcParams["axes.labelcolor"] = softblack
@@ -27,15 +27,15 @@ mpl.rcParams["axes.linewidth"]
 
 mpl.rcParams["ytick.direction"] = "in"
 mpl.rcParams["xtick.direction"] = "in"
-mpl.rcParams["xtick.labelsize"] = 12  # 9
-mpl.rcParams["ytick.labelsize"] = 12  # 9
+mpl.rcParams["xtick.labelsize"] = 9  # 12
+mpl.rcParams["ytick.labelsize"] = 9  # 12
 mpl.rcParams["xtick.color"] = softblack
 mpl.rcParams["ytick.color"] = softblack
 mpl.rcParams["xtick.minor.size"] = 2.4
 mpl.rcParams["ytick.minor.size"] = 2.4
 
 mpl.rcParams["legend.title_fontsize"] = 9
-mpl.rcParams["legend.fontsize"] = 11  # 9
+mpl.rcParams["legend.fontsize"] = 9  # 11
 mpl.rcParams["legend.edgecolor"] = "inherit"  # inherits from axes.edgecolor, to match
 mpl.rcParams["legend.facecolor"] = (
     1,
@@ -734,9 +734,21 @@ def gp_analysis(
                             )
 
                             # sets the meshes for the random variable arrays
-                            mpi_vals = np.linspace(10, 400, 49, dtype=np.dtype('f4'))
-                            ls_vals = np.linspace(0.02, 4.00, 50, dtype=np.dtype('f'))
-                            lambda_vals = np.linspace(250, 1000, 51, dtype=np.dtype('f4'))
+                            mpi_vals = np.linspace(10, 400, 99, dtype=np.dtype('f4'))
+                            # ls_vals = np.linspace(0.02, 4.00, 25, dtype=np.dtype('f'))
+                            # print(ls_vals)
+                            ls_vals = np.linspace(0.01,
+                                                2 * (VsQuantity.input_space(
+                                                    **{"p_input": E_to_p(E_lab, nn_interaction),
+                                                        "deg_input": 179,
+                                                        "interaction": nn_interaction}) - \
+                                                     VsQuantity.input_space(
+                                                         **{"p_input": E_to_p(E_lab, nn_interaction),
+                                                            "deg_input": 1,
+                                                            "interaction": nn_interaction})),
+                                                100)
+                            # print(ls_vals)
+                            lambda_vals = np.linspace(250, 1000, 101, dtype=np.dtype('f4'))
 
                             mesh_cart = gm.cartesian(lambda_vals, np.log(ls_vals), mpi_vals)
 
@@ -900,9 +912,9 @@ def gp_analysis(
                                         AXX=AXX,
                                         AYY=AYY,
                                         t_lab=t_lab,
-                                        # t_lab_pts=np.array([5, 21, 48, 85, 133, 192]),
+                                        t_lab_pts=np.array([5, 21, 48, 85, 133, 192]),
                                         # t_lab_pts=np.array([1, 5, 12, 21, 33, 48]),
-                                        t_lab_pts=np.array([1, 10, 25, 48]),
+                                        # t_lab_pts=np.array([1, 10, 25, 48]),
                                         # t_lab_pts=np.array([1, 10, 25]),
                                         # t_lab_pts=np.array([65, 85, 108, 133, 161, 192]),
                                         # t_lab_pts=np.array([65, 100, 143, 192]),
@@ -916,8 +928,11 @@ def gp_analysis(
                                         mesh_cart=mesh_cart,
                                         Lambda_b_true=Lambdab,
                                         mpi_true=m_pi_eff,
-                                        orders=2,
-                                        whether_save=save_lambdapost_curvewise_bool,
+                                        orders=1,
+                                        whether_use_data=False,
+                                        whether_save_data=False,
+                                        whether_save_plots=save_lambdapost_curvewise_bool,
+                                        plot_all_obs=True
                                     )
                                 if plot_plotzilla_bool:
                                     MyPlot.plotzilla(whether_save=save_plotzilla_bool)
@@ -1011,11 +1026,13 @@ def gp_analysis(
                             )
 
                             # sets the meshes for the random variable arrays
-                            mpi_vals = np.linspace(100, 400, 49, dtype=np.dtype('f4'))
-                            ls_vals = VsQuantity.input_space(
-                                    **{"E_lab": np.linspace(1, 300, 50, dtype=np.dtype('f4')),
-                                       "interaction": nn_interaction})
-                            lambda_vals = np.linspace(250, 1000, 51, dtype=np.dtype('f4'))
+                            mpi_vals = np.linspace(100, 400, 99, dtype=np.dtype('f4'))
+                            # ls_vals = VsQuantity.input_space(
+                            #         **{"E_lab": np.linspace(1, 300, 50, dtype=np.dtype('f4')),
+                            #            "interaction": nn_interaction})
+                            ls_vals = np.linspace(1, 200, 100, dtype=np.dtype('f4'))
+                            lambda_vals = np.linspace(250, 1000, 101
+                                                      , dtype=np.dtype('f4'))
 
                             mesh_cart = gm.cartesian(lambda_vals, np.log(ls_vals), mpi_vals)
 
@@ -1034,7 +1051,7 @@ def gp_analysis(
                                                         name='ls',
                                                         label="\ell",
                                                         units="",
-                                                        ticks=[],
+                                                        ticks=[50, 100, 150],
                                                         logprior=np.zeros(len(ls_vals)),
                                                         logprior_name="ls_nologprior")
                             MpieffVariable = RandomVariable(var=mpi_vals,
@@ -1195,7 +1212,10 @@ def gp_analysis(
                                         Lambda_b_true=Lambdab,
                                         mpi_true=m_pi_eff,
                                         orders=2,
-                                        whether_save=save_lambdapost_curvewise_bool,
+                                        whether_use_data=False,
+                                        whether_save_data=False,
+                                        whether_save_plots=save_lambdapost_curvewise_bool,
+                                        plot_all_obs=True
                                     )
                                 if plot_plotzilla_bool:
                                     MyPlot.plotzilla(whether_save=save_plotzilla_bool)
@@ -1236,12 +1256,12 @@ def gp_analysis(
 gp_analysis(
     nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
-    observable_input=["D"],
+    observable_input=["DSG"],
     E_input_array=[0],
     deg_input_array=[50],
     Q_param_method_array=["smoothmax", "sum"],
     p_param_method_array=["Qofprel"],
-    input_space_input=["prel", "Elab"],
+    input_space_input=["Elab", "prel"],
     train_test_split_array=[Allenergysplit1],
     orders_excluded=[],
     orders_names_dict=None,
@@ -1261,14 +1281,14 @@ gp_analysis(
     plot_lambdapost_pointwise_bool=False,
     plot_lambdapost_curvewise_bool=True,
     plot_plotzilla_bool=False,
-    save_coeffs_bool=True,
-    save_md_bool=True,
-    save_pc_bool=True,
-    save_ci_bool=True,
+    save_coeffs_bool=False,
+    save_md_bool=False,
+    save_pc_bool=False,
+    save_ci_bool=False,
     save_pdf_bool=False,
     save_trunc_bool=False,
     save_lambdapost_pointwise_bool=False,
     save_lambdapost_curvewise_bool=True,
     save_plotzilla_bool=False,
-    filename_addendum="_angletest",
+    filename_addendum="_newbool",
 )

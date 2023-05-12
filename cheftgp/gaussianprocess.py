@@ -689,8 +689,8 @@ class GSUMDiagnostics:
 
         # plots the coefficients against the given input space
         if ax is None:
-            # fig, ax = plt.subplots(figsize=(3.2, 3.2))
-            fig, ax = plt.subplots(figsize=(2.1, 2.1))
+            fig, ax = plt.subplots(figsize=(3.2, 3.2))
+            # fig, ax = plt.subplots(figsize=(2.1, 2.1))
 
         for i, n in enumerate(self.nn_orders_full[self.mask_restricted]):
             ax.fill_between(self.x, self.pred[:, i] + 2 * self.std,
@@ -713,13 +713,13 @@ class GSUMDiagnostics:
             ax.set_xticks(self.x_test, minor=True)
             ax.set_xticks([round(xx, 0) for xx in self.x_train])
         ax.tick_params(which='minor', bottom=True, top=False)
-        # ax.set_xlabel(self.caption_coeffs)
+        ax.set_xlabel(self.caption_coeffs)
         ax.set_yticks(ticks=[-2 * self.underlying_std, 2 * self.underlying_std])
         ax.set_yticklabels(labels=['{:.1f}'.format(-2 * self.underlying_std), '{:.1f}'.format(2 * self.underlying_std)])
         ax.set_yticks([-1 * self.underlying_std, self.underlying_std], minor=True)
-        # ax.legend(ncol=2, borderpad=0.4,# labelspacing=0.5, columnspacing=1.3,
-        #           borderaxespad=0.6, loc = 'upper right',
-        #           title = self.title_coeffs).set_zorder(5 * i)
+        ax.legend(ncol=2, borderpad=0.4,# labelspacing=0.5, columnspacing=1.3,
+                  borderaxespad=0.6, loc = 'upper right',
+                  title = self.title_coeffs).set_zorder(5 * i)
 
         if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
             dX = np.array([[self.x[i]] for i in self.constraint[0]])
@@ -731,7 +731,7 @@ class GSUMDiagnostics:
                                             Xc=dX,
                                             y=np.array(self.constraint[1]),
                                             return_std=True)
-            # print("We calculated std_interp.")
+
             ax.plot(self.x, 2 * std_interp, color='gray', ls='--', zorder=-10, lw=1)
             ax.plot(self.x, -2 * std_interp, color='gray', ls='--', zorder=-10, lw=1)
 
@@ -739,34 +739,34 @@ class GSUMDiagnostics:
         ax.annotate("", xy=(np.min(self.x), -0.65 * 2 * self.underlying_std),
                     xytext=(np.min(self.x) + self.ls, -0.65 * 2 * self.underlying_std),
                     arrowprops=dict(arrowstyle="<->", capstyle='projecting', lw=1,
-                                    color='k'), annotation_clip=False, zorder=5 * i)
+                                    color='k', shrinkA = 0, shrinkB = 0), annotation_clip=False, zorder=5 * i)
         ax.text(np.min(self.x) + self.ls + 0.2 * (np.max(self.x) - np.min(self.x)),
                 -0.65 * 2 * self.underlying_std, r'$\ell_{\mathrm{guess}}$', fontsize=14,
                 horizontalalignment='right', verticalalignment='center', zorder=5 * i)
 
-        ax.annotate("", xy=(np.min(self.x), -0.9 * 2 * self.underlying_std), \
+        ax.annotate("", xy=(np.min(self.x), -0.9 * 2 * self.underlying_std),
                     xytext=(np.min(self.x) + self.ls_true, -0.9 * 2 * self.underlying_std),
                     arrowprops=dict(arrowstyle="<->", capstyle='projecting', lw=1,
-                                    color='k'), annotation_clip=False, zorder=5 * i)
+                                    color='k', shrinkA = 0, shrinkB = 0), annotation_clip=False, zorder=5 * i)
         ax.text(np.min(self.x) + self.ls_true + 0.2 * (np.max(self.x) - np.min(self.x)),
                 -0.9 * 2 * self.underlying_std, r'$\ell_{\mathrm{fit}}$', fontsize=14,
                 horizontalalignment='right', verticalalignment='center', zorder=5 * i)
 
         # draws standard deviations
-        ax.annotate("", xy=(np.min(self.x) + 0.90 * (np.max(self.x) - np.min(self.x)), 0), \
-                    xytext=(np.min(self.x) + 0.90 * (np.max(self.x) - np.min(self.x)), \
+        ax.annotate("", xy=(np.min(self.x) + 0.90 * (np.max(self.x) - np.min(self.x)), 0),
+                    xytext=(np.min(self.x) + 0.90 * (np.max(self.x) - np.min(self.x)),
                             -1. * self.std_est),
                     arrowprops=dict(arrowstyle="<->", capstyle='projecting', lw=1,
-                                    color='k'), annotation_clip=False, zorder=5 * i)
+                                    color='k', shrinkA = 0, shrinkB = 0), annotation_clip=False, zorder=5 * i)
         ax.text(np.min(self.x) + 0.90 * (np.max(self.x) - np.min(self.x)),
                 -1.2 * self.std_est, r'$\sigma_{\mathrm{guess}}$', fontsize=14,
                 horizontalalignment='center', verticalalignment='bottom', zorder=5 * i)
 
-        ax.annotate("", xy=(np.min(self.x) + 0.74 * (np.max(self.x) - np.min(self.x)), 0), \
-                    xytext=(np.min(self.x) + 0.74 * (np.max(self.x) - np.min(self.x)), \
+        ax.annotate("", xy=(np.min(self.x) + 0.74 * (np.max(self.x) - np.min(self.x)), 0),
+                    xytext=(np.min(self.x) + 0.74 * (np.max(self.x) - np.min(self.x)),
                             -1. * self.underlying_std),
                     arrowprops=dict(arrowstyle="<->", capstyle='projecting', lw=1,
-                                    color='k'), annotation_clip=False, zorder=5 * i)
+                                    color='k', shrinkA = 0, shrinkB = 0), annotation_clip=False, zorder=5 * i)
         ax.text(np.min(self.x) + 0.74 * (np.max(self.x) - np.min(self.x)),
                 -1.2 * self.underlying_std, r'$\sigma_{\mathrm{fit}}$', fontsize=14,
                 horizontalalignment='center', verticalalignment='bottom', zorder=5 * i)
@@ -2053,12 +2053,27 @@ class GSUMDiagnostics:
                                   ax=None,
                                   whether_plot_posteriors = True,
                                   whether_plot_corner=True,
-                                  whether_save=True,
-                                  whether_save_opt=False,):
+                                  whether_use_data=True,
+                                  whether_save_data=True,
+                                  whether_save_plots=True,
+                                  whether_save_opt=False,
+                                  plot_all_obs=False,):
 
         # sets the number of orders and the corresponding colors
         order_num = int(orders)
         Lb_colors = self.light_colors[-1 * order_num:]
+
+        if self.observable_name == "SGT":
+            obs_name_corner = "SGT"
+            posterior_label = r'$\sigma$'
+        elif self.observable_name == "DSG":
+            obs_name_corner = "DSG"
+            posterior_label = r'$\displaystyle\frac{d\sigma}{d\Omega}$'
+        elif self.observable_name == "A" or self.observable_name == "AY" or \
+                self.observable_name == "D" or self.observable_name == "AYY" or \
+                self.observable_name == "AXX":
+            obs_name_corner = "spins"
+            posterior_label = r'$X_{pqik}$'
 
         # # sets the meshes for the random variable arrays
         # mpi_vals = np.linspace(50, 425, 49, dtype=np.dtype('f4'))
@@ -2144,23 +2159,44 @@ class GSUMDiagnostics:
         BATCH_SIZE = 100
 
         like_list = []
+        obs_loglike_plots = []
 
         try:
-            # generates names for files and searches for whether they exist
-            for order_counter in range(1, order_num + 1):
-                order = np.max(self.nn_orders) - order_num + order_counter
-                print("order = " + str(order))
+            if not whether_use_data:
+                raise ValueError("You elected not to use saved data.")
+            else:
+                # generates names for files and searches for whether they exist
+                for order_counter in range(1, order_num + 1):
+                    order = np.max(self.nn_orders) - order_num + order_counter
+                    print("order = " + str(order))
 
-                # if they exist, they are read in, reshaped, and appended to like_list
-                np.append(like_list, np.reshape(
-                    np.loadtxt(make_likelihood_filename(self,
-                                                        "data",
-                                                        self.orders_names_dict[order],
-                                                        [variable.logprior_name for variable in variables_array],
-                                                        variables_array,
-                                                        )),
-                    (len(random_var.var) for random_var in variables_array),
-                ))
+                    # if they exist, they are read in, reshaped, and appended to like_list
+                    # print(make_likelihood_filename(self,
+                    #                             "data",
+                    #                             self.orders_names_dict[order],
+                    #                             [variable.logprior_name for variable in variables_array],
+                    #                             variables_array,
+                    #                             ))
+                    like_list.append(np.reshape(
+                        np.loadtxt(make_likelihood_filename(self,
+                                                            "data",
+                                                            self.orders_names_dict[order],
+                                                            [variable.logprior_name for variable in variables_array],
+                                                            variables_array,
+                                                            )),
+                        tuple([len(random_var.var) for random_var in variables_array]),
+                    ))
+                    # print(np.reshape(
+                    #     np.loadtxt(make_likelihood_filename(self,
+                    #                                         "data",
+                    #                                         self.orders_names_dict[order],
+                    #                                         [variable.logprior_name for variable in variables_array],
+                    #                                         variables_array,
+                    #                                         )),
+                    #     tuple([len(random_var.var) for random_var in variables_array]),
+                    # ))
+                    # print(tuple([len(random_var.var) for random_var in variables_array]))
+                    # print(like_list)
 
         except:
             for order_counter in range(1, order_num + 1):
@@ -2169,10 +2205,7 @@ class GSUMDiagnostics:
                 print("order = " + str(order))
                 orders_nho_ray = ray.put(self.nn_orders[:order])
 
-                if self.observable_name == "SGT":
-                    obs_name_corner = "SGT"
-                    posterior_label = r'$\sigma$'
-
+                if self.observable_name == "SGT" or plot_all_obs:
                     # converts the points in t_lab_pts to the current input space
                     t_lab_input = self.inputspace.input_space(**{"E_lab": t_lab,
                                                                  "interaction": self.nn_interaction})
@@ -2183,8 +2216,9 @@ class GSUMDiagnostics:
                     sgt_data = SGT[:, np.isin(t_lab, t_lab_pts)]
 
                     # creates and fits the TruncationGP object
-                    gp_post_sgt_nho = gm.TruncationGP(self.kernel,
-                                                      ref=sgt_data[0],
+                    gp_post_sgt = gm.TruncationGP(self.kernel,
+                                                      # ref=sgt_data[0],
+                                                        ref=sgt_data[-1],
                                                       ratio=interp_f_ratio_posterior,
                                                       center=self.center,
                                                       disp=self.disp,
@@ -2196,16 +2230,16 @@ class GSUMDiagnostics:
                                                                  "Q_param": self.Q_param,
                                                                  "mpi_var": mpi_true,
                                                                  "lambda_var": Lambda_b_true})
-                    gp_post_sgt_nho.fit(t_lab_pts_input[:, None],
+                    gp_post_sgt.fit(t_lab_pts_input[:, None],
                                         (sgt_data[:order]).T,
                                         orders=self.nn_orders_full[:order])
 
                     # puts important objects into ray objects
-                    gp_post_nho_ray = ray.put(gp_post_sgt_nho)
+                    gp_post_ray = ray.put(gp_post_sgt)
                     t_lab_mom_ray = ray.put(E_to_p(t_lab, interaction=self.nn_interaction))
 
                     # calculates the posterior using ray
-                    log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_nho_ray,
+                    log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_ray,
                                                 t_lab_input, t_lab_mom_ray)
                     # log_like_ids = []
                     # for i in range(0, len(mesh_cart), BATCH_SIZE):
@@ -2214,11 +2248,8 @@ class GSUMDiagnostics:
                     #                                               t_lab_input, t_lab_mom_ray, batch))
                     # log_like = list(itertools.chain(*ray.get(log_like_ids)))
                     obs_loglike = np.reshape(log_like, tuple(len(random_var.var) for random_var in variables_array))
-
-                elif self.observable_name == "DSG":
-                    obs_name_corner = "DSG"
-                    posterior_label = r'$\displaystyle\frac{d\sigma}{d\Omega}$'
-
+                    obs_loglike_plots.append(obs_loglike)
+                if self.observable_name == "DSG" or plot_all_obs:
                     obs_loglike = np.zeros(tuple(len(random_var.var) for random_var in variables_array))
 
                     if slice_type == "energy":
@@ -2234,37 +2265,41 @@ class GSUMDiagnostics:
                             ratio_points_ray = ray.put(E_to_p(t_lab_pt, interaction=self.nn_interaction))
 
                             # sieves the data
-                            print("DSG has shape " + str(np.shape(DSG)))
+                            # print("DSG has shape " + str(np.shape(DSG)))
                             dsg_data = np.reshape(DSG[:, np.isin(t_lab, t_lab_pt)][..., np.isin(degrees, degrees_pts)],
                                                   (len(self.nn_orders_full), -1))
-
+                            # print("dsg_data has shape " + str(np.shape(dsg_data)))
+                            # print("dsg_data = " + str(dsg_data))
+                            # print("yref = " + str(dsg_data[0]))
                             # creates and fits the TruncationGP object
-                            gp_post_dsg_nho = gm.TruncationGP(self.kernel,
-                                                              ref=dsg_data[0],
-                                                              ratio=interp_f_ratio_posterior,
-                                                              center=self.center,
-                                                              disp=self.disp,
-                                                              df=self.df,
-                                                              scale=self.std_est,
-                                                              excluded=self.excluded,
-                                                              ratio_kws={"x_interp": degrees_input,
-                                                                         "p": t_lab_mom_pt,
-                                                                         "Q_param": self.Q_param,
-                                                                         "mpi_var": mpi_true,
-                                                                         "lambda_var": Lambda_b_true})
+                            gp_post_dsg = gm.TruncationGP(self.kernel,
+                                                          # ref=dsg_data[0],
+                                                          ref=dsg_data[-1],
+                                                          # ref=np.ones((len(degrees_pts))),
+                                                          ratio=interp_f_ratio_posterior,
+                                                          center=self.center,
+                                                          disp=self.disp,
+                                                          df=self.df,
+                                                          scale=self.std_est,
+                                                          excluded=self.excluded,
+                                                          ratio_kws={"x_interp": degrees_input,
+                                                                     "p": t_lab_mom_pt,
+                                                                     "Q_param": self.Q_param,
+                                                                     "mpi_var": mpi_true,
+                                                                     "lambda_var": Lambda_b_true})
                             # gp_post_dsg_nho.fit(degrees_pts_input[:, None],
                             #                       dsg_data.T,
                             #                       orders = self.nn_orders_full,
                             #                       orders_eval = self.nn_orders[:order])
-                            gp_post_dsg_nho.fit(degrees_pts_input[:, None],
+                            gp_post_dsg.fit(degrees_pts_input[:, None],
                                                 (dsg_data[:order, :]).T,
                                                 orders=self.nn_orders_full[:order])
 
                             # puts important objects into ray objects
-                            gp_post_nho_ray = ray.put(gp_post_dsg_nho)
+                            gp_post_ray = ray.put(gp_post_dsg)
 
                             # calculates the posterior using ray
-                            log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_nho_ray,
+                            log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_ray,
                                                         degrees_input_ray, ratio_points_ray)
                             # log_like_ids = []
                             # for i in range(0, len(mesh_cart), BATCH_SIZE):
@@ -2273,7 +2308,7 @@ class GSUMDiagnostics:
                             #                                               degrees_input_ray, ratio_points_ray, batch))
                             # log_like = list(itertools.chain(*ray.get(log_like_ids)))
                             obs_loglike += np.reshape(log_like, tuple(len(random_var.var) for random_var in variables_array))
-
+                        obs_loglike_plots.append(obs_loglike)
                     elif slice_type == "angle":
                         for degrees_pt in degrees_pts:
                             # converts the points in t_lab_pts to the current input space
@@ -2301,8 +2336,10 @@ class GSUMDiagnostics:
                             print("dsg_data has shape " + str(np.shape(dsg_data)))
 
                             # creates and fits the TruncationGP object
-                            gp_post_dsg_nho = gm.TruncationGP(self.kernel,
-                                                              ref=dsg_data[0],
+                            gp_post_dsg = gm.TruncationGP(self.kernel,
+                                                              # ref=dsg_data[0],
+                                                                ref=dsg_data[-1],
+                                                              # ref=np.ones((len(degrees_pts))),
                                                               ratio=interp_f_ratio_posterior,
                                                               center=self.center,
                                                               disp=self.disp,
@@ -2318,15 +2355,15 @@ class GSUMDiagnostics:
                             #                       dsg_data.T,
                             #                       orders = self.nn_orders_full,
                             #                       orders_eval = self.nn_orders[:order])
-                            gp_post_dsg_nho.fit(tlab_pts_input[:, None],
+                            gp_post_dsg.fit(tlab_pts_input[:, None],
                                                 (dsg_data[:order, :]).T,
                                                 orders=self.nn_orders_full[:order])
 
                             # puts important objects into ray objects
-                            gp_post_nho_ray = ray.put(gp_post_dsg_nho)
+                            gp_post_ray = ray.put(gp_post_dsg)
 
                             # calculates the posterior using ray
-                            log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_nho_ray,
+                            log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_ray,
                                                         tlab_input_ray, ratio_points_ray)
                             # log_like_ids = []
                             # for i in range(0, len(mesh_cart), BATCH_SIZE):
@@ -2336,15 +2373,12 @@ class GSUMDiagnostics:
                             # log_like = list(itertools.chain(*ray.get(log_like_ids)))
                             obs_loglike += np.reshape(log_like,
                                                       tuple(len(random_var.var) for random_var in variables_array))
-
-                elif self.observable_name == "A" or self.observable_name == "AY" or \
+                        obs_loglike_plots.append(obs_loglike)
+                if self.observable_name == "A" or self.observable_name == "AY" or \
                         self.observable_name == "D" or self.observable_name == "AYY" or \
-                        self.observable_name == "AXX":
-                    obs_name_corner = "spins"
-                    posterior_label = r'$X_{pqik}$'
-
+                        self.observable_name == "AXX"  or plot_all_obs:
                     obs_loglike = np.zeros(tuple(len(random_var.var) for random_var in variables_array))
-                    spin_obs_list = [AY, A, D, AXX, AYY]
+                    spin_obs_list = [DSG, AY, A, D, AXX, AYY]
 
                     if slice_type == "energy":
                         for t_lab_pt, t_lab_mom_pt in zip(t_lab_pts, E_to_p(t_lab_pts, interaction=self.nn_interaction)):
@@ -2358,7 +2392,7 @@ class GSUMDiagnostics:
                             # not sure why we doubly transformed the energies here before
                             ratio_points_ray = ray.put(E_to_p(t_lab_pt, interaction=self.nn_interaction))
 
-                            gp_fits_spins_nho = []
+                            gp_fits_spins = []
                             # gp_fits_spins_ho = []
 
                             for so, spin_obs in enumerate(spin_obs_list):
@@ -2368,7 +2402,7 @@ class GSUMDiagnostics:
                                     (len(self.nn_orders_full), -1))
 
                                 # creates and fits the TruncationGP object
-                                gp_fits_spins_nho.append(gm.TruncationGP(self.kernel,
+                                gp_fits_spins.append(gm.TruncationGP(self.kernel,
                                                                          ref=np.ones((len(degrees_pts))),
                                                                          ratio=interp_f_ratio_posterior,
                                                                          center=self.center,
@@ -2385,16 +2419,16 @@ class GSUMDiagnostics:
                                 #                       spin_data.T,
                                 #                       orders = self.nn_orders_full,
                                 #                       orders_eval = self.nn_orders[:order])
-                                gp_fits_spins_nho[so].fit(degrees_pts_input[:, None],
+                                gp_fits_spins[so].fit(degrees_pts_input[:, None],
                                                           (spin_data[:order, :]).T,
                                                           orders=self.nn_orders_full[:order])
 
-                            for gp_fit_spins in gp_fits_spins_nho:
+                            for gp_fit_spins in gp_fits_spins:
                                 # puts important objects into ray objects
-                                gp_post_nho_ray = ray.put(gp_fit_spins)
+                                gp_post_ray = ray.put(gp_fit_spins)
 
                                 # calculates the posterior using ray
-                                log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_nho_ray,
+                                log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_ray,
                                     degrees_input_ray, ratio_points_ray)
                                 # log_like_ids = []
                                 # for i in range(0, len(mesh_cart), BATCH_SIZE):
@@ -2403,7 +2437,7 @@ class GSUMDiagnostics:
                                 #                                               degrees_input_ray, ratio_points_ray, batch))
                                 # log_like = list(itertools.chain(*ray.get(log_like_ids)))
                                 obs_loglike += np.reshape(log_like, tuple(len(random_var.var) for random_var in variables_array))
-
+                        obs_loglike_plots.append(obs_loglike)
                     elif slice_type == "angle":
                         for degrees_pt in degrees_pts:
                             # converts the points in t_lab_pts to the current input space
@@ -2425,7 +2459,7 @@ class GSUMDiagnostics:
                             # not sure why we doubly transformed the energies here before
                             ratio_points_ray = ray.put(E_to_p(t_lab, interaction=self.nn_interaction))
 
-                            gp_fits_spins_nho = []
+                            gp_fits_spins = []
 
                             for so, spin_obs in enumerate(spin_obs_list):
                                 # sieves the data
@@ -2434,8 +2468,8 @@ class GSUMDiagnostics:
                                                   (len(self.nn_orders_full), -1))
 
                                 # creates and fits the TruncationGP object
-                                gp_fits_spins_nho.append(gm.TruncationGP(self.kernel,
-                                                                  ref=spin_data[0],
+                                gp_fits_spins.append(gm.TruncationGP(self.kernel,
+                                                                  ref=np.ones((len(t_lab_pts))),
                                                                   ratio=interp_f_ratio_posterior,
                                                                   center=self.center,
                                                                   disp=self.disp,
@@ -2451,16 +2485,16 @@ class GSUMDiagnostics:
                                 #                       dsg_data.T,
                                 #                       orders = self.nn_orders_full,
                                 #                       orders_eval = self.nn_orders[:order])
-                                gp_fits_spins_nho[so].fit(tlab_pts_input[:, None],
+                                gp_fits_spins[so].fit(tlab_pts_input[:, None],
                                                     (spin_data[:order, :]).T,
                                                     orders=self.nn_orders_full[:order])
 
-                            for gp_fit_spins in gp_fits_spins_nho:
+                            for gp_fit_spins in gp_fits_spins:
                                 # puts important objects into ray objects
-                                gp_post_nho_ray = ray.put(gp_fit_spins)
+                                gp_post_ray = ray.put(gp_fit_spins)
 
                                 # calculates the posterior using ray
-                                log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_nho_ray,
+                                log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_ray,
                                                             tlab_input_ray, ratio_points_ray)
                                 # log_like_ids = []
                                 # for i in range(0, len(mesh_cart), BATCH_SIZE):
@@ -2470,11 +2504,11 @@ class GSUMDiagnostics:
                                 # log_like = list(itertools.chain(*ray.get(log_like_ids)))
                                 obs_loglike += np.reshape(log_like,
                                                           tuple(len(random_var.var) for random_var in variables_array))
-
+                        obs_loglike_plots.append(obs_loglike)
                 # loglike_list.append(obs_loglike)
 
                 # adds the log-priors to the log-likelihoods
-                obs_loglike = add_logpriors(variables_array, obs_loglike)
+                obs_loglike_plots = [add_logpriors(variables_array, oll) for oll in obs_loglike_plots]
                 # for i, logprior in enumerate([variable.logprior for variable in variables_array]):
                 #     obs_loglike += np.transpose(np.tile(logprior,
                 #                                         (
@@ -2485,10 +2519,20 @@ class GSUMDiagnostics:
                 #                                         ),
                 #                                 np.roll(np.arange(0, len(variables_array), dtype=int), i + 1))
                 # Makes sure that the values don't get too big or too small
-                obs_like = np.exp(obs_loglike - np.max(obs_loglike))
-                like_list.append(obs_like)
-
-                np.savetxt(make_likelihood_filename(self,
+                print(np.shape(obs_loglike_plots))
+                obs_like = [np.exp(oll - np.max(oll)) for oll in obs_loglike_plots]
+                print(np.shape(obs_like))
+                # like_list.append(obs_like)
+                print(np.shape(like_list))
+                print("We made it this far!")
+                print(make_likelihood_filename(self,
+                                            "data",
+                                            self.orders_names_dict[order],
+                                            [variable.logprior_name for variable in variables_array],
+                                            variables_array,
+                                            ))
+                if whether_save_data:
+                    np.savetxt(make_likelihood_filename(self,
                                                     "data",
                                                     self.orders_names_dict[order],
                                                     [variable.logprior_name for variable in variables_array],
@@ -2497,7 +2541,15 @@ class GSUMDiagnostics:
                            np.reshape(obs_like, (np.prod([len(random_var.var) for random_var in variables_array]))))
                 # np.savetxt('data/posterior_pdf_curvewise_SGT_SMS_500MeV_N3LO_Qsmoothmax_Qofprel_Elab_Lambdab_uniformlogprior_ls_nologprior_mpieff_uniformlogprior_Lambdab26pts213p90to1500p00_ls25pts1p00to300p00_mpieff24pts44p52to427p80.txt', np.reshape(obs_like, (np.prod([len(random_var.var) for random_var in variables_array]))))
 
-        marg_post_array, joint_post_array = marginalize_likelihoods(variables_array, like_list, order_num)
+        # we reshape obs_like so that observables are grouped sequentially, in order of increased order
+        like_list = obs_like
+        print(np.shape(like_list))
+        like_list = np.reshape(np.reshape(like_list, (np.shape(like_list)[0] // orders, orders) + np.shape(like_list)[1:], order = 'F'),
+                              np.shape(like_list))
+        print(np.shape(like_list))
+
+        if whether_plot_posteriors or whether_plot_corner:
+            marg_post_array, joint_post_array = marginalize_likelihoods(variables_array, like_list, order_num)
         # marg_post_list = []
         # joint_post_list = []
         #
@@ -2540,9 +2592,10 @@ class GSUMDiagnostics:
         # marg_post_array = np.reshape(marg_post_list, (len(variables_array), order_num), order='F')
         # joint_post_array = np.reshape(joint_post_list,
         #                               (len(variables_array) * (len(variables_array) - 1) // 2, order_num), order='F')
-
+        print(np.shape(marg_post_array))
         if whether_plot_posteriors:
             for (variable, result) in zip(variables_array, marg_post_array):
+                print(np.shape(result))
                 fig = plot_marg_posteriors(variable, result, posterior_label, Lb_colors, order_num,
                                            self.nn_orders, self.orders_labels_dict)
             #     # Plot each posterior and its summary statistics
@@ -2587,7 +2640,7 @@ class GSUMDiagnostics:
             #
             #     plt.show()
 
-                if 'fig' in locals() and whether_save:
+                if 'fig' in locals() and whether_save_plots:
                     fig.tight_layout()
 
                     fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' +
@@ -2707,7 +2760,7 @@ class GSUMDiagnostics:
                 #
                 # plt.show()
 
-                if 'fig' in locals() and whether_save:
+                if 'fig' in locals() and whether_save_plots:
                     fig.tight_layout()
 
                     fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' +
@@ -4554,6 +4607,7 @@ def marginalize_likelihoods(variables_array, like_list, order_num):
         comb_array = np.flip(comb_array[p], axis=0)
 
         for v in np.flip(np.roll(np.arange(0, np.shape(variables_array)[0], 1, dtype=int), 1)):
+            print("While marginalizing, " + str(v))
             joint_post = np.trapz(like, x=variables_array[v].var, axis=v)
 
             joint_post /= np.trapz(np.trapz(joint_post,
@@ -4565,9 +4619,9 @@ def marginalize_likelihoods(variables_array, like_list, order_num):
 
     # print(np.shape(marg_post_list))
     # print(np.shape(joint_post_list))
-    marg_post_array = np.reshape(marg_post_list, (len(variables_array), order_num), order='F')
+    marg_post_array = np.reshape(marg_post_list, (len(variables_array), order_num * np.shape(like_list)[0] // order_num), order='F')
     joint_post_array = np.reshape(joint_post_list,
-                                  (len(variables_array) * (len(variables_array) - 1) // 2, order_num), order='F')
+                                  (len(variables_array) * (len(variables_array) - 1) // 2, order_num * np.shape(like_list)[0] // order_num), order='F')
 
     return marg_post_array, joint_post_array
 
@@ -4585,10 +4639,11 @@ def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_
     """
     # Plot each posterior and its summary statistics
     fig, ax = plt.subplots(1, 1, figsize=(3.4, 3.4))
+    print("result has shape " + str(np.shape(result)))
 
     for i, posterior_raw in enumerate(result):
         # scales the posteriors so they're all the same height
-        # print(posterior_raw)
+        print("posterior_raw has shape " + str(np.shape(posterior_raw)))
         posterior = posterior_raw / (1.2 * np.max(posterior_raw))
         # Make the lines taper off
         vals_restricted = variable.var[posterior > 1e-2]
@@ -4596,7 +4651,7 @@ def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_
         # Plot and fill posterior, and add summary statistics
         ax.plot(vals_restricted, posterior - i, c='gray')
 
-        ax.fill_between(vals_restricted, -i, posterior - i, facecolor=colors_array[i])
+        ax.fill_between(vals_restricted, -i, posterior - i, facecolor=colors_array[i % order_num])
 
         bounds = np.zeros((2, 2))
         for j, p in enumerate([0.68, 0.95]):
@@ -4656,7 +4711,8 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
             mean_list.append(dist_mean)
             stddev_list.append(dist_stddev)
             dist_mean = sig_figs(dist_mean, 3)
-            dist_stddev = round_to_same_digits(dist_stddev, dist_mean)
+            dist_stddev = sig_figs(dist_stddev, 3)
+            # dist_stddev = round_to_same_digits(dist_stddev, dist_mean)
             ax_marg_array[variable_idx].set_title(rf'${variable.label}$ = {dist_mean} $\pm$ {dist_stddev}',
                                                   fontsize=18)
 
@@ -4665,14 +4721,12 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
             ax_marg_array[variable_idx].fill_between(variable.var, np.zeros_like(variable.var),
                                                      marg_post_array[variable_idx - 1, i],
                                                      facecolor=cmap(0.2), lw=1)
-            try:
+            if np.roll([variable.user_val for variable in variables_array], 1)[variable_idx] is not None:
                 ax_marg_array[variable_idx].axvline(
                     np.roll([variable.user_val for variable in variables_array], 1)[variable_idx], 0, 1,
                     c=gray, lw=1)
-            except:
-                pass
-            if variable_idx == np.shape(variables_array)[0] - 1:
-                ax_marg_array[variable_idx].set_xticklabels(variable.ticks)
+            # if variable_idx == np.shape(variables_array)[0] - 1:
+            #     ax_marg_array[variable_idx].set_xticklabels(variable.ticks)
 
         comb_array = np.array(np.meshgrid(np.arange(0, np.shape(variables_array)[0], 1, dtype=int),
                                           np.arange(0, np.shape(variables_array)[0], 1,
@@ -4691,46 +4745,59 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
                 [0, mean_list[comb_array[joint_idx, 1]] - 5 * stddev_list[comb_array[joint_idx, 1]]]),
                 top=mean_list[comb_array[joint_idx, 1]] + 5 * stddev_list[
                     comb_array[joint_idx, 1]])
-            try:
-                ax_joint_array[joint_idx].contour(np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-                                                  np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-                                                  joint,
-                                                  levels=[np.amax(joint) * level for level in \
-                                                          ([np.exp(-0.5 * r ** 2) for r in
-                                                            np.arange(9, 0, -0.5)] + [0.999])],
-                                                  cmap=cmap_name)
-                corr_coeff = correlation_coefficient(
-                    np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-                    np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-                    joint)
-            except:
-                ax_joint_array[joint_idx].contour(np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-                                                  np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-                                                  joint.T,
-                                                  levels=[np.amax(joint.T) * level for level in \
-                                                          ([np.exp(-0.5 * r ** 2) for r in
-                                                            np.arange(9, 0, -0.5)] + [0.999])],
-                                                  cmap=cmap_name)
-                corr_coeff = correlation_coefficient(
-                    np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-                    np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-                    joint.T)
+            # try:
+            #     print("In try, " + str(comb_array[joint_idx, :]))
+            #     ax_joint_array[joint_idx].contour(np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
+            #                                       np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
+            #                                       joint,
+            #                                       levels=[np.amax(joint) * level for level in \
+            #                                               ([np.exp(-0.5 * r ** 2) for r in
+            #                                                 np.arange(9, 0, -0.5)] + [0.999])],
+            #                                       cmap=cmap_name)
+            #     corr_coeff = correlation_coefficient(
+            #         np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
+            #         np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
+            #         joint)
+            # except:
+            #     print("In except, " + str(comb_array[joint_idx, :]))
+            #     ax_joint_array[joint_idx].contour(np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
+            #                                       np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
+            #                                       joint.T,
+            #                                       levels=[np.amax(joint) * level for level in \
+            #                                               ([np.exp(-0.5 * r ** 2) for r in
+            #                                                 np.arange(9, 0, -0.5)] + [0.999])],
+            #                                       cmap=cmap_name)
+            #     corr_coeff = correlation_coefficient(
+            #         np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
+            #         np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
+            #         joint.T)
+
+            if joint_idx == len(joint_post_array[:, i]) - 1:
+                joint = joint.T
+            ax_joint_array[joint_idx].contour(np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
+                                              np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
+                                              joint,
+                                              levels=[np.amax(joint) * level for level in \
+                                                      ([np.exp(-0.5 * r ** 2) for r in
+                                                        np.arange(9, 0, -0.5)] + [0.999])],
+                                              cmap=cmap_name)
+            corr_coeff = correlation_coefficient(
+                np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
+                np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
+                joint)
             ax_joint_array[joint_idx].text(.99, .99, rf'$\rho$ = {corr_coeff:.2f}',
                                            ha='right', va='top',
                                            transform=ax_joint_array[joint_idx].transAxes,
                                            fontsize=18)
-            try:
+
+            if np.roll([variable.user_val for variable in variables_array], 1)[comb_array[joint_idx, 0]] is not None:
                 ax_joint_array[joint_idx].axvline(
                     np.roll([variable.user_val for variable in variables_array], 1)[
                         comb_array[joint_idx, 0]], 0, 1, c=gray, lw=1)
-            except:
-                pass
-            try:
+            if np.roll([variable.user_val for variable in variables_array], 1)[comb_array[joint_idx, 1]] is not None:
                 ax_joint_array[joint_idx].axhline(
                     np.roll([variable.user_val for variable in variables_array], 1)[
                         comb_array[joint_idx, 1]], 0, 1, c=gray, lw=1)
-            except:
-                pass
 
         ax_title.text(.99, .99,
                     obs_name_corner + '\n' +
