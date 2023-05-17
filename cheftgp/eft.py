@@ -14,6 +14,7 @@ def Q_approx(p, Q_parametrization, Lambda_b, m_pi=138,
     Lambda_b (float) : value for the cutoff (in MeV)
     """
     if single_expansion:
+        # for expansions with the momentum p as the only soft scale
         m_pi = 0
 
     if Q_parametrization == "smoothmax":
@@ -38,8 +39,10 @@ def Q_approx(p, Q_parametrization, Lambda_b, m_pi=138,
         return q
 
 def Qsum_to_Qsmoothmax(m_pi):
+    # function that converts the denominator of the dimensionless expansion parameter
+    # from the Qsmoothmax to the Qsum prescription, based on a rough empirical formula,
+    # in terms of the value of m_pi in the numerator
     return m_pi / 320 + 1
-
 
 def p_approx(p_name, prel, degrees):
     """
@@ -67,10 +70,12 @@ def p_approx(p_name, prel, degrees):
 
 
 def deg_fn(deg_input, **kwargs):
+    # converts degrees to degrees
     return deg_input
 
 
 def neg_cos(deg_input, **kwargs):
+    # converts degrees to -cos(degrees)
     return -1 * np.cos(np.radians(deg_input))
 
 
@@ -103,10 +108,12 @@ def deg_to_qcm2(p_input, deg_input, **kwargs):
 
 
 def Elab_fn(E_lab, **kwargs):
+    # converts lab energy to lab energy
     return E_lab
 
 
 def sin_thing(deg, **kwargs):
+    # converts degrees to an abortive sine-based input space
     return np.array([np.sin(np.radians(d)) if d <= 90 else 2 - np.sin(np.radians(d)) for d in deg])
 
 

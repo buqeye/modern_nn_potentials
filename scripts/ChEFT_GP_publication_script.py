@@ -61,35 +61,35 @@ mpl.rc(
 
 edgewidth = 0.6
 
-# We get the NN data from a separate place in our github respository.
-nn_online_pot = "pwa93"
-nn_online_url = "https://github.com/buqeye/buqeyebox/blob/master/nn_scattering/NN-online-Observables.h5?raw=true"
-nno_response = urllib.request.urlopen(nn_online_url)
-nn_online_file = tables.open_file(
-    "nn_online_example.h5",
-    driver="H5FD_CORE",
-    driver_core_image=nno_response.read(),
-    driver_core_backing_store=0,
-)
-SGT_nn_online = nn_online_file.get_node("/" + nn_online_pot + "/SGT").read()
-DSG_nn_online = nn_online_file.get_node("/" + nn_online_pot + "/DSG").read()[:, :-1]
-AY_nn_online = nn_online_file.get_node("/" + nn_online_pot + "/PB").read()[:, :-1]
-A_nn_online = nn_online_file.get_node("/" + nn_online_pot + "/A").read()[:, :-1]
-D_nn_online = nn_online_file.get_node("/" + nn_online_pot + "/D").read()[:, :-1]
-AXX_nn_online = nn_online_file.get_node("/" + nn_online_pot + "/AXX").read()[:, :-1]
-AYY_nn_online = nn_online_file.get_node("/" + nn_online_pot + "/AYY").read()[:, :-1]
+# # We get the NN data from a separate place in our github respository.
+# nn_online_pot = "pwa93"
+# nn_online_url = "https://github.com/buqeye/buqeyebox/blob/master/nn_scattering/NN-online-Observables.h5?raw=true"
+# nno_response = urllib.request.urlopen(nn_online_url)
+# nn_online_file = tables.open_file(
+#     "nn_online_example.h5",
+#     driver="H5FD_CORE",
+#     driver_core_image=nno_response.read(),
+#     driver_core_backing_store=0,
+# )
+# SGT_nn_online = nn_online_file.get_node("/" + nn_online_pot + "/SGT").read()
+# DSG_nn_online = nn_online_file.get_node("/" + nn_online_pot + "/DSG").read()[:, :-1]
+# AY_nn_online = nn_online_file.get_node("/" + nn_online_pot + "/PB").read()[:, :-1]
+# A_nn_online = nn_online_file.get_node("/" + nn_online_pot + "/A").read()[:, :-1]
+# D_nn_online = nn_online_file.get_node("/" + nn_online_pot + "/D").read()[:, :-1]
+# AXX_nn_online = nn_online_file.get_node("/" + nn_online_pot + "/AXX").read()[:, :-1]
+# AYY_nn_online = nn_online_file.get_node("/" + nn_online_pot + "/AYY").read()[:, :-1]
 
-# creates a dictionary that links the NN online data for each observable to the
-# eventual predictions for that observable by a given potential scheme and scale
-online_data_dict = {
-    "SGT": SGT_nn_online,
-    "DSG": DSG_nn_online,
-    "AY": AY_nn_online,
-    "A": A_nn_online,
-    "D": D_nn_online,
-    "AXX": AXX_nn_online,
-    "AYY": AYY_nn_online,
-}
+# # creates a dictionary that links the NN online data for each observable to the
+# # eventual predictions for that observable by a given potential scheme and scale
+# online_data_dict = {
+#     "SGT": SGT_nn_online,
+#     "DSG": DSG_nn_online,
+#     "AY": AY_nn_online,
+#     "A": A_nn_online,
+#     "D": D_nn_online,
+#     "AXX": AXX_nn_online,
+#     "AYY": AYY_nn_online,
+# }
 
 # for each choice of scale and scheme, sets the total possible orders and nomenclature
 EKM0p8fm = ScaleSchemeBunch(
@@ -1031,8 +1031,7 @@ def gp_analysis(
                             #         **{"E_lab": np.linspace(1, 300, 50, dtype=np.dtype('f4')),
                             #            "interaction": nn_interaction})
                             ls_vals = np.linspace(1, 200, 100, dtype=np.dtype('f4'))
-                            lambda_vals = np.linspace(250, 1000, 101
-                                                      , dtype=np.dtype('f4'))
+                            lambda_vals = np.linspace(250, 1000, 101, dtype=np.dtype('f4'))
 
                             mesh_cart = gm.cartesian(lambda_vals, np.log(ls_vals), mpi_vals)
 

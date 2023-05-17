@@ -1,10 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
 def joint_plot(ratio=1, height=3):
-    """Taken from Seaborn JointGrid"""
+    """
+    Makes a plot for two random variables (two fully marginalized pdfs, one joint pdf).
+    Taken from Seaborn JointGrid.
+    """
     fig = plt.figure(figsize=(height, height))
     gsp = plt.GridSpec(ratio + 1, ratio + 1)
 
+    # uses GridSpec to add subplots
     ax_joint = fig.add_subplot(gsp[1:, :-1])
     ax_marg_x = fig.add_subplot(gsp[0, :-1], sharex=ax_joint)
     ax_marg_y = fig.add_subplot(gsp[1:, -1], sharey=ax_joint)
@@ -30,6 +34,7 @@ def joint_plot(ratio=1, height=3):
     utils.despine(ax=ax_marg_y, bottom=True)
     fig.tight_layout(h_pad=0, w_pad=0)
 
+    # sets axis ticks
     ax_marg_y.tick_params(axis='y', which='major', direction='out')
     ax_marg_x.tick_params(axis='x', which='major', direction='out')
     ax_marg_y.tick_params(axis='y', which='minor', direction='out')
@@ -41,13 +46,24 @@ def joint_plot(ratio=1, height=3):
     return fig, ax_joint, ax_marg_x, ax_marg_y
 
 def offset_xlabel(ax):
+    """
+    Sets x-axis ticklabels according to a certain style.
+    :param ax:
+    :return:
+    """
     ax.set_xticks([0])
     ax.set_xticklabels(labels=[0], fontdict=dict(color='w'))
     ax.tick_params(axis='x', length=0)
     return ax
 
 def corner_plot(n_plots=3, height=9):
-    """Taken from Seaborn JointGrid"""
+    """
+    Creates a square corner plot (of side length height) for n_plots random variables.
+    :param n_plots:
+    :param height:
+    :return:
+    """
+    # creates the figure
     fig = plt.figure(figsize=(height, height))
     gsp = plt.GridSpec(n_plots, n_plots, wspace=0.05, hspace=0.05)
 
@@ -63,6 +79,7 @@ def corner_plot(n_plots=3, height=9):
     #     print(ax_joint_array)
     #     print("ax_joint_array has shape " + str(np.shape(ax_joint_array)))
 
+    # adds and formats subplots
     for i in range(1, n_plots):
         for j in range(1, i + 1):
             if ((n_plots * i + j - 1) % n_plots != 0) and ((n_plots * i + j - 1) < (n_plots * (n_plots - 1))):
@@ -83,6 +100,8 @@ def corner_plot(n_plots=3, height=9):
                 # print("I have both sets of labels.")
                 fig.add_subplot(gsp[n_plots * i + j - 1])
     # print(fig.axes)
+
+    # reshapes the arrays of joint and fully marginalized pdfs
     ax_joint_array = np.reshape(fig.axes,
                                 int(n_plots * (n_plots - 1) / 2))
     # print(ax_joint_array)
@@ -105,6 +124,7 @@ def corner_plot(n_plots=3, height=9):
     # print(fig.axes)
     # print("ax_marg_array has shape " + str(np.shape(ax_marg_array)))
 
+    # creates a blank space with a title
     ax_title = fig.add_subplot(gsp[n_plots - 1])
     ax_title.axis('off')
 

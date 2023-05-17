@@ -59,7 +59,16 @@ class GPHyperparameters:
     def __init__(self, ls_class, center, ratio, nugget=1e-10, seed=None, df=np.inf,
                  disp=0, scale=1, sd=None):
         """
-        Class for the hyperparameters of a Gaussian process.
+        Class for the parameters of a Gaussian process.
+        :param ls_class:
+        :param center:
+        :param ratio:
+        :param nugget:
+        :param seed:
+        :param df:
+        :param disp:
+        :param scale:
+        :param sd:
         """
         self.ls = ls_class.ls_guess
         self.ls_lower = ls_class.ls_bound_lower
@@ -2592,7 +2601,7 @@ class GSUMDiagnostics:
         # marg_post_array = np.reshape(marg_post_list, (len(variables_array), order_num), order='F')
         # joint_post_array = np.reshape(joint_post_list,
         #                               (len(variables_array) * (len(variables_array) - 1) // 2, order_num), order='F')
-        print(np.shape(marg_post_array))
+        print("marg_post_array has shape " + str(np.shape(marg_post_array)))
         if whether_plot_posteriors:
             for (variable, result) in zip(variables_array, marg_post_array):
                 print(np.shape(result))
@@ -2651,6 +2660,7 @@ class GSUMDiagnostics:
 
         if whether_plot_corner:
             with plt.rc_context({"text.usetex": True}):
+                print("joint_post_array has shape " + str(np.shape(joint_post_array)))
                 fig = plot_corner_posteriors('Blues', order_num, variables_array, marg_post_array, joint_post_array, self, obs_name_corner)
                 # cmap_name = 'Blues'
                 # cmap = mpl.cm.get_cmap(cmap_name)
@@ -4646,8 +4656,9 @@ def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_
         print("posterior_raw has shape " + str(np.shape(posterior_raw)))
         posterior = posterior_raw / (1.2 * np.max(posterior_raw))
         # Make the lines taper off
-        vals_restricted = variable.var[posterior > 1e-2]
-        posterior = posterior[posterior > 1e-2]
+        # vals_restricted = variable.var[posterior > 1e-7]
+        # posterior = posterior[posterior > 1e-7]
+        vals_restricted = variable.var
         # Plot and fill posterior, and add summary statistics
         ax.plot(vals_restricted, posterior - i, c='gray')
 
@@ -4695,121 +4706,123 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
     cmap_name = 'Blues'
     cmap = mpl.cm.get_cmap(cmap_name)
 
-    for i in range(order_num):
-        # sets up axes
-        n_plots = np.shape(variables_array)[0]
-        fig, ax_joint_array, ax_marg_array, ax_title = corner_plot(n_plots=n_plots)
+    for obs_idx in 2 * np.arange(0, (np.shape(marg_post_array))[1] // order_num, 1, dtype = int):
+        print("obs_idx = " + str(obs_idx))
+        for i in range(order_num):
+            # sets up axes
+            n_plots = np.shape(variables_array)[0]
+            fig, ax_joint_array, ax_marg_array, ax_title = corner_plot(n_plots=n_plots)
 
-        mean_list = []
-        stddev_list = []
+            mean_list = []
+            stddev_list = []
 
-        for variable_idx, variable in enumerate(np.roll(variables_array, 1)):
-            # Now plot the marginal distributions
-            dist_mean, dist_stddev = mean_and_stddev(variable.var, marg_post_array[variable_idx - 1, i])
-            ax_marg_array[variable_idx].set_xlim(left=np.max([0, dist_mean - 5 * dist_stddev]),
-                                                 right=dist_mean + 5 * dist_stddev)
-            mean_list.append(dist_mean)
-            stddev_list.append(dist_stddev)
-            dist_mean = sig_figs(dist_mean, 3)
-            dist_stddev = sig_figs(dist_stddev, 3)
-            # dist_stddev = round_to_same_digits(dist_stddev, dist_mean)
-            ax_marg_array[variable_idx].set_title(rf'${variable.label}$ = {dist_mean} $\pm$ {dist_stddev}',
-                                                  fontsize=18)
+            for variable_idx, variable in enumerate(np.roll(variables_array, 1)):
+                # Now plot the marginal distributions
+                dist_mean, dist_stddev = mean_and_stddev(variable.var, marg_post_array[variable_idx - 1, i + obs_idx])
+                ax_marg_array[variable_idx].set_xlim(left=np.max([0, dist_mean - 5 * dist_stddev]),
+                                                     right=dist_mean + 5 * dist_stddev)
+                mean_list.append(dist_mean)
+                stddev_list.append(dist_stddev)
+                dist_mean = sig_figs(dist_mean, 3)
+                dist_stddev = sig_figs(dist_stddev, 3)
+                # dist_stddev = round_to_same_digits(dist_stddev, dist_mean)
+                ax_marg_array[variable_idx].set_title(rf'${variable.label}$ = {dist_mean} $\pm$ {dist_stddev}',
+                                                      fontsize=18)
 
-            ax_marg_array[variable_idx].plot(variable.var, marg_post_array[variable_idx - 1, i],
-                                             c=cmap(0.8), lw=1)
-            ax_marg_array[variable_idx].fill_between(variable.var, np.zeros_like(variable.var),
-                                                     marg_post_array[variable_idx - 1, i],
-                                                     facecolor=cmap(0.2), lw=1)
-            if np.roll([variable.user_val for variable in variables_array], 1)[variable_idx] is not None:
-                ax_marg_array[variable_idx].axvline(
-                    np.roll([variable.user_val for variable in variables_array], 1)[variable_idx], 0, 1,
-                    c=gray, lw=1)
-            # if variable_idx == np.shape(variables_array)[0] - 1:
-            #     ax_marg_array[variable_idx].set_xticklabels(variable.ticks)
+                ax_marg_array[variable_idx].plot(variable.var, marg_post_array[variable_idx - 1, i + obs_idx],
+                                                 c=cmap(0.8), lw=1)
+                ax_marg_array[variable_idx].fill_between(variable.var, np.zeros_like(variable.var),
+                                                         marg_post_array[variable_idx - 1, i + obs_idx],
+                                                         facecolor=cmap(0.2), lw=1)
+                if np.roll([variable.user_val for variable in variables_array], 1)[variable_idx] is not None:
+                    ax_marg_array[variable_idx].axvline(
+                        np.roll([variable.user_val for variable in variables_array], 1)[variable_idx], 0, 1,
+                        c=gray, lw=1)
+                # if variable_idx == np.shape(variables_array)[0] - 1:
+                #     ax_marg_array[variable_idx].set_xticklabels(variable.ticks)
 
-        comb_array = np.array(np.meshgrid(np.arange(0, np.shape(variables_array)[0], 1, dtype=int),
-                                          np.arange(0, np.shape(variables_array)[0], 1,
-                                                    dtype=int))).T.reshape(-1, 2)
-        comb_array = np.delete(comb_array, [comb[0] >= comb[1] for comb in comb_array], axis=0)
-        p = np.argsort(comb_array[:, 1])
-        comb_array = comb_array[p]
+            comb_array = np.array(np.meshgrid(np.arange(0, np.shape(variables_array)[0], 1, dtype=int),
+                                              np.arange(0, np.shape(variables_array)[0], 1,
+                                                        dtype=int))).T.reshape(-1, 2)
+            comb_array = np.delete(comb_array, [comb[0] >= comb[1] for comb in comb_array], axis=0)
+            p = np.argsort(comb_array[:, 1])
+            comb_array = comb_array[p]
 
-        for joint_idx, joint in enumerate(joint_post_array[:, i]):
-            # plots contours
-            ax_joint_array[joint_idx].set_xlim(left=np.max(
-                [0, mean_list[comb_array[joint_idx, 0]] - 5 * stddev_list[comb_array[joint_idx, 0]]]),
-                right=mean_list[comb_array[joint_idx, 0]] + 5 * stddev_list[
-                    comb_array[joint_idx, 0]])
-            ax_joint_array[joint_idx].set_ylim(bottom=np.max(
-                [0, mean_list[comb_array[joint_idx, 1]] - 5 * stddev_list[comb_array[joint_idx, 1]]]),
-                top=mean_list[comb_array[joint_idx, 1]] + 5 * stddev_list[
-                    comb_array[joint_idx, 1]])
-            # try:
-            #     print("In try, " + str(comb_array[joint_idx, :]))
-            #     ax_joint_array[joint_idx].contour(np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-            #                                       np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-            #                                       joint,
-            #                                       levels=[np.amax(joint) * level for level in \
-            #                                               ([np.exp(-0.5 * r ** 2) for r in
-            #                                                 np.arange(9, 0, -0.5)] + [0.999])],
-            #                                       cmap=cmap_name)
-            #     corr_coeff = correlation_coefficient(
-            #         np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-            #         np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-            #         joint)
-            # except:
-            #     print("In except, " + str(comb_array[joint_idx, :]))
-            #     ax_joint_array[joint_idx].contour(np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-            #                                       np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-            #                                       joint.T,
-            #                                       levels=[np.amax(joint) * level for level in \
-            #                                               ([np.exp(-0.5 * r ** 2) for r in
-            #                                                 np.arange(9, 0, -0.5)] + [0.999])],
-            #                                       cmap=cmap_name)
-            #     corr_coeff = correlation_coefficient(
-            #         np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-            #         np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-            #         joint.T)
+            for joint_idx, joint in enumerate(joint_post_array[:, i + obs_idx]):
+                # plots contours
+                ax_joint_array[joint_idx].set_xlim(left=np.max(
+                    [0, mean_list[comb_array[joint_idx, 0]] - 5 * stddev_list[comb_array[joint_idx, 0]]]),
+                    right=mean_list[comb_array[joint_idx, 0]] + 5 * stddev_list[
+                        comb_array[joint_idx, 0]])
+                ax_joint_array[joint_idx].set_ylim(bottom=np.max(
+                    [0, mean_list[comb_array[joint_idx, 1]] - 5 * stddev_list[comb_array[joint_idx, 1]]]),
+                    top=mean_list[comb_array[joint_idx, 1]] + 5 * stddev_list[
+                        comb_array[joint_idx, 1]])
+                # try:
+                #     print("In try, " + str(comb_array[joint_idx, :]))
+                #     ax_joint_array[joint_idx].contour(np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
+                #                                       np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
+                #                                       joint,
+                #                                       levels=[np.amax(joint) * level for level in \
+                #                                               ([np.exp(-0.5 * r ** 2) for r in
+                #                                                 np.arange(9, 0, -0.5)] + [0.999])],
+                #                                       cmap=cmap_name)
+                #     corr_coeff = correlation_coefficient(
+                #         np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
+                #         np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
+                #         joint)
+                # except:
+                #     print("In except, " + str(comb_array[joint_idx, :]))
+                #     ax_joint_array[joint_idx].contour(np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
+                #                                       np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
+                #                                       joint.T,
+                #                                       levels=[np.amax(joint) * level for level in \
+                #                                               ([np.exp(-0.5 * r ** 2) for r in
+                #                                                 np.arange(9, 0, -0.5)] + [0.999])],
+                #                                       cmap=cmap_name)
+                #     corr_coeff = correlation_coefficient(
+                #         np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
+                #         np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
+                #         joint.T)
 
-            if joint_idx == len(joint_post_array[:, i]) - 1:
-                joint = joint.T
-            ax_joint_array[joint_idx].contour(np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-                                              np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-                                              joint,
-                                              levels=[np.amax(joint) * level for level in \
-                                                      ([np.exp(-0.5 * r ** 2) for r in
-                                                        np.arange(9, 0, -0.5)] + [0.999])],
-                                              cmap=cmap_name)
-            corr_coeff = correlation_coefficient(
-                np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-                np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-                joint)
-            ax_joint_array[joint_idx].text(.99, .99, rf'$\rho$ = {corr_coeff:.2f}',
-                                           ha='right', va='top',
-                                           transform=ax_joint_array[joint_idx].transAxes,
-                                           fontsize=18)
+                if joint_idx == len(joint_post_array[:, i + obs_idx]) - 1:
+                    joint = joint.T
+                ax_joint_array[joint_idx].contour(np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
+                                                  np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
+                                                  joint,
+                                                  levels=[np.amax(joint) * level for level in \
+                                                          ([np.exp(-0.5 * r ** 2) for r in
+                                                            np.arange(9, 0, -0.5)] + [0.999])],
+                                                  cmap=cmap_name)
+                corr_coeff = correlation_coefficient(
+                    np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
+                    np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
+                    joint)
+                ax_joint_array[joint_idx].text(.99, .99, rf'$\rho$ = {corr_coeff:.2f}',
+                                               ha='right', va='top',
+                                               transform=ax_joint_array[joint_idx].transAxes,
+                                               fontsize=18)
 
-            if np.roll([variable.user_val for variable in variables_array], 1)[comb_array[joint_idx, 0]] is not None:
-                ax_joint_array[joint_idx].axvline(
-                    np.roll([variable.user_val for variable in variables_array], 1)[
-                        comb_array[joint_idx, 0]], 0, 1, c=gray, lw=1)
-            if np.roll([variable.user_val for variable in variables_array], 1)[comb_array[joint_idx, 1]] is not None:
-                ax_joint_array[joint_idx].axhline(
-                    np.roll([variable.user_val for variable in variables_array], 1)[
-                        comb_array[joint_idx, 1]], 0, 1, c=gray, lw=1)
+                if np.roll([variable.user_val for variable in variables_array], 1)[comb_array[joint_idx, 0]] is not None:
+                    ax_joint_array[joint_idx].axvline(
+                        np.roll([variable.user_val for variable in variables_array], 1)[
+                            comb_array[joint_idx, 0]], 0, 1, c=gray, lw=1)
+                if np.roll([variable.user_val for variable in variables_array], 1)[comb_array[joint_idx, 1]] is not None:
+                    ax_joint_array[joint_idx].axhline(
+                        np.roll([variable.user_val for variable in variables_array], 1)[
+                            comb_array[joint_idx, 1]], 0, 1, c=gray, lw=1)
 
-        ax_title.text(.99, .99,
-                    obs_name_corner + '\n' +
-                    GP.scheme + '\,' + GP.scale + '\n' +
-                    r'' + GP.orders_labels_dict[max(GP.nn_orders) - order_num + 1 + i] + '\n' +
-                    r'$Q_{\mathrm{' + GP.Q_param + '}}$' + '\n' +
-                    GP.p_param + '\n' +
-                    GP.vs_what,
-                    ha='right', va='top',
-                    transform=ax_title.transAxes,
-                    fontsize=25)
+            ax_title.text(.99, .99,
+                        obs_name_corner + '\n' +
+                        GP.scheme + '\,' + GP.scale + '\n' +
+                        r'' + GP.orders_labels_dict[max(GP.nn_orders) - order_num + 1 + i] + '\n' +
+                        r'$Q_{\mathrm{' + GP.Q_param + '}}$' + '\n' +
+                        GP.p_param + '\n' +
+                        GP.vs_what,
+                        ha='right', va='top',
+                        transform=ax_title.transAxes,
+                        fontsize=25)
 
-    plt.show()
+            plt.show()
 
     return fig

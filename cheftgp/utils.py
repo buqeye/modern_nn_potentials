@@ -3,36 +3,31 @@ import decimal
 import gsum as gm
 
 def correlation_coefficient(x, y, pdf):
+    """
+    :param x:
+    :param y:
+    :param pdf:
+    :return:
+    """
     # normalizes the pdf
     pdf /= np.trapz(np.trapz(pdf, x=y, axis=0), x=x, axis=0)
-    # print("pdf = " + str(pdf))
 
     # finds the maximum value
     pdf_max = np.amax(pdf)
-    # print("pdf_max = " + str(pdf_max))
 
     # figures out the x and y coordinates of the max
-    # print(np.argwhere(pdf == pdf_max))
     x_max = x[np.argwhere(pdf == pdf_max)[0, 1]]
-    # print("x_max = " + str(x_max))
     y_max = y[np.argwhere(pdf == pdf_max)[0, 0]]
-    # print("y_max = " + str(y_max))
 
     # finds variance in x and y
     sigma_x_sq = np.trapz(
         np.trapz(np.tile((x - x_max) ** 2, (len(y), 1)) * pdf,
                  x=x, axis=1),
         x=y, axis=0)
-    # print("sigma_x_sq = " + str(sigma_x_sq))
-    #     sigma_x_sq = np.trapz(pdf @ (x - x_max)**2, x = y, axis = 0)
-    #     print("sigma_x_sq = " + str(sigma_x_sq))
     sigma_y_sq = np.trapz(
         np.trapz(np.tile(np.reshape((y - y_max) ** 2, (len(y), 1)), (1, len(x))) * pdf,
                  x=y, axis=0),
         x=x, axis=0)
-    #     print("sigma_y_sq = " + str(sigma_y_sq))
-    #     sigma_y_sq = np.trapz((y - y_max)**2 @ pdf, x = x, axis = 0)
-    # print("sigma_y_sq = " + str(sigma_y_sq))
 
     # finds sigmaxy
     sigma_xy_sq = np.trapz(
@@ -40,38 +35,33 @@ def correlation_coefficient(x, y, pdf):
                  np.tile(x - x_max, (len(y), 1)) * pdf,
                  x=x, axis=1),
         x=y, axis=0)
-    # print("sigma_xy_sq = " + str(sigma_xy_sq))
-    #     sigma_xy_sq = (y - y_max) @ pdf @ (x - x_max)
-    #     print("sigma_xy_sq = " + str(sigma_xy_sq))
 
     # finds the correlation coefficient
     corr_coeff = sigma_xy_sq / (np.sqrt(sigma_x_sq) * np.sqrt(sigma_y_sq))
-    # print(corr_coeff)
 
     return corr_coeff
 
 
 def mean_and_stddev(x, pdf):
+    """
+    :param x:
+    :param pdf:
+    :return:
+    """
     # normalizes the pdf
     pdf /= np.trapz(pdf, x=x, axis=0)
-    # print("pdf = " + str(pdf))
 
     # finds the maximum value
     pdf_max = np.amax(pdf)
-    # print("pdf_max = " + str(pdf_max))
 
     # figures out the x coordinate of the max
-    # print(np.argwhere(pdf == pdf_max))
     x_max = x[np.argwhere(pdf == pdf_max)][0]
-    # print("x_max = " + str(x_max))
 
     # finds the mean
     mean = np.trapz(x * pdf, x=x, axis=0)
-    # print("mean = " + str(mean))
 
     # finds the standard deviation
     sigma_x = np.sqrt(np.trapz((x - x_max) ** 2 * pdf, x=x, axis=0))
-    # print("sigma_x = " + str(sigma_x))
 
     return mean, sigma_x
 
@@ -95,14 +85,10 @@ def sig_figs(number, n_figs):
         np.float64(
             np.format_float_scientific(
                 number, precision=n_figs - 1)))
-    # print("number_string = " + number_string)
 
     # eliminates any unncessary zeros and decimal points
-    # while((np.float64(number_string) > 10**(n_figs - 1)) and ((number_string[-1] == '0') or (number_string[-1] == '.'))):
-    #     number_string = number_string[:-1]
     if ((np.float64(number_string) > 10 ** (n_figs - 1)) and (number_string[-1] == '.')):
         number_string = number_string[:-1]
-        # print("We chopped off the decimal point.")
         return np.int(number_string)
     else:
         return np.float64(number_string)
@@ -111,22 +97,30 @@ def sig_figs(number, n_figs):
 
 
 def round_to_same_digits(number, comparand):
-    # print("We called the function correctly.")
-    # print(str(comparand))
-    # print(str(decimal.Decimal(str(comparand)).as_tuple().exponent))
+    """
+    :param number:
+    :param comparand:
+    :return:
+    """
     if decimal.Decimal(str(comparand)).as_tuple().exponent == 0:
         return int(number)
     else:
         return np.around(number, decimals = decimal.Decimal(str(comparand)).as_tuple().exponent)
 
 def compute_posterior_intervals(model, data, ratios, ref, orders, max_idx, logprior, Lb):
-    # print("We're about to fit.")
-    # print("data has shape " + str(np.shape(data[:max_idx+1].T)))
-    # print("ratio has shape " + str(np.shape(ratios[0])))
-    # print("ref has shape " + str(np.shape(ref)))
-    # print("orders has shape " + str(np.shape(orders[:max_idx+1])))
+    """
+    For pointwise the pointwise model.
+    :param model:
+    :param data:
+    :param ratios:
+    :param ref:
+    :param orders:
+    :param max_idx:
+    :param logprior:
+    :param Lb:
+    :return:
+    """
     model.fit(data[:max_idx+1].T, ratio=ratios[0], ref=ref, orders=orders[:max_idx+1])
-    # raise ValueError("something")
     log_like = np.array([model.log_likelihood(ratio=ratio) for ratio in ratios])
     log_like += logprior
     posterior = np.exp(log_like - np.max(log_like))
@@ -134,7 +128,6 @@ def compute_posterior_intervals(model, data, ratios, ref, orders, max_idx, logpr
 
     bounds = np.zeros((2,2))
     for i, p in enumerate([0.68, 0.95]):
-        # bounds[i] = gm.hpd_pdf(pdf=posterior, alpha=p, x=Lb, disp=False)
         bounds[i] = gm.hpd_pdf(pdf=posterior, alpha=p, x=Lb)
 
     median = gm.median_pdf(pdf=posterior, x=Lb)
