@@ -1030,7 +1030,7 @@ def gp_analysis(
                             # ls_vals = VsQuantity.input_space(
                             #         **{"E_lab": np.linspace(1, 300, 50, dtype=np.dtype('f4')),
                             #            "interaction": nn_interaction})
-                            ls_vals = np.linspace(1, 200, 50, dtype=np.dtype('f8'))
+                            ls_vals = np.linspace(1, 200, 50, dtype=np.dtype('f4'))
                             lambda_vals = np.linspace(300, 800, 51, dtype=np.dtype('f4'))
 
                             mesh_cart = gm.cartesian(lambda_vals, np.log(ls_vals), mpi_vals)
