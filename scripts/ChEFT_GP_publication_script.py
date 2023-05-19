@@ -1026,12 +1026,12 @@ def gp_analysis(
                             )
 
                             # sets the meshes for the random variable arrays
-                            mpi_vals = np.linspace(100, 400, 99, dtype=np.dtype('f4'))
+                            mpi_vals = np.linspace(100, 400, 49, dtype=np.dtype('f4'))
                             # ls_vals = VsQuantity.input_space(
                             #         **{"E_lab": np.linspace(1, 300, 50, dtype=np.dtype('f4')),
                             #            "interaction": nn_interaction})
-                            ls_vals = np.linspace(1, 200, 100, dtype=np.dtype('f4'))
-                            lambda_vals = np.linspace(250, 1000, 101, dtype=np.dtype('f4'))
+                            ls_vals = np.linspace(1, 200, 50, dtype=np.dtype('f4'))
+                            lambda_vals = np.linspace(300, 800, 51, dtype=np.dtype('f4'))
 
                             mesh_cart = gm.cartesian(lambda_vals, np.log(ls_vals), mpi_vals)
 
@@ -1289,5 +1289,5 @@ gp_analysis(
     save_lambdapost_pointwise_bool=False,
     save_lambdapost_curvewise_bool=True,
     save_plotzilla_bool=False,
-    filename_addendum="_newbool",
+    filename_addendum="_trunctp2",
 )

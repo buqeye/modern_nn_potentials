@@ -2225,7 +2225,7 @@ class GSUMDiagnostics:
                     sgt_data = SGT[:, np.isin(t_lab, t_lab_pts)]
 
                     # creates and fits the TruncationGP object
-                    gp_post_sgt = gm.TruncationGP(self.kernel,
+                    gp_post_sgt = gm.TruncationTP(self.kernel,
                                                       # ref=sgt_data[0],
                                                         ref=sgt_data[-1],
                                                       ratio=interp_f_ratio_posterior,
@@ -2281,7 +2281,7 @@ class GSUMDiagnostics:
                             # print("dsg_data = " + str(dsg_data))
                             # print("yref = " + str(dsg_data[0]))
                             # creates and fits the TruncationGP object
-                            gp_post_dsg = gm.TruncationGP(self.kernel,
+                            gp_post_dsg = gm.TruncationTP(self.kernel,
                                                           # ref=dsg_data[0],
                                                           ref=dsg_data[-1],
                                                           # ref=np.ones((len(degrees_pts))),
@@ -2345,7 +2345,7 @@ class GSUMDiagnostics:
                             print("dsg_data has shape " + str(np.shape(dsg_data)))
 
                             # creates and fits the TruncationGP object
-                            gp_post_dsg = gm.TruncationGP(self.kernel,
+                            gp_post_dsg = gm.TruncationTP(self.kernel,
                                                               # ref=dsg_data[0],
                                                                 ref=dsg_data[-1],
                                                               # ref=np.ones((len(degrees_pts))),
@@ -2411,7 +2411,7 @@ class GSUMDiagnostics:
                                     (len(self.nn_orders_full), -1))
 
                                 # creates and fits the TruncationGP object
-                                gp_fits_spins.append(gm.TruncationGP(self.kernel,
+                                gp_fits_spins.append(gm.TruncationTP(self.kernel,
                                                                          ref=np.ones((len(degrees_pts))),
                                                                          ratio=interp_f_ratio_posterior,
                                                                          center=self.center,
@@ -2477,7 +2477,7 @@ class GSUMDiagnostics:
                                                   (len(self.nn_orders_full), -1))
 
                                 # creates and fits the TruncationGP object
-                                gp_fits_spins.append(gm.TruncationGP(self.kernel,
+                                gp_fits_spins.append(gm.TruncationTP(self.kernel,
                                                                   ref=np.ones((len(t_lab_pts))),
                                                                   ratio=interp_f_ratio_posterior,
                                                                   center=self.center,
