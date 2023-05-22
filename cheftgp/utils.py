@@ -4,10 +4,13 @@ import gsum as gm
 
 def correlation_coefficient(x, y, pdf):
     """
-    :param x:
-    :param y:
-    :param pdf:
-    :return:
+    Calculates the correlation coefficient of a 2-d posterior pdf.
+
+    Parameters
+    ----------
+    x (array) : 1-d array of x-axis mesh points.
+    y (array) : 2-d array of y-axis mesh points.
+    pdf (array) : array of probabilities with the dimensions (len(x), len(y)).
     """
     # normalizes the pdf
     pdf /= np.trapz(np.trapz(pdf, x=y, axis=0), x=x, axis=0)
@@ -44,9 +47,12 @@ def correlation_coefficient(x, y, pdf):
 
 def mean_and_stddev(x, pdf):
     """
-    :param x:
-    :param pdf:
-    :return:
+    Returns the mean and standard deviation of a 1-d posterior pdf.
+
+    Parameters
+    ----------
+    x (array) : array of x-axis mesh points.
+    pdf (array) : array of probabilities of dimension (len(x)).
     """
     # normalizes the pdf
     pdf /= np.trapz(pdf, x=x, axis=0)
@@ -70,15 +76,12 @@ def sig_figs(number, n_figs):
     """
     Parameters
     ----------
-    number : float
-        A number.
-    n_figs : int
-        Number of significant figures.
+    number (float) : a number.
+    n_figs (int) : number of significant figures.
 
     Returns
     -------
-    None.
-
+    number_string (str) : number with n_figs significant figures
     """
     # formats the number as a string
     number_string = np.format_float_positional(
@@ -93,14 +96,16 @@ def sig_figs(number, n_figs):
     else:
         return np.float64(number_string)
 
-
-
-
 def round_to_same_digits(number, comparand):
     """
-    :param number:
-    :param comparand:
-    :return:
+    Parameters
+    ----------
+    number (float) : a number.
+    comparand (float) : another number.
+
+    Returns
+    -------
+    number with the same number of digits past the decimal point as comparand.
     """
     if decimal.Decimal(str(comparand)).as_tuple().exponent == 0:
         return int(number)
@@ -109,16 +114,24 @@ def round_to_same_digits(number, comparand):
 
 def compute_posterior_intervals(model, data, ratios, ref, orders, max_idx, logprior, Lb):
     """
-    For pointwise the pointwise model.
-    :param model:
-    :param data:
-    :param ratios:
-    :param ref:
-    :param orders:
-    :param max_idx:
-    :param logprior:
-    :param Lb:
-    :return:
+    Calculates a likelihood for the breakdown scale using a pointwise (uncorrelated) GP model.
+
+    Parameters
+    ----------
+    model (TruncationPointwise) : model to be fit.
+    data (array) : data for the observable of interest.
+    ratios (array) : 1-d mesh of dimensionless expansion parameter values across the region of fitting.
+    ref (array) : 1-d mesh of reference scale values across the region of fitting.
+    orders (int list) : list of orders for which fitting data is available
+    max_idx (int) : highest order for calculation.
+    logprior (array) : 1-d log-prior to add to calculated likelihood pdf.
+    Lb (array) : 1-d array of values for Lambda_b (breakdown scale) mesh (in MeV).
+
+    Returns
+    -------
+    posterior (array) : 1-d array of probability values at each value of Lb.
+    bounds (array) : array of dimension (2, 2) with upper and lower bounds of 68% and 95% confidence intervals.
+    median (float) : median value of posterior.
     """
     model.fit(data[:max_idx+1].T, ratio=ratios[0], ref=ref, orders=orders[:max_idx+1])
     log_like = np.array([model.log_likelihood(ratio=ratio) for ratio in ratios])
@@ -136,6 +149,15 @@ def compute_posterior_intervals(model, data, ratios, ref, orders, max_idx, logpr
 def find_nearest_val(array, value):
     """
     Finds the value in array closest to value and returns that entry.
+
+    Parameters
+    ----------
+    array (array) : 1-d array.
+    value (float) : number.
+
+    Returns
+    -------
+    (float) entry in array closest to value.
     """
     array = np.asarray(array)
     idx = (np.abs(array - value)).argmin()
@@ -144,6 +166,15 @@ def find_nearest_val(array, value):
 def find_nearest_idx(array, value):
     """
     Finds the value in array closest to value and returns that entry.
+
+    Parameters
+    ----------
+    array (array) : 1-d array.
+    value (float) : number.
+
+    Returns
+    -------
+    idx (int) : index of the entry in array closest to value.
     """
     array = np.asarray(array)
     idx = (np.abs(array - value)).argmin()
@@ -153,6 +184,16 @@ def mask_mapper(array_from, array_to, mask_from):
     """
     Converts from one mask to another by mapping the entries of the first to the nearest-in-
     value entries in the second.
+
+    Parameters
+    ----------
+    array_from (float array) : 1-d array.
+    array_to (float array) : 1-d array.
+    mask_from (bool array) : 1-d array of boolean values for array_from.
+
+    Returns
+    -------
+    (bool array) : indices to be applied to array_to to get as close as possible in value to array_from[mask_from].
     """
     mask_array = [( np.argwhere(array_to == find_nearest_val(array_to, i)) ) for i in array_from[mask_from]]
     mask = np.zeros(len(array_from))

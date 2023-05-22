@@ -59,16 +59,25 @@ class GPHyperparameters:
     def __init__(self, ls_class, center, ratio, nugget=1e-10, seed=None, df=np.inf,
                  disp=0, scale=1, sd=None):
         """
-        Class for the parameters of a Gaussian process.
-        :param ls_class:
-        :param center:
-        :param ratio:
-        :param nugget:
-        :param seed:
-        :param df:
-        :param disp:
-        :param scale:
-        :param sd:
+        Information necessary for Gaussian process hyperparameters.
+
+        Parameters
+        ----------
+        ls_class (LengthScale) : LengthScale object with relevant information.
+        center (float) : initial guess for the mean of the distribution.
+        ratio (array) : array of values for the dimensionless expansion parameter
+        nugget (float) : small number used for allowing white-noise error into fitting procedures.
+            default : 1e-10
+        seed (int) : seed for RNGs in fitting procedure.
+            default : None
+        df (int) : number of degrees of freedom.
+            default : np.inf
+        disp (int) : initial guess for the standard deviation.
+            default : 0
+        scale (float) : estimate for the standard deviation.
+            default : 1
+        sd (float) : fixed standard deviation for fitting procedure.
+            default : None (i.e., it will calculate one afresh using the fitting algorithm)
         """
         self.ls = ls_class.ls_guess
         self.ls_lower = ls_class.ls_bound_lower
@@ -87,11 +96,16 @@ class GPHyperparameters:
 class FileNaming:
     def __init__(self, scheme, scale, Q_param, p_param, filename_addendum=""):
         """
+        Information necessary to name files for output figures.
+
+        Parameters
+        ----------
         scheme (str) : name of the scheme
         scale (str) : name of the scale
         Q_param (str) : name of the Q parametrization
         p_param (str) : name of the p parametrization
         filename_addendum (str) : optional extra string
+            default : ""
         """
         self.scheme = scheme
         self.scale = scale
@@ -111,6 +125,20 @@ class PosteriorBounds:
 
 class RandomVariable:
     def __init__(self, var, user_val, name, label, units, ticks, logprior, logprior_name):
+        """
+        Instantiates the information in a class necessary for a random variable for Bayesian parameter estimation.
+
+        Parameters
+        ----------
+        var (array) : 1-d array of the variable's values.
+        user_val (float) : user-set value for the variable.
+        name (str) : name for the random variable.
+        label (str) : markdown-formatted label for plots.
+        units (str) : abbreviation for the variable's units.
+        ticks (array) : location of ticks for 1-d plots of the variable.
+        logprior (array) : 1-d array of the log-prior for the variable.
+        logprior_name (str) : name for the log-prior
+        """
         self.var = var
         self.user_val = user_val
         self.name = name
@@ -135,8 +163,10 @@ class OrderInfo:
         lightcolors_array (array): list of lighter versions of colors_array
         orders_names_dict (dict): dictionary method linking the numerical indices (int)
             of EFT orders and their corresponding abbreviations (str)
+            default : None
         orders_names_dict (dict): dictionary method linking the numerical indices (int)
             of EFT orders and their corresponding math-mode-formatted labels (str)
+            default: None
         """
         self.orders_full = np.array(orders_array)
         # print(self.orders_full)
@@ -159,20 +189,18 @@ class OrderInfo:
 
 
 class InputSpaceBunch:
-    """
-    Class for an input space (i.e., x-coordinate)
-    name (string) : (abbreviated) name for the input space
-    input_space (array) : x-coordinate mesh points for evaluation
-    mom (array) : momenta for the purpose of calculating the ratio
-    caption (string) : caption for the x-axis of the coefficient plots for that input space
-    tick_marks (array) : major tick marks for the x-axis of the coefficient plots
-    title_pieces (array) : information to be concatenated into the coefficient plot's title
-    """
-
     def __init__(self, name, input_space, mom, caption, title_pieces):
+        """
+        Class for an input space (i.e., x-coordinate)
+
+        name (string) : (abbreviated) name for the input space
+        input_space (array) : x-coordinate mesh points for evaluation
+        mom (array) : momenta for the purpose of calculating the ratio
+        caption (string) : caption for the x-axis of the coefficient plots for that input space
+        title_pieces (array) : information to be concatenated into the coefficient plot's title
+        """
         self.name = name
         self.input_space = input_space
-        # self.mom = mom * np.ones(len(input_space))
         self.mom = mom
         self.caption = caption
         self.title_pieces = title_pieces
@@ -187,22 +215,23 @@ class InputSpaceBunch:
 
 
 class ObservableBunch:
-    """
-    Class for an observable
-    name (string) : (abbreviated) name for the observable
-    data (array) : coefficient values at each order over the mesh
-    energies (array) : energies at which the observable will be evaluated (None for observables
-        plotted against energy)
-    title (string) : title for the coefficient plot
-    ref_type (string) : tells whether the reference scale (to be divided out of the coefficient
-        values) has dimension (e.g., the case of the cross section) or not (e.g., the case of the
-    spin observables). Can only be "dimensionless" or "dimensionful".
-    constraint (array or None): constraint on the values of the observable, including the
-        name of the quantity for which the constraint applies.
-        For dimensionful (i.e., cross-section) observables, should be None.
-    """
-
     def __init__(self, name, data, energies, angles, title, ref_type, constraint=None):
+        """
+        Class for an observable
+        name (string) : (abbreviated) name for the observable
+        data (array) : coefficient values at each order over the mesh
+        energies (array) : energies at which the observable will be evaluated (should be None for observables
+            plotted against angle)
+        angles (array) : angles at which the observable will be evaluated (should be None for observables
+            plotted against energy)
+        title (string) : title for the coefficient plot
+        ref_type (string) : tells whether the reference scale (to be divided out of the coefficient
+            values) has dimension (e.g., the case of the cross section) or not (e.g., the case of the
+        spin observables). Can only be "dimensionless" or "dimensionful".
+        constraint (array or None): constraint on the values of the observable, including the
+            name of the quantity for which the constraint applies.
+            For dimensionful (i.e., cross-section) observables, should be None.
+        """
         self.name = name
         self.data = data
         self.energies = energies
@@ -215,14 +244,13 @@ class ObservableBunch:
 
 
 class Interpolation:
-    """
-    Class for an interpolater
-    x (array) : x-coordinate data
-    y (array) : y-coordinate data
-    kind (string) : scipy.interpolate.interp1d interpolater 'kind'
-    """
-
     def __init__(self, x, y, kind='cubic'):
+        """
+        Class for an interpolater
+        x (array) : x-coordinate data
+        y (array) : y-coordinate data
+        kind (string) : scipy.interpolate.interp1d interpolater 'kind'
+        """
         self.x = x
         self.y = y
         self.kind = kind
@@ -230,44 +258,43 @@ class Interpolation:
 
 
 class TrainTestSplit:
-    """
-    Class for an input space (i.e., x-coordinate)
-
-    name (str) : (abbreviated) name for the combination of training and testing masks
-    n_train (int) : number of intervals into which to split x, with training points at the
-        edges of each interval
-    n_test_inter (int) : number of subintervals into which to split the intervals between
-        training points, with testing points at the edges of each subinterval
-    isclose_factor (float) : fraction of the total input space for the tolerance of making
-        sure that training and testing points don't coincide
-    offset_train_min_factor (float) : fraction above the minimum of the input space where
-        the first potential training point ought to go
-    offset_train_max_factor (float) : fraction below the maximum of the input space where
-        the last potential training point ought to go
-    xmin_train_factor (float) : fraction of the input space below which there ought not to
-        be training points
-    xmax_train_factor (float) : fraction of the input space above which there ought not to
-        be training points
-    offset_test_min_factor (float) : fraction above the minimum of the input space where
-        the first potential testing point ought to go
-    offset_test_max_factor (float) : fraction below the maximum of the input space where
-        the last potential testing point ought to go
-    xmin_test_factor (float) : fraction of the input space below which there ought not to
-        be testing points
-    xmax_test_factor (float) : fraction of the input space above which there ought not to
-        be testing points
-    train_at_ends (bool) : whether training points should be allowed at or near the
-        endpoints of x
-    test_at_ends (bool) : whether testing points should be allowed at or near the endpoints
-        of x
-    """
-
-    def __init__(self, name, n_train, n_test_inter, isclose_factor=0.01, \
-                 offset_train_min_factor=0, offset_train_max_factor=0, \
-                 xmin_train_factor=0, xmax_train_factor=1, \
-                 offset_test_min_factor=0, offset_test_max_factor=0, \
-                 xmin_test_factor=0, xmax_test_factor=1, \
+    def __init__(self, name, n_train, n_test_inter, isclose_factor=0.01,
+                 offset_train_min_factor=0, offset_train_max_factor=0,
+                 xmin_train_factor=0, xmax_train_factor=1,
+                 offset_test_min_factor=0, offset_test_max_factor=0,
+                 xmin_test_factor=0, xmax_test_factor=1,
                  train_at_ends=True, test_at_ends=False):
+        """
+        Class for an input space (i.e., x-coordinate)
+
+        name (str) : (abbreviated) name for the combination of training and testing masks
+        n_train (int) : number of intervals into which to split x, with training points at the
+            edges of each interval
+        n_test_inter (int) : number of subintervals into which to split the intervals between
+            training points, with testing points at the edges of each subinterval
+        isclose_factor (float) : fraction of the total input space for the tolerance of making
+            sure that training and testing points don't coincide
+        offset_train_min_factor (float) : fraction above the minimum of the input space where
+            the first potential training point ought to go
+        offset_train_max_factor (float) : fraction below the maximum of the input space where
+            the last potential training point ought to go
+        xmin_train_factor (float) : fraction of the input space below which there ought not to
+            be training points
+        xmax_train_factor (float) : fraction of the input space above which there ought not to
+            be training points
+        offset_test_min_factor (float) : fraction above the minimum of the input space where
+            the first potential testing point ought to go
+        offset_test_max_factor (float) : fraction below the maximum of the input space where
+            the last potential testing point ought to go
+        xmin_test_factor (float) : fraction of the input space below which there ought not to
+            be testing points
+        xmax_test_factor (float) : fraction of the input space above which there ought not to
+            be testing points
+        train_at_ends (bool) : whether training points should be allowed at or near the
+            endpoints of x
+        test_at_ends (bool) : whether testing points should be allowed at or near the endpoints
+            of x
+        """
         self.name = name
         self.n_train = n_train
         self.n_test_inter = n_test_inter
@@ -338,6 +365,19 @@ class ScaleSchemeBunch:
     # os.path.join(os.path.abspath(__file__), os.pardir)
     def __init__(self, file_name, orders_full, cmaps, potential_string, cutoff_string,
                  dir_path=""):
+        """
+        Information relevant to a particular scheme (regulator choice) and scale (cutoff choice).
+
+        Parameters
+        ----------
+        file_name (str) : name for files that includes information about the scale and scheme.
+        orders_full (int array) : array with the full range of orders for that scheme and scale.
+        cmaps (cmap) : array of matplotlib cmap objects corresponding to each order of coefficient.
+        potential_string (str) : name of potential (scheme).
+        cutoff_string (str) : name of cutoff (scale).
+        dir_path (str) : path to directory where data is stored on each scale/scheme combination.
+            default : ""
+        """
         self.file_name = file_name
         self.orders_full = orders_full
         self.cmaps = cmaps
@@ -352,6 +392,15 @@ class ScaleSchemeBunch:
         self.light_colors = [cmap(0.35) for cmap in self.cmaps]
 
     def get_data(self, observable_string):
+        """
+        Parameters
+        ----------
+        observable_string : abbreviation for the observable of interest.
+
+        Returns
+        -------
+        obs_data (array) : array of observable data.
+        """
         response = h5py.File(self.full_path, "r")
         obs_data = np.array(response[observable_string][:])
         response.close()
@@ -359,21 +408,21 @@ class ScaleSchemeBunch:
 
 
 class LengthScale:
-    """
-    Class for setting a guess for the Gaussian process correlation length scale and its
-    bounds
-    x (array) : x-coordinate data
-    ls_guess_factor (float) : fraction of the total input space length for the initial
-        length scale guess
-    ls_bound_lower_factor (float) : fraction of the initial length scale guess for the lower
-        bound of fitting
-    ls_bound_upper_factor (float) : fraction of the initial length scale guess for the upper
-        bound of fitting
-    whether_fit (bool) : should the fit procedure be performed?
-    """
-
     def __init__(self, name, ls_guess_factor, ls_bound_lower_factor,
                  ls_bound_upper_factor, whether_fit=True):
+        """
+        Class for setting a guess for the Gaussian process correlation length scale and its
+        bounds.
+
+        Parameters
+        ----------
+        name (str) : name for the instance.
+        ls_guess_factor (float) : ls_guess_factor * total length of the input space = initial guess for length scale.
+        ls_bound_lower_factor (float) : ls_bound_lower_factor * total length of the input space = lower bound for length scale fitting.
+        ls_bound_upper_factor (float) : ls_bound_upper_factor * total length of the input space = upper bound for length scale fitting.
+        whether_fit (bool) : should the length scale be fitted or kept constant?
+            default : True
+        """
         self.name = name
         self.ls_guess_factor = ls_guess_factor
         self.ls_bound_lower_factor = ls_bound_lower_factor
@@ -381,6 +430,11 @@ class LengthScale:
         self.whether_fit = whether_fit
 
     def make_guess(self, x):
+        """
+        Parameters
+        ----------
+        x (array) : input space.
+        """
         self.ls_guess = (np.max(x) - np.min(x)) * self.ls_guess_factor
 
         if self.whether_fit:
@@ -394,22 +448,25 @@ class LengthScale:
 class GSUMDiagnostics:
     def __init__(self, nn_interaction, observable, Lambda_b, inputspace, traintestsplit,
                  gphyperparameters, orderinfo, filenaming,
-                 fixed_quantity=[None, None, None],
-                 x_quantity=[None, None], posteriorgrid=None):
+                 fixed_quantity=[None, None, None, None],
+                 x_quantity=[None, None, None], posteriorgrid=None):
         """
         Class for everything involving Jordan Melendez's GSUM library for observables that
         can be plotted against angle.
-        nn_interaction (str) : two-letter string for two nucleons interacting in observables
-        observable (ObservableBunch) : observable being plotted
-        Lambda_b (float) : cutoff (MeV)
-        inputspace (InputSpaceBunch) : input space against which the observable is plotted
-        traintestsplit (TrainTestSplit) : training and testing masks
-        gphyperparameters (GPHyperparameters) : parameters for fitted Gaussian process
-        orderinfo (OrderInfo) : information about the EFT orders and their colors
-        filenaming (FileNaming) : strings for naming the save files
-        E_lab (float) : lab energy (MeV) at which to evaluate the observable
-        E_lab_x (float array) : lab-energy (MeV) x-coordinate mesh over which the GP is calculated, plotted, and fitted
-        posteriorgrid (PosteriorBounds) : xy-grid over which to plot the Lambda-ell posterior pdf
+
+        Parameters
+        ----------
+        nn_interaction (str) : two-letter string for two nucleons interacting in observables.
+        observable (ObservableBunch) : observable being plotted.
+        Lambda_b (float) : breakdown scale (in MeV).
+        inputspace (InputSpaceBunch) : input space against which the observable is plotted.
+        traintestsplit (TrainTestSplit) : training and testing masks.
+        gphyperparameters (GPHyperparameters) : parameters for fitted Gaussian process.
+        orderinfo (OrderInfo) : information about the EFT orders and their colors.
+        filenaming (FileNaming) : strings for naming the save files.
+        fixed_quantity (list) : [fixed_quantity name (str), fixed_quantity value (float), fixed_quantity array (array), fixed_quantity units (str)]
+        x_quantity (list) : [x_quantity name (str), x_quantity array (array), x_quantity units (str)]
+        posteriorgrid (PosteriorBounds) : xy-grid over which to plot the Lambda-ell posterior pdf.
         """
         self.nn_interaction = nn_interaction
 
@@ -4503,6 +4560,19 @@ class GSUMDiagnostics:
                               self.filename_addendum).replace('_0MeVlab_', '_'))
 
 def interp_f_ratio_posterior(x_map, x_interp, p, Q_param, mpi_var, lambda_var):
+    """
+    Function for interpolating between the input space and the ratio across that input space.
+
+    Parameters
+    ----------
+    x_map (array) : array of points onto which to map.
+    x_interp (array) : array of points from which to map.
+    p (array) : momentum/momenta for calculating the ratio (dimensionless expansion parameter).
+    Q_param (str) : type of Q parametrization.
+        Can be "smoothmax", "max", or "sum".
+    mpi_var (float) : value of the (effective) pion mass (in MeV) for calculating the ratio.
+    mpi_var (float) : value of the breakdown scale (in MeV) for calculating the ratio.
+    """
     X = np.ravel(x_map)
 
     return (interp1d(x_interp, Q_approx(p, Q_param, Lambda_b=lambda_var, m_pi=mpi_var)
@@ -4514,6 +4584,21 @@ def make_likelihood_filename(self,
         logpriors_names,
         random_vars_array,
 ):
+    """
+    Information for naming posterior pdf output files.
+
+    Parameters
+    ----------
+    self (GSUMObj) : GSUM object with information on naming files.
+    folder (str) : folder name.
+    order_name (str) : abbreviation for the highest calculated order.
+    logpriors_names (str list) : list of names for the log-priors added to the likelihood.
+    random_vars_array (RandomVariable list) : list of RandomVariable objects.
+
+    Returns
+    ----------
+    (str) : file name.
+    """
     filename = (
             str(folder)
             + "/"
@@ -4549,17 +4634,22 @@ def make_likelihood_filename(self,
 
 def calc_loglike_ray(mesh_cart, batch_size, log_likelihood, gp_post, input_space, testing_pts):
     """
+    Calculates the log-likelihood for a set of inputs.
 
-    :param mesh_cart:
-    :param batch_size:
-    :param log_likelihood:
-    :param gp_post:
-    :param input_space:
-    :param testing_pts:
-    :param variables_array:
-    :return:
+    Parameters
+    ----------
+    mesh_cart (array) : Cartesian array of all possible ordered tuples of random variable meshes.
+    batch_size (int) : batch size for Ray.
+    log_likelihood (Ray) : Ray object with function for calculating the log-likelihood.
+    gp_post (TruncationGP) : fitted Gaussian process object.
+    input_space (array) : input space.
+    testing_pts (array) : subset of the input space where evaluation of the log-likelihood will occur.
+
+    Returns
+    ----------
+    log_like (array) : log-likelihood generated by the function log_likelihood.
     """
-    # calculates the posterior using ray
+    # calculates the likelihood using ray
     log_like_ids = []
     for i in range(0, len(mesh_cart), batch_size):
         batch = mesh_cart[i: i + batch_size]
@@ -4571,10 +4661,16 @@ def calc_loglike_ray(mesh_cart, batch_size, log_likelihood, gp_post, input_space
     return log_like
 def add_logpriors(variables_array, obs_loglike):
     """
+    Adds N log-priors to an N-dimensional array.
 
-    :param variables_array:
-    :param obs_loglike:
-    :return:
+    Parameters
+    ----------
+    variables_array (RandomVariable list) : list of RandomVariable objects.
+    obs_loglike (array) : log-likelihood to which to add the log-priors.
+
+    Returns
+    ----------
+    obs_loglike (array) : log-likelihood after the log-priors have been added to it.
     """
     for i, logprior in enumerate([variable.logprior for variable in variables_array]):
         obs_loglike += np.transpose(np.tile(logprior,
@@ -4589,6 +4685,20 @@ def add_logpriors(variables_array, obs_loglike):
     return obs_loglike
 
 def marginalize_likelihoods(variables_array, like_list, order_num):
+    """
+    Marginalizes likelihoods into all possible 1- and 2-d posteriors.
+
+    Parameters
+    ----------
+    variables_array (RandomVariable list) : list of RandomVariable objects.
+    like_list (array) : list of likelihoods.
+    order_num (int) : total number of orders in the evaluation.
+
+    Returns
+    ----------
+    marg_post_array (array) : array of fully marginalized single-variable posteriors.
+    joint_post_array (array) : array of fully marginalized joint posteriors.
+    """
     marg_post_list = []
     joint_post_list = []
 
@@ -4637,15 +4747,11 @@ def marginalize_likelihoods(variables_array, like_list, order_num):
 
 def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_orders, orders_labels_dict):
     """
+    Plots the fully marginalized posteriors.
 
-    :param variables_array:
-    :param marg_post_array:
-    :param y_label:
-    :param colors_array:
-    :param order_num:
-    :param nn_orders:
-    :param orders_labels_dict:
-    :return:
+    Parameters
+    ----------
+
     """
     # Plot each posterior and its summary statistics
     fig, ax = plt.subplots(1, 1, figsize=(3.4, 3.4))

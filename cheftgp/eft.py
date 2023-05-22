@@ -12,6 +12,10 @@ def Q_approx(p, Q_parametrization, Lambda_b, m_pi=138,
     p (float or array) : momentum (in MeV)
     Q_parametrization (str) : can be "smoothmax", "max", or "sum"
     Lambda_b (float) : value for the cutoff (in MeV)
+    m_pi (float) : value for the pion mass (in MeV)
+        default : 138
+    single_expansion (bool) : whether the soft scale should take into account only p
+        default : False
     """
     if single_expansion:
         # for expansions with the momentum p as the only soft scale
@@ -85,10 +89,8 @@ def deg_to_qcm(p_input, deg_input, **kwargs):
 
     Parameters
     ----------
-    p_rel       = float
-                  relative momentum given in MeV.
-    degrees     = number
-                  angle measure given in degrees
+    p_input (float) : relative momentum given in MeV.
+    deg_input (float) : angle measure given in degrees
     """
     return p_input * np.sqrt(2 * (1 - np.cos(np.radians(deg_input))))
 
@@ -99,10 +101,8 @@ def deg_to_qcm2(p_input, deg_input, **kwargs):
 
     Parameters
     ----------
-    p_rel       = float
-                  relative momentum given in MeV.
-    degrees     = number
-                  angle measure given in degrees
+    p_input (float) : relative momentum given in MeV.
+    deg_input (float) : angle measure given in degrees.
     """
     return (p_input * np.sqrt(2 * (1 - np.cos(np.radians(deg_input))))) ** (2)
 
@@ -123,21 +123,25 @@ def softmax_mom(p, q, n=5):
 
     Parameters
     ----------
-    p       = float
-            one interpolant.
-    q       = float
-            another interpolant.
-    n       = float
-            scaling parameter.
+    p (float) : one interpolant.
+    q (float) : another interpolant.
+    n (float) : scaling parameter.
+        default : 5
     """
     return 1 / n * math.log(1.01 ** (n * p) + 1.01 ** (n * q), 1.01)
 
 def Lb_logprior(Lambda_b):
-    """Melendez et al., Eq. (31)"""
+    """
+    Uniform log-prior for the breakdown scale.
+    Similar to Melendez et al., Eq. (31)
+    """
     # return np.where((300 <= Lambda_b) & (Lambda_b <= 1500), np.log(1. / Lambda_b), -np.inf)
     return np.where((200 <= Lambda_b) & (Lambda_b <= 2000), 0, -np.inf)
 
 def mpieff_logprior(m_pi):
-    """Melendez et al., Eq. (31)"""
+    """
+    Uniform log-prior for the effective pion mass.
+    Similar to Melendez et al., Eq. (31)
+    """
     # return np.where((50 <= m_pi) & (m_pi <= 300), np.log(1. / m_pi), -np.inf)
     return np.where((10 <= m_pi) & (m_pi <= 1000), 0, -np.inf)

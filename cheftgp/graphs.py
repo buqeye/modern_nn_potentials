@@ -48,8 +48,10 @@ def joint_plot(ratio=1, height=3):
 def offset_xlabel(ax):
     """
     Sets x-axis ticklabels according to a certain style.
-    :param ax:
-    :return:
+
+    Parameters
+    ----------
+    ax (Axes) : the Axes object on which to plot
     """
     ax.set_xticks([0])
     ax.set_xticklabels(labels=[0], fontdict=dict(color='w'))
@@ -59,9 +61,11 @@ def offset_xlabel(ax):
 def corner_plot(n_plots=3, height=9):
     """
     Creates a square corner plot (of side length height) for n_plots random variables.
-    :param n_plots:
-    :param height:
-    :return:
+
+    Parameters
+    ----------
+    n_plots (int) : number of random variables, and therefore also the number of plots on the diagonal
+    height (float) : side length, in inches, of the plot
     """
     # creates the figure
     fig = plt.figure(figsize=(height, height))
@@ -131,6 +135,19 @@ def corner_plot(n_plots=3, height=9):
     return fig, ax_joint_array, ax_marg_array, ax_title
 
 def draw_summary_statistics(bounds68, bounds95, median, height=0, ax=None):
+    """
+    Draws two sets of confidence intervals on the plot of a posterior pdf.
+
+    Parameters
+    ----------
+    bounds68 (array) : lower and upper bounds of the 68% confidence interval.
+    bounds95 (array) : lower and upper bounds of the 95% confidence interval.
+    median (float) : median of the distribution.
+    height (float) : vertical offset of the plotting.
+        default : 0
+    ax (Axes) : Axes object on which to plot.
+        default : None
+    """
     if ax is None:
         ax = plt.gca()
     ax.plot(bounds68, [height, height], c='gray', lw=6, solid_capstyle='round')
