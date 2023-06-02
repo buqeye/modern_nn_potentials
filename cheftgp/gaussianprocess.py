@@ -5,7 +5,8 @@ from scipy.interpolate import interp1d
 from .utils import versatile_train_test_split, compute_posterior_intervals, sig_figs, correlation_coefficient, \
     round_to_same_digits, mean_and_stddev
 from .scattering import E_to_p
-from .graphs import draw_summary_statistics, corner_plot, offset_xlabel, joint_plot
+from .graphs import draw_summary_statistics, corner_plot, offset_xlabel, joint_plot, setup_rc_params, plot_marg_posteriors, \
+    plot_corner_posteriors, softblack, gray, edgewidth, text_bbox
 from .eft import Q_approx, Lb_logprior, mpieff_logprior
 import h5py
 import ray
@@ -17,43 +18,44 @@ from sklearn.gaussian_process.kernels import RBF, WhiteKernel
 import itertools
 import time
 
-softblack = 'k'  # Looks better when printed on tex file
-gray = '0.7'
-edgewidth = 0.6
-
-mpl.rcParams['figure.dpi'] = 180
-mpl.rcParams['font.size'] = 9
-mpl.rcParams['text.usetex'] = True
-mpl.rcParams['font.family'] = 'serif'
-
-mpl.rcParams['axes.labelsize'] = 14 # 9
-mpl.rcParams['axes.edgecolor'] = softblack
-mpl.rcParams['axes.xmargin'] = 0
-mpl.rcParams['axes.labelcolor'] = softblack
-mpl.rcParams['axes.linewidth']
-
-mpl.rcParams['ytick.direction'] = 'in'
-mpl.rcParams['xtick.direction'] = 'in'
-mpl.rcParams['xtick.labelsize'] = 11 # 9
-mpl.rcParams['ytick.labelsize'] = 11 # 9
-mpl.rcParams['xtick.color'] = softblack
-mpl.rcParams['ytick.color'] = softblack
-mpl.rcParams['xtick.minor.size'] = 2.4
-mpl.rcParams['ytick.minor.size'] = 2.4
-
-mpl.rcParams['legend.title_fontsize'] = 9
-mpl.rcParams['legend.fontsize'] = 14 # 9
-mpl.rcParams['legend.edgecolor'] = 'inherit'  # inherits from axes.edgecolor, to match
-mpl.rcParams['legend.facecolor'] = (1, 1, 1, 0.6)  # Set facecolor with its own alpha, so edgecolor is unaffected
-mpl.rcParams['legend.fancybox'] = True
-mpl.rcParams['legend.borderaxespad'] = 0.8
-mpl.rcParams['legend.framealpha'] = None  # Do not set overall alpha (affects edgecolor). Handled by facecolor above
-mpl.rcParams['patch.linewidth'] = 0.8  # This is for legend edgewidth, since it does not have its own option
-
-mpl.rcParams['lines.markersize'] = 10
-
-text_bbox = dict(boxstyle='round', fc=(1, 1, 1, 0.6), ec=softblack, lw=0.8)
-mpl.rc('savefig', transparent=False, bbox='tight', pad_inches=0.05, dpi=300, format='pdf')
+# softblack = 'k'  # Looks better when printed on tex file
+# gray = '0.7'
+# edgewidth = 0.6
+#
+# mpl.rcParams['figure.dpi'] = 180
+# mpl.rcParams['font.size'] = 9
+# mpl.rcParams['text.usetex'] = True
+# mpl.rcParams['font.family'] = 'serif'
+#
+# mpl.rcParams['axes.labelsize'] = 14 # 9
+# mpl.rcParams['axes.edgecolor'] = softblack
+# mpl.rcParams['axes.xmargin'] = 0
+# mpl.rcParams['axes.labelcolor'] = softblack
+# mpl.rcParams['axes.linewidth']
+#
+# mpl.rcParams['ytick.direction'] = 'in'
+# mpl.rcParams['xtick.direction'] = 'in'
+# mpl.rcParams['xtick.labelsize'] = 11 # 9
+# mpl.rcParams['ytick.labelsize'] = 11 # 9
+# mpl.rcParams['xtick.color'] = softblack
+# mpl.rcParams['ytick.color'] = softblack
+# mpl.rcParams['xtick.minor.size'] = 2.4
+# mpl.rcParams['ytick.minor.size'] = 2.4
+#
+# mpl.rcParams['legend.title_fontsize'] = 9
+# mpl.rcParams['legend.fontsize'] = 14 # 9
+# mpl.rcParams['legend.edgecolor'] = 'inherit'  # inherits from axes.edgecolor, to match
+# mpl.rcParams['legend.facecolor'] = (1, 1, 1, 0.6)  # Set facecolor with its own alpha, so edgecolor is unaffected
+# mpl.rcParams['legend.fancybox'] = True
+# mpl.rcParams['legend.borderaxespad'] = 0.8
+# mpl.rcParams['legend.framealpha'] = None  # Do not set overall alpha (affects edgecolor). Handled by facecolor above
+# mpl.rcParams['patch.linewidth'] = 0.8  # This is for legend edgewidth, since it does not have its own option
+#
+# mpl.rcParams['lines.markersize'] = 10
+#
+# text_bbox = dict(boxstyle='round', fc=(1, 1, 1, 0.6), ec=softblack, lw=0.8)
+# mpl.rc('savefig', transparent=False, bbox='tight', pad_inches=0.05, dpi=300, format='pdf')
+setup_rc_params()
 
 class GPHyperparameters:
     def __init__(self, ls_class, center, ratio, nugget=1e-10, seed=None, df=np.inf,
@@ -401,10 +403,13 @@ class ScaleSchemeBunch:
         -------
         obs_data (array) : array of observable data.
         """
-        response = h5py.File(self.full_path, "r")
-        obs_data = np.array(response[observable_string][:])
-        response.close()
-        return obs_data
+        try:
+            response = h5py.File(self.full_path, "r")
+            obs_data = np.array(response[observable_string][:])
+            response.close()
+            return obs_data
+        except:
+            raise Exception("Data could not be found at " + self.full_path + ".")
 
 
 class LengthScale:
@@ -919,54 +924,54 @@ class GSUMDiagnostics:
         -------
         Figure with plot.
         """
-        try:
-            # calculates and plots the pivoted Cholesky decomposition
-            self.gp.kernel_
+        # try:
+        # calculates and plots the pivoted Cholesky decomposition
+        self.gp.kernel_
 
-            if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
-                dX = np.array([[self.x[i]] for i in self.constraint[0]])
-                self.mean, self.cov = self.gp.predict(self.X_test,
-                                                      Xc=dX,
-                                                      y=np.array(self.constraint[1]),
-                                                      return_std=False,
-                                                      return_cov=True)
-            else:
-                self.mean = self.gp.mean(self.X_test)
-                self.cov = self.gp.cov(self.X_test)
-            self.gr_dgn = gm.GraphicalDiagnostic(self.coeffs_test,
-                                                 self.mean,
-                                                 self.cov,
-                                                 colors=self.colors,
-                                                 gray=gray,
-                                                 black=softblack)
+        if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
+            dX = np.array([[self.x[i]] for i in self.constraint[0]])
+            self.mean, self.cov = self.gp.predict(self.X_test,
+                                                  Xc=dX,
+                                                  y=np.array(self.constraint[1]),
+                                                  return_std=False,
+                                                  return_cov=True)
+        else:
+            self.mean = self.gp.mean(self.X_test)
+            self.cov = self.gp.cov(self.X_test)
+        self.gr_dgn = gm.GraphicalDiagnostic(self.coeffs_test,
+                                             self.mean,
+                                             self.cov,
+                                             colors=self.colors,
+                                             gray=gray,
+                                             black=softblack)
 
-            with plt.rc_context({"text.usetex": True}):
-                if ax is None:
-                    # fig, ax = plt.subplots(figsize=(3.2, 3.2))
-                    fig, ax = plt.subplots(figsize=(2.1, 2.1))
+        with plt.rc_context({"text.usetex": True}):
+            if ax is None:
+                # fig, ax = plt.subplots(figsize=(3.2, 3.2))
+                fig, ax = plt.subplots(figsize=(2.1, 2.1))
 
-                self.gr_dgn.pivoted_cholesky_errors(ax=ax, title=None)
-                ax.set_xticks(np.arange(2, self.n_test_pts + 1, 2))
-                ax.set_xticks(np.arange(1, self.n_test_pts + 1, 2), minor=True)
-                ax.text(0.05, 0.95, r'$\mathrm{D}_{\mathrm{PC}}$', bbox=text_bbox,
-                        transform=ax.transAxes, va='top', ha='left')
-                ax.set_ylim(-6, 6)
+            self.gr_dgn.pivoted_cholesky_errors(ax=ax, title=None)
+            ax.set_xticks(np.arange(2, self.n_test_pts + 1, 2))
+            ax.set_xticks(np.arange(1, self.n_test_pts + 1, 2), minor=True)
+            ax.text(0.05, 0.95, r'$\mathrm{D}_{\mathrm{PC}}$', bbox=text_bbox,
+                    transform=ax.transAxes, va='top', ha='left')
+            ax.set_ylim(-6, 6)
 
-                plt.show()
+            plt.show()
 
-                if 'fig' in locals() and whether_save:
-                    fig.tight_layout()
+            if 'fig' in locals() and whether_save:
+                fig.tight_layout()
 
-                    fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' + self.observable_name + \
-                                 '_' + 'pc_vs_index' + '_' + str(self.fixed_quantity_value) + str(
-                                self.fixed_quantity_units) + '_' + \
-                                 self.scheme + '_' + self.scale + '_Q' + self.Q_param + '_' + self.vs_what + \
-                                 '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' + \
-                                 self.train_pts_loc + '_' + self.p_param +
-                                 self.filename_addendum).replace('_0MeVlab_', '_'))
+                fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' + self.observable_name + \
+                             '_' + 'pc_vs_index' + '_' + str(self.fixed_quantity_value) + str(
+                            self.fixed_quantity_units) + '_' + \
+                             self.scheme + '_' + self.scale + '_Q' + self.Q_param + '_' + self.vs_what + \
+                             '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' + \
+                             self.train_pts_loc + '_' + self.p_param +
+                             self.filename_addendum).replace('_0MeVlab_', '_'))
 
-        except:
-            print("Error in calculating or plotting the pivoted Cholesky decomposition.")
+        # except:
+        #     print("Error in calculating or plotting the pivoted Cholesky decomposition.")
 
     def plot_posterior_pdf(self, ax_joint=None, ax_marg_x=None,
                            ax_marg_y=None, whether_save=True):
@@ -2282,7 +2287,7 @@ class GSUMDiagnostics:
                     sgt_data = SGT[:, np.isin(t_lab, t_lab_pts)]
 
                     # creates and fits the TruncationGP object
-                    gp_post_sgt = gm.TruncationTP(self.kernel,
+                    gp_post_sgt = gm.TruncationGP(self.kernel,
                                                       # ref=sgt_data[0],
                                                         ref=sgt_data[-1],
                                                       ratio=interp_f_ratio_posterior,
@@ -2338,7 +2343,7 @@ class GSUMDiagnostics:
                             # print("dsg_data = " + str(dsg_data))
                             # print("yref = " + str(dsg_data[0]))
                             # creates and fits the TruncationGP object
-                            gp_post_dsg = gm.TruncationTP(self.kernel,
+                            gp_post_dsg = gm.TruncationGP(self.kernel,
                                                           # ref=dsg_data[0],
                                                           ref=dsg_data[-1],
                                                           # ref=np.ones((len(degrees_pts))),
@@ -2402,7 +2407,7 @@ class GSUMDiagnostics:
                             print("dsg_data has shape " + str(np.shape(dsg_data)))
 
                             # creates and fits the TruncationGP object
-                            gp_post_dsg = gm.TruncationTP(self.kernel,
+                            gp_post_dsg = gm.TruncationGP(self.kernel,
                                                               # ref=dsg_data[0],
                                                                 ref=dsg_data[-1],
                                                               # ref=np.ones((len(degrees_pts))),
@@ -2468,7 +2473,7 @@ class GSUMDiagnostics:
                                     (len(self.nn_orders_full), -1))
 
                                 # creates and fits the TruncationGP object
-                                gp_fits_spins.append(gm.TruncationTP(self.kernel,
+                                gp_fits_spins.append(gm.TruncationGP(self.kernel,
                                                                          ref=np.ones((len(degrees_pts))),
                                                                          ratio=interp_f_ratio_posterior,
                                                                          center=self.center,
@@ -2534,7 +2539,7 @@ class GSUMDiagnostics:
                                                   (len(self.nn_orders_full), -1))
 
                                 # creates and fits the TruncationGP object
-                                gp_fits_spins.append(gm.TruncationTP(self.kernel,
+                                gp_fits_spins.append(gm.TruncationGP(self.kernel,
                                                                   ref=np.ones((len(t_lab_pts))),
                                                                   ratio=interp_f_ratio_posterior,
                                                                   center=self.center,
@@ -4744,191 +4749,3 @@ def marginalize_likelihoods(variables_array, like_list, order_num):
                                   (len(variables_array) * (len(variables_array) - 1) // 2, order_num * np.shape(like_list)[0] // order_num), order='F')
 
     return marg_post_array, joint_post_array
-
-def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_orders, orders_labels_dict):
-    """
-    Plots the fully marginalized posteriors.
-
-    Parameters
-    ----------
-
-    """
-    # Plot each posterior and its summary statistics
-    fig, ax = plt.subplots(1, 1, figsize=(3.4, 3.4))
-    print("result has shape " + str(np.shape(result)))
-
-    for i, posterior_raw in enumerate(result):
-        # scales the posteriors so they're all the same height
-        print("posterior_raw has shape " + str(np.shape(posterior_raw)))
-        posterior = posterior_raw / (1.2 * np.max(posterior_raw))
-        # Make the lines taper off
-        # vals_restricted = variable.var[posterior > 1e-7]
-        # posterior = posterior[posterior > 1e-7]
-        vals_restricted = variable.var
-        # Plot and fill posterior, and add summary statistics
-        ax.plot(vals_restricted, posterior - i, c='gray')
-
-        ax.fill_between(vals_restricted, -i, posterior - i, facecolor=colors_array[i % order_num])
-
-        bounds = np.zeros((2, 2))
-        for j, p in enumerate([0.68, 0.95]):
-            bounds[j] = gm.hpd_pdf(pdf=posterior_raw, alpha=p, x=variable.var)
-
-        median = gm.median_pdf(pdf=posterior_raw, x=variable.var)
-
-        draw_summary_statistics(*bounds, median, ax=ax, height=-i)
-
-    # Plot formatting
-    ax.set_yticks([0])
-    ax.set_yticklabels([y_label])
-    ax.tick_params(axis='both', which='both', direction='in')
-    ax.tick_params(which='major', length=0)
-    ax.tick_params(which='minor', length=7, right=True)
-    ax.set_xticks(variable.ticks)
-    ax.set_xlabel((r'$' + variable.label + r'$ (' + variable.units + ')').replace('()', ''))
-    ax.legend(title=r'$\mathrm{pr}(' + variable.label + r' \, | \, \vec{\mathbf{y}}_{k}, \mathbf{f})$',
-              handles=[Patch(facecolor=colors_array[o],
-                             edgecolor='gray',
-                             linewidth=1,
-                             label=orders_labels_dict[(np.sort(nn_orders))[-1 - o]])
-                       for o in range(0, order_num)])
-    ax.grid(axis='x')
-    ax.set_axisbelow(True)
-
-    plt.show()
-
-    return fig
-
-def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_array, joint_post_array, GP, obs_name_corner):
-    """
-
-    :param order_num:
-    :param variables_array:
-    :param marg_post_array:
-    :param joint_post_array:
-    :param title:
-    :return:
-    """
-    cmap_name = 'Blues'
-    cmap = mpl.cm.get_cmap(cmap_name)
-
-    for obs_idx in 2 * np.arange(0, (np.shape(marg_post_array))[1] // order_num, 1, dtype = int):
-        print("obs_idx = " + str(obs_idx))
-        for i in range(order_num):
-            # sets up axes
-            n_plots = np.shape(variables_array)[0]
-            fig, ax_joint_array, ax_marg_array, ax_title = corner_plot(n_plots=n_plots)
-
-            mean_list = []
-            stddev_list = []
-
-            for variable_idx, variable in enumerate(np.roll(variables_array, 1)):
-                # Now plot the marginal distributions
-                dist_mean, dist_stddev = mean_and_stddev(variable.var, marg_post_array[variable_idx - 1, i + obs_idx])
-                ax_marg_array[variable_idx].set_xlim(left=np.max([0, dist_mean - 5 * dist_stddev]),
-                                                     right=dist_mean + 5 * dist_stddev)
-                mean_list.append(dist_mean)
-                stddev_list.append(dist_stddev)
-                dist_mean = sig_figs(dist_mean, 3)
-                dist_stddev = sig_figs(dist_stddev, 3)
-                # dist_stddev = round_to_same_digits(dist_stddev, dist_mean)
-                ax_marg_array[variable_idx].set_title(rf'${variable.label}$ = {dist_mean} $\pm$ {dist_stddev}',
-                                                      fontsize=18)
-
-                ax_marg_array[variable_idx].plot(variable.var, marg_post_array[variable_idx - 1, i + obs_idx],
-                                                 c=cmap(0.8), lw=1)
-                ax_marg_array[variable_idx].fill_between(variable.var, np.zeros_like(variable.var),
-                                                         marg_post_array[variable_idx - 1, i + obs_idx],
-                                                         facecolor=cmap(0.2), lw=1)
-                if np.roll([variable.user_val for variable in variables_array], 1)[variable_idx] is not None:
-                    ax_marg_array[variable_idx].axvline(
-                        np.roll([variable.user_val for variable in variables_array], 1)[variable_idx], 0, 1,
-                        c=gray, lw=1)
-                # if variable_idx == np.shape(variables_array)[0] - 1:
-                #     ax_marg_array[variable_idx].set_xticklabels(variable.ticks)
-
-            comb_array = np.array(np.meshgrid(np.arange(0, np.shape(variables_array)[0], 1, dtype=int),
-                                              np.arange(0, np.shape(variables_array)[0], 1,
-                                                        dtype=int))).T.reshape(-1, 2)
-            comb_array = np.delete(comb_array, [comb[0] >= comb[1] for comb in comb_array], axis=0)
-            p = np.argsort(comb_array[:, 1])
-            comb_array = comb_array[p]
-
-            for joint_idx, joint in enumerate(joint_post_array[:, i + obs_idx]):
-                # plots contours
-                ax_joint_array[joint_idx].set_xlim(left=np.max(
-                    [0, mean_list[comb_array[joint_idx, 0]] - 5 * stddev_list[comb_array[joint_idx, 0]]]),
-                    right=mean_list[comb_array[joint_idx, 0]] + 5 * stddev_list[
-                        comb_array[joint_idx, 0]])
-                ax_joint_array[joint_idx].set_ylim(bottom=np.max(
-                    [0, mean_list[comb_array[joint_idx, 1]] - 5 * stddev_list[comb_array[joint_idx, 1]]]),
-                    top=mean_list[comb_array[joint_idx, 1]] + 5 * stddev_list[
-                        comb_array[joint_idx, 1]])
-                # try:
-                #     print("In try, " + str(comb_array[joint_idx, :]))
-                #     ax_joint_array[joint_idx].contour(np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-                #                                       np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-                #                                       joint,
-                #                                       levels=[np.amax(joint) * level for level in \
-                #                                               ([np.exp(-0.5 * r ** 2) for r in
-                #                                                 np.arange(9, 0, -0.5)] + [0.999])],
-                #                                       cmap=cmap_name)
-                #     corr_coeff = correlation_coefficient(
-                #         np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-                #         np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-                #         joint)
-                # except:
-                #     print("In except, " + str(comb_array[joint_idx, :]))
-                #     ax_joint_array[joint_idx].contour(np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-                #                                       np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-                #                                       joint.T,
-                #                                       levels=[np.amax(joint) * level for level in \
-                #                                               ([np.exp(-0.5 * r ** 2) for r in
-                #                                                 np.arange(9, 0, -0.5)] + [0.999])],
-                #                                       cmap=cmap_name)
-                #     corr_coeff = correlation_coefficient(
-                #         np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-                #         np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-                #         joint.T)
-
-                if joint_idx == len(joint_post_array[:, i + obs_idx]) - 1:
-                    joint = joint.T
-                ax_joint_array[joint_idx].contour(np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-                                                  np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-                                                  joint,
-                                                  levels=[np.amax(joint) * level for level in \
-                                                          ([np.exp(-0.5 * r ** 2) for r in
-                                                            np.arange(9, 0, -0.5)] + [0.999])],
-                                                  cmap=cmap_name)
-                corr_coeff = correlation_coefficient(
-                    np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-                    np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-                    joint)
-                ax_joint_array[joint_idx].text(.99, .99, rf'$\rho$ = {corr_coeff:.2f}',
-                                               ha='right', va='top',
-                                               transform=ax_joint_array[joint_idx].transAxes,
-                                               fontsize=18)
-
-                if np.roll([variable.user_val for variable in variables_array], 1)[comb_array[joint_idx, 0]] is not None:
-                    ax_joint_array[joint_idx].axvline(
-                        np.roll([variable.user_val for variable in variables_array], 1)[
-                            comb_array[joint_idx, 0]], 0, 1, c=gray, lw=1)
-                if np.roll([variable.user_val for variable in variables_array], 1)[comb_array[joint_idx, 1]] is not None:
-                    ax_joint_array[joint_idx].axhline(
-                        np.roll([variable.user_val for variable in variables_array], 1)[
-                            comb_array[joint_idx, 1]], 0, 1, c=gray, lw=1)
-
-            ax_title.text(.99, .99,
-                        obs_name_corner + '\n' +
-                        GP.scheme + '\,' + GP.scale + '\n' +
-                        r'' + GP.orders_labels_dict[max(GP.nn_orders) - order_num + 1 + i] + '\n' +
-                        r'$Q_{\mathrm{' + GP.Q_param + '}}$' + '\n' +
-                        GP.p_param + '\n' +
-                        GP.vs_what,
-                        ha='right', va='top',
-                        transform=ax_title.transAxes,
-                        fontsize=25)
-
-            plt.show()
-
-    return fig

@@ -9,57 +9,58 @@ from cheftgp.graphs import *
 from cheftgp.scattering import *
 from cheftgp.utils import *
 
-# See: https://ianstormtaylor.com/design-tip-never-use-black/
-# softblack = '#262626'
-softblack = "k"  # Looks better when printed on tex file
-gray = "0.7"
-
-mpl.rcParams["figure.dpi"] = 180
-mpl.rcParams["font.size"] = 9
-mpl.rcParams["text.usetex"] = True
-mpl.rcParams["font.family"] = "serif"
-
-mpl.rcParams["axes.labelsize"] = 9  # 14
-mpl.rcParams["axes.edgecolor"] = softblack
-mpl.rcParams["axes.xmargin"] = 0
-mpl.rcParams["axes.labelcolor"] = softblack
-mpl.rcParams["axes.linewidth"]
-
-mpl.rcParams["ytick.direction"] = "in"
-mpl.rcParams["xtick.direction"] = "in"
-mpl.rcParams["xtick.labelsize"] = 9  # 12
-mpl.rcParams["ytick.labelsize"] = 9  # 12
-mpl.rcParams["xtick.color"] = softblack
-mpl.rcParams["ytick.color"] = softblack
-mpl.rcParams["xtick.minor.size"] = 2.4
-mpl.rcParams["ytick.minor.size"] = 2.4
-
-mpl.rcParams["legend.title_fontsize"] = 9
-mpl.rcParams["legend.fontsize"] = 9  # 11
-mpl.rcParams["legend.edgecolor"] = "inherit"  # inherits from axes.edgecolor, to match
-mpl.rcParams["legend.facecolor"] = (
-    1,
-    1,
-    1,
-    0.6,
-)  # Set facecolor with its own alpha, so edgecolor is unaffected
-mpl.rcParams["legend.fancybox"] = True
-mpl.rcParams["legend.borderaxespad"] = 0.8
-mpl.rcParams[
-    "legend.framealpha"
-] = None  # Do not set overall alpha (affects edgecolor). Handled by facecolor above
-mpl.rcParams[
-    "patch.linewidth"
-] = 0.8  # This is for legend edgewidth, since it does not have its own option
-
-# mpl.rcParams['lines.markersize'] = 5
-
-text_bbox = dict(boxstyle="round", fc=(1, 1, 1, 0.6), ec=softblack, lw=0.8)
-mpl.rc(
-    "savefig", transparent=False, bbox="tight", pad_inches=0.05, dpi=300, format="pdf"
-)
-
-edgewidth = 0.6
+# # See: https://ianstormtaylor.com/design-tip-never-use-black/
+# # softblack = '#262626'
+# softblack = "k"  # Looks better when printed on tex file
+# gray = "0.7"
+#
+# mpl.rcParams["figure.dpi"] = 180
+# mpl.rcParams["font.size"] = 9
+# mpl.rcParams["text.usetex"] = True
+# mpl.rcParams["font.family"] = "serif"
+#
+# mpl.rcParams["axes.labelsize"] = 9  # 14
+# mpl.rcParams["axes.edgecolor"] = softblack
+# mpl.rcParams["axes.xmargin"] = 0
+# mpl.rcParams["axes.labelcolor"] = softblack
+# mpl.rcParams["axes.linewidth"]
+#
+# mpl.rcParams["ytick.direction"] = "in"
+# mpl.rcParams["xtick.direction"] = "in"
+# mpl.rcParams["xtick.labelsize"] = 9  # 12
+# mpl.rcParams["ytick.labelsize"] = 9  # 12
+# mpl.rcParams["xtick.color"] = softblack
+# mpl.rcParams["ytick.color"] = softblack
+# mpl.rcParams["xtick.minor.size"] = 2.4
+# mpl.rcParams["ytick.minor.size"] = 2.4
+#
+# mpl.rcParams["legend.title_fontsize"] = 9
+# mpl.rcParams["legend.fontsize"] = 9  # 11
+# mpl.rcParams["legend.edgecolor"] = "inherit"  # inherits from axes.edgecolor, to match
+# mpl.rcParams["legend.facecolor"] = (
+#     1,
+#     1,
+#     1,
+#     0.6,
+# )  # Set facecolor with its own alpha, so edgecolor is unaffected
+# mpl.rcParams["legend.fancybox"] = True
+# mpl.rcParams["legend.borderaxespad"] = 0.8
+# mpl.rcParams[
+#     "legend.framealpha"
+# ] = None  # Do not set overall alpha (affects edgecolor). Handled by facecolor above
+# mpl.rcParams[
+#     "patch.linewidth"
+# ] = 0.8  # This is for legend edgewidth, since it does not have its own option
+#
+# # mpl.rcParams['lines.markersize'] = 5
+#
+# text_bbox = dict(boxstyle="round", fc=(1, 1, 1, 0.6), ec=softblack, lw=0.8)
+# mpl.rc(
+#     "savefig", transparent=False, bbox="tight", pad_inches=0.05, dpi=300, format="pdf"
+# )
+#
+# edgewidth = 0.6
+setup_rc_params()
 
 # # We get the NN data from a separate place in our github respository.
 # nn_online_pot = "pwa93"
@@ -489,18 +490,15 @@ def gp_analysis(
     for o, ScaleScheme in enumerate(scale_scheme_bunch_array):
         # gets observable data from a local file
         # default location is the same as this program's
-        try:
-            SGT = ScaleScheme.get_data("SGT")
-            DSG = ScaleScheme.get_data("DSG")
-            AY = ScaleScheme.get_data("PB")
-            A = ScaleScheme.get_data("A")
-            D = ScaleScheme.get_data("D")
-            AXX = ScaleScheme.get_data("AXX")
-            AYY = ScaleScheme.get_data("AYY")
-            t_lab = ScaleScheme.get_data("t_lab")
-            degrees = ScaleScheme.get_data("degrees")
-        except:
-            raise Exception("Data could not be found in the location specified.")
+        SGT = ScaleScheme.get_data("SGT")
+        DSG = ScaleScheme.get_data("DSG")
+        AY = ScaleScheme.get_data("PB")
+        A = ScaleScheme.get_data("A")
+        D = ScaleScheme.get_data("D")
+        AXX = ScaleScheme.get_data("AXX")
+        AYY = ScaleScheme.get_data("AYY")
+        t_lab = ScaleScheme.get_data("t_lab")
+        degrees = ScaleScheme.get_data("degrees")
 
         # creates the bunch for each observable to be plotted against angle
         SGTBunch = ObservableBunch(
@@ -734,7 +732,7 @@ def gp_analysis(
                             )
 
                             # sets the meshes for the random variable arrays
-                            mpi_vals = np.linspace(10, 400, 99, dtype=np.dtype('f4'))
+                            mpi_vals = np.linspace(100, 400, 49, dtype=np.dtype('f4'))
                             # ls_vals = np.linspace(0.02, 4.00, 25, dtype=np.dtype('f'))
                             # print(ls_vals)
                             ls_vals = np.linspace(0.01,
@@ -746,9 +744,9 @@ def gp_analysis(
                                                          **{"p_input": E_to_p(E_lab, nn_interaction),
                                                             "deg_input": 1,
                                                             "interaction": nn_interaction})),
-                                                100)
+                                                50)
                             # print(ls_vals)
-                            lambda_vals = np.linspace(250, 1000, 101, dtype=np.dtype('f4'))
+                            lambda_vals = np.linspace(300, 800, 51, dtype=np.dtype('f4'))
 
                             mesh_cart = gm.cartesian(lambda_vals, np.log(ls_vals), mpi_vals)
 
@@ -818,7 +816,7 @@ def gp_analysis(
                                     m_pi=m_pi_eff,
                                 )
                                 center = 0
-                                df = 1
+                                df = 30
                                 disp = 0
                                 std_scale = 1
                                 GPHyper = GPHyperparameters(
@@ -884,6 +882,8 @@ def gp_analysis(
                                         whether_save=save_pdf_bool
                                     )
                                 if plot_trunc_bool:
+                                    get_nn_online_data()
+
                                     MyPlot.plot_truncation_errors(
                                         online_data_dict[Observable.name],
                                         whether_save=save_trunc_bool,
@@ -932,7 +932,7 @@ def gp_analysis(
                                         whether_use_data=False,
                                         whether_save_data=False,
                                         whether_save_plots=save_lambdapost_curvewise_bool,
-                                        plot_all_obs=True
+                                        plot_all_obs=False
                                     )
                                 if plot_plotzilla_bool:
                                     MyPlot.plotzilla(whether_save=save_plotzilla_bool)
@@ -1108,7 +1108,7 @@ def gp_analysis(
                                     m_pi=m_pi_eff,
                                 )
                                 center = 0
-                                df = 1
+                                df = 30
                                 disp = 0
                                 std_scale = 1
                                 GPHyper = GPHyperparameters(
@@ -1179,6 +1179,8 @@ def gp_analysis(
                                         whether_save=save_pdf_bool
                                     )
                                 if plot_trunc_bool:
+                                    get_nn_online_data()
+
                                     MyPlot.plot_truncation_errors(
                                         online_data_dict[Observable.name],
                                         whether_save=save_trunc_bool,
@@ -1255,13 +1257,13 @@ def gp_analysis(
 gp_analysis(
     nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
-    observable_input=["DSG"],
-    E_input_array=[0],
-    deg_input_array=[50],
+    observable_input=["DSG", "D"],
+    E_input_array=[50],
+    deg_input_array=[0],
     Q_param_method_array=["smoothmax", "sum"],
     p_param_method_array=["Qofprel"],
-    input_space_input=["Elab", "prel"],
-    train_test_split_array=[Allenergysplit1],
+    input_space_input=["deg", "cos"],
+    train_test_split_array=[Fullspaceanglessplit1],
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
@@ -1289,5 +1291,5 @@ gp_analysis(
     save_lambdapost_pointwise_bool=False,
     save_lambdapost_curvewise_bool=True,
     save_plotzilla_bool=False,
-    filename_addendum="_trunctp2",
+    filename_addendum="_trunctp3",
 )

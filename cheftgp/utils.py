@@ -1,6 +1,7 @@
 import numpy as np
 import decimal
 import gsum as gm
+import urllib
 
 def correlation_coefficient(x, y, pdf):
     """
@@ -315,3 +316,34 @@ def versatile_train_test_split(interp_obj, n_train, n_test_inter=1, isclose_fact
                 y_test = y_test[:, :-1]
 
     return x_train, x_test, y_train, y_test
+
+def get_nn_online_data():
+    # We get the NN data from a separate place in our github respository.
+    nn_online_pot = "pwa93"
+    nn_online_url = "https://github.com/buqeye/buqeyebox/blob/master/nn_scattering/NN-online-Observables.h5?raw=true"
+    nno_response = urllib.request.urlopen(nn_online_url)
+    nn_online_file = tables.open_file(
+        "nn_online_example.h5",
+        driver="H5FD_CORE",
+        driver_core_image=nno_response.read(),
+        driver_core_backing_store=0,
+    )
+    SGT_nn_online = nn_online_file.get_node("/" + nn_online_pot + "/SGT").read()
+    DSG_nn_online = nn_online_file.get_node("/" + nn_online_pot + "/DSG").read()[:, :-1]
+    AY_nn_online = nn_online_file.get_node("/" + nn_online_pot + "/PB").read()[:, :-1]
+    A_nn_online = nn_online_file.get_node("/" + nn_online_pot + "/A").read()[:, :-1]
+    D_nn_online = nn_online_file.get_node("/" + nn_online_pot + "/D").read()[:, :-1]
+    AXX_nn_online = nn_online_file.get_node("/" + nn_online_pot + "/AXX").read()[:, :-1]
+    AYY_nn_online = nn_online_file.get_node("/" + nn_online_pot + "/AYY").read()[:, :-1]
+
+    # creates a dictionary that links the NN online data for each observable to the
+    # eventual predictions for that observable by a given potential scheme and scale
+    online_data_dict = {
+        "SGT": SGT_nn_online,
+        "DSG": DSG_nn_online,
+        "AY": AY_nn_online,
+        "A": A_nn_online,
+        "D": D_nn_online,
+        "AXX": AXX_nn_online,
+        "AYY": AYY_nn_online,
+    }
