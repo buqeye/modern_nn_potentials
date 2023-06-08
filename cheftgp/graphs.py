@@ -247,13 +247,16 @@ def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_
 
         ax.fill_between(vals_restricted, -i, posterior - i, facecolor=colors_array[i % order_num])
 
-        bounds = np.zeros((2, 2))
-        for j, p in enumerate([0.68, 0.95]):
-            bounds[j] = gm.hpd_pdf(pdf=posterior_raw, alpha=p, x=variable.var)
+        try:
+            bounds = np.zeros((2, 2))
+            for j, p in enumerate([0.68, 0.95]):
+                bounds[j] = gm.hpd_pdf(pdf=posterior_raw, alpha=p, x=variable.var)
 
-        median = gm.median_pdf(pdf=posterior_raw, x=variable.var)
+            median = gm.median_pdf(pdf=posterior_raw, x=variable.var)
 
-        draw_summary_statistics(*bounds, median, ax=ax, height=-i)
+            draw_summary_statistics(*bounds, median, ax=ax, height=-i)
+        except:
+            pass
 
     # Plot formatting
     ax.set_yticks([0])
@@ -267,7 +270,7 @@ def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_
               handles=[Patch(facecolor=colors_array[o],
                              edgecolor='gray',
                              linewidth=1,
-                             label=orders_labels_dict[(np.sort(nn_orders))[-1 - o]])
+                             label=orders_labels_dict[(np.sort(nn_orders))[-order_num + o]])
                        for o in range(0, order_num)])
     ax.grid(axis='x')
     ax.set_axisbelow(True)
@@ -310,7 +313,10 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
 
             for variable_idx, variable in enumerate(np.roll(variables_array, 1)):
                 # Now plot the marginal distributions
-                dist_mean, dist_stddev = mean_and_stddev(variable.var, marg_post_array[variable_idx - 1, i + obs_idx])
+                try:
+                    dist_mean, dist_stddev = mean_and_stddev(variable.var, marg_post_array[variable_idx - 1, i + obs_idx])
+                except:
+                    dist_mean, dist_stddev = variable.var[0], 1e-5
                 ax_marg_array[variable_idx].set_xlim(left=np.max([0, dist_mean - 5 * dist_stddev]),
                                                      right=dist_mean + 5 * dist_stddev)
                 mean_list.append(dist_mean)
@@ -386,11 +392,18 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
                                                           ([np.exp(-0.5 * r ** 2) for r in
                                                             np.arange(9, 0, -0.5)] + [0.999])],
                                                   cmap=cmap_name)
-                corr_coeff = correlation_coefficient(
-                    np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-                    np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-                    joint)
-                ax_joint_array[joint_idx].text(.99, .99, rf'$\rho$ = {corr_coeff:.2f}',
+                try:
+                    corr_coeff = correlation_coefficient(
+                        np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
+                        np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
+                        joint)
+                    ax_joint_array[joint_idx].text(.99, .99, rf'$\rho$ = {corr_coeff:.2f}',
+                       ha='right', va='top',
+                       transform=ax_joint_array[joint_idx].transAxes,
+                       fontsize=18)
+                except:
+                    corr_coeff = None
+                    ax_joint_array[joint_idx].text(.99, .99, rf'$\rho$ = ',
                                                ha='right', va='top',
                                                transform=ax_joint_array[joint_idx].transAxes,
                                                fontsize=18)
