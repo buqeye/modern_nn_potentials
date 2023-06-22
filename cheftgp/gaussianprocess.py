@@ -708,6 +708,9 @@ class GSUMDiagnostics:
             self.kernel = RBF(length_scale=self.ls, \
                               length_scale_bounds=(self.ls_lower, self.ls_upper)) + \
                           WhiteKernel(1e-10, noise_level_bounds='fixed')
+        # self.kernel = RBF(length_scale=self.ls,
+        #                   length_scale_bounds=(self.ls_lower, self.ls_upper)) + \
+        #               WhiteKernel(1e-4, noise_level_bounds='fixed')
         # print(self.kernel)
 
         # Define the GP
@@ -948,14 +951,14 @@ class GSUMDiagnostics:
         with plt.rc_context({"text.usetex": True}):
             if ax is None:
                 # fig, ax = plt.subplots(figsize=(3.2, 3.2))
-                fig, ax = plt.subplots(figsize=(2.1, 2.1))
+                fig, ax = plt.subplots(figsize=(3.2, 3.2))
 
             self.gr_dgn.pivoted_cholesky_errors(ax=ax, title=None)
             ax.set_xticks(np.arange(2, self.n_test_pts + 1, 2))
             ax.set_xticks(np.arange(1, self.n_test_pts + 1, 2), minor=True)
             ax.text(0.05, 0.95, r'$\mathrm{D}_{\mathrm{PC}}$', bbox=text_bbox,
                     transform=ax.transAxes, va='top', ha='left')
-            ax.set_ylim(-6, 6)
+            # ax.set_ylim(-6, 6)
 
             plt.show()
 
@@ -2449,7 +2452,8 @@ class GSUMDiagnostics:
                         self.observable_name == "D" or self.observable_name == "AYY" or \
                         self.observable_name == "AXX"  or plot_all_obs:
                     obs_loglike = np.zeros(tuple(len(random_var.var) for random_var in variables_array))
-                    spin_obs_list = [DSG, AY, A, D, AXX, AYY]
+                    # spin_obs_list = [AY, A, D, AXX, AYY]
+                    spin_obs_list = [D]
 
                     if slice_type == "energy":
                         for t_lab_pt, t_lab_mom_pt in zip(t_lab_pts, E_to_p(t_lab_pts, interaction=self.nn_interaction)):
@@ -2882,6 +2886,9 @@ class GSUMDiagnostics:
                 self.kernel = RBF(length_scale=opt_vals_list[1],
                                   length_scale_bounds=(opt_vals_list[1], opt_vals_list[1])) + \
                               WhiteKernel(1e-10, noise_level_bounds='fixed')
+            # self.kernel = RBF(length_scale=self.ls,
+            #                   length_scale_bounds=(self.ls_lower, self.ls_upper)) + \
+            #               WhiteKernel(1e-4, noise_level_bounds='fixed')
             self.ls = opt_vals_list[1]
             # print(self.kernel)
 
@@ -4720,8 +4727,9 @@ def marginalize_likelihoods(variables_array, like_list, order_num):
                 marg_post = np.trapz(marg_post, x=variables_array[idx].var, axis=idx)
 
             marg_post /= np.trapz(marg_post, x=variables_array[v].var, axis=0)
+            print("This marg_post has shape " + str(np.shape(marg_post)))
 
-            marg_post_list.append(marg_post)
+            marg_post_list.append(list(marg_post))
 
         # creates the normalized joint posteriors
         comb_array = np.array(np.meshgrid(np.arange(0, np.shape(variables_array)[0], 1, dtype=int),
@@ -4739,13 +4747,16 @@ def marginalize_likelihoods(variables_array, like_list, order_num):
                                             x=variables_array[comb_array[v, 1]].var, axis=1),
                                    x=variables_array[comb_array[v, 0]].var, axis=0
                                    )
-
+            print("This joint_post has shape " + str(np.shape(joint_post)))
             joint_post_list.append(joint_post)
 
     # print(np.shape(marg_post_list))
-    # print(np.shape(joint_post_list))
-    marg_post_array = np.reshape(marg_post_list, (len(variables_array), order_num * np.shape(like_list)[0] // order_num), order='F')
+    print(np.shape(joint_post_list))
+    # print(np.shape(marg_post_list))
+    marg_post_array = np.reshape(marg_post_list, (len(variables_array), np.shape(like_list)[0]), order='F')
+    # print(np.shape(marg_post_array))
+    # marg_post_array = np.array(marg_post_list)
     joint_post_array = np.reshape(joint_post_list,
-                                  (len(variables_array) * (len(variables_array) - 1) // 2, order_num * np.shape(like_list)[0] // order_num), order='F')
+                                  (len(variables_array) * (len(variables_array) - 1) // 2, np.shape(like_list)[0]), order='F')
 
     return marg_post_array, joint_post_array

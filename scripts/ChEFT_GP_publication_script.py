@@ -732,7 +732,7 @@ def gp_analysis(
                             )
 
                             # sets the meshes for the random variable arrays
-                            mpi_vals = np.linspace(100, 400, 49, dtype=np.dtype('f4'))
+                            mpi_vals = np.linspace(100, 400, 50, dtype=np.dtype('f4'))
                             # ls_vals = np.linspace(0.02, 4.00, 25, dtype=np.dtype('f'))
                             # print(ls_vals)
                             ls_vals = np.linspace(0.01,
@@ -746,7 +746,7 @@ def gp_analysis(
                                                             "interaction": nn_interaction})),
                                                 50)
                             # print(ls_vals)
-                            lambda_vals = np.linspace(300, 800, 51, dtype=np.dtype('f4'))
+                            lambda_vals = np.linspace(300, 800, 50, dtype=np.dtype('f4'))
 
                             mesh_cart = gm.cartesian(lambda_vals, np.log(ls_vals), mpi_vals)
 

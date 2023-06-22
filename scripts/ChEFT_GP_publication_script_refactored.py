@@ -490,6 +490,7 @@ def gp_analysis(
     # try:
     # runs through the potentials
     for o, ScaleScheme in enumerate(scale_scheme_bunch_array):
+        print("o = " + str(o))
         # gets observable data from a local file
         # default location is the same as this program's
         SGT = ScaleScheme.get_data("SGT")
@@ -501,7 +502,7 @@ def gp_analysis(
         AYY = ScaleScheme.get_data("AYY")
         t_lab = ScaleScheme.get_data("t_lab")
         degrees = ScaleScheme.get_data("degrees")
-        print(np.shape(DSG))
+        # print(np.shape(DSG))
 
         # creates the bunch for each observable to be plotted against angle
         SGTBunch = ObservableBunch(
@@ -577,8 +578,8 @@ def gp_analysis(
                 else:
                     energy_deg_pairs = np.reshape(energy_deg_pairs,
                         (len(E_input_array) + len(deg_input_array), 2), order='F')
-                print(energy_deg_pairs)
-                print(np.shape(energy_deg_pairs))
+                # print(energy_deg_pairs)
+                # print(np.shape(energy_deg_pairs))
 
                 # runs through the energies at which to evaluate the observables
                 for j, E_angle_pair in enumerate(energy_deg_pairs):
@@ -780,8 +781,8 @@ def gp_analysis(
                             # )
 
                             # sets the meshes for the random variable arrays
-                            # mpi_vals = np.linspace(100, 400, 99, dtype=np.dtype('f4'))
-                            mpi_vals = 200 * np.array([0.9999, 1.0001])
+                            mpi_vals = np.linspace(70, 400, 49, dtype=np.dtype('f4'))
+                            # mpi_vals = 200 * np.array([0.9999, 1.0001])
                             # ls_vals = np.linspace(0.02, 4.00, 25, dtype=np.dtype('f'))
                             # print(ls_vals)
                             if E_angle_pair[0]:
@@ -796,9 +797,9 @@ def gp_analysis(
                                                                 "interaction": nn_interaction})),
                                                     50)
                             else:
-                                ls_vals = np.linspace(1, 200, 100, dtype=np.dtype('f4'))
-                            print(ls_vals)
-                            lambda_vals = np.linspace(300, 800, 101, dtype=np.dtype('f4'))
+                                ls_vals = np.linspace(1, 200, 50, dtype=np.dtype('f4'))
+                            # print(ls_vals)
+                            lambda_vals = np.linspace(300, 800, 51, dtype=np.dtype('f4'))
                             # lambda_vals = 600 * np.array([0.9999, 1.0001])
 
                             mesh_cart = gm.cartesian(lambda_vals, np.log(ls_vals), mpi_vals)
@@ -1003,8 +1004,8 @@ def gp_analysis(
                                         orders = 1
                                         slice_type="energy"
                                     else:
-                                        plot_all_obs = True
-                                        orders = 2
+                                        plot_all_obs = False
+                                        orders = 1
                                         slice_type="angle"
                                     MyPlot.plot_posteriors_curvewise(
                                         SGT=SGT,
@@ -1035,7 +1036,8 @@ def gp_analysis(
                                         whether_use_data=False,
                                         whether_save_data=False,
                                         whether_save_plots=save_lambdapost_curvewise_bool,
-                                        plot_all_obs=plot_all_obs
+                                        plot_all_obs=plot_all_obs,
+                                        whether_save_opt=True,
                                     )
                                 if plot_plotzilla_bool:
                                     MyPlot.plotzilla(whether_save=save_plotzilla_bool)
@@ -1359,14 +1361,14 @@ def gp_analysis(
 
 gp_analysis(
     nn_interaction="np",
-    scale_scheme_bunch_array=[RKE500MeV],
+    scale_scheme_bunch_array=[RKE450MeV],
     observable_input=["DSG"],
-    E_input_array=[50],
-    deg_input_array=[],
-    Q_param_method_array=["smoothmax", "sum"],
+    E_input_array=[],
+    deg_input_array=[90],
+    Q_param_method_array=["sum"],
     p_param_method_array=["Qofprel"],
-    input_space_input=["deg", "cos"],
-    train_test_split_array=[Fullspaceanglessplit1],
+    input_space_input=["prel"],
+    train_test_split_array=[Allenergysplit1],
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
@@ -1383,16 +1385,16 @@ gp_analysis(
     plot_pdf_bool=False,
     plot_trunc_bool=False,
     plot_lambdapost_pointwise_bool=False,
-    plot_lambdapost_curvewise_bool=False,
+    plot_lambdapost_curvewise_bool=True,
     plot_plotzilla_bool=False,
-    save_coeffs_bool=True,
+    save_coeffs_bool=False,
     save_md_bool=False,
-    save_pc_bool=False,
+    save_pc_bool=True,
     save_ci_bool=False,
     save_pdf_bool=False,
     save_trunc_bool=False,
     save_lambdapost_pointwise_bool=False,
-    save_lambdapost_curvewise_bool=True,
+    save_lambdapost_curvewise_bool=False,
     save_plotzilla_bool=False,
-    filename_addendum="_mpi138",
+    filename_addendum="_paper",
 )

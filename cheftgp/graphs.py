@@ -24,6 +24,8 @@ def setup_rc_params():
     mpl.rcParams["axes.labelcolor"] = softblack
     mpl.rcParams["axes.linewidth"]
 
+    mpl.rcParams['lines.markersize'] = 6
+
     mpl.rcParams["ytick.direction"] = "in"
     mpl.rcParams["xtick.direction"] = "in"
     mpl.rcParams["xtick.labelsize"] = 9  # 12
