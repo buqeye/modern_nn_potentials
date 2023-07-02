@@ -490,7 +490,7 @@ def gp_analysis(
     # try:
     # runs through the potentials
     for o, ScaleScheme in enumerate(scale_scheme_bunch_array):
-        print("o = " + str(o))
+        # print("o = " + str(o))
         # gets observable data from a local file
         # default location is the same as this program's
         SGT = ScaleScheme.get_data("SGT")
@@ -624,7 +624,7 @@ def gp_analysis(
                         )
                         SinBunch = InputSpaceBunch(
                             "sin",
-                            lambda x: sin_thing(x),
+                            sin_thing,
                             p_approx(
                                 PParamMethod,
                                 E_to_p(E_lab, interaction=nn_interaction),
@@ -1037,7 +1037,8 @@ def gp_analysis(
                                         whether_save_data=False,
                                         whether_save_plots=save_lambdapost_curvewise_bool,
                                         plot_all_obs=plot_all_obs,
-                                        whether_save_opt=True,
+                                        combine_all_obs=False,
+                                        whether_save_opt=False,
                                     )
                                 if plot_plotzilla_bool:
                                     MyPlot.plotzilla(whether_save=save_plotzilla_bool)
@@ -1361,12 +1362,12 @@ def gp_analysis(
 
 gp_analysis(
     nn_interaction="np",
-    scale_scheme_bunch_array=[RKE450MeV],
-    observable_input=["DSG"],
+    scale_scheme_bunch_array=[RKE500MeV],
+    observable_input=["D"],
     E_input_array=[],
     deg_input_array=[90],
     Q_param_method_array=["sum"],
-    p_param_method_array=["Qofprel"],
+    p_param_method_array=["Qofqcm"],
     input_space_input=["prel"],
     train_test_split_array=[Allenergysplit1],
     orders_excluded=[],
@@ -1389,7 +1390,7 @@ gp_analysis(
     plot_plotzilla_bool=False,
     save_coeffs_bool=False,
     save_md_bool=False,
-    save_pc_bool=True,
+    save_pc_bool=False,
     save_ci_bool=False,
     save_pdf_bool=False,
     save_trunc_bool=False,

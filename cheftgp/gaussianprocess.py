@@ -7,7 +7,7 @@ from .utils import versatile_train_test_split, compute_posterior_intervals, sig_
 from .scattering import E_to_p
 from .graphs import draw_summary_statistics, corner_plot, offset_xlabel, joint_plot, setup_rc_params, plot_marg_posteriors, \
     plot_corner_posteriors, softblack, gray, edgewidth, text_bbox
-from .eft import Q_approx, Lb_logprior, mpieff_logprior
+from .eft import Q_approx, Lb_logprior, mpieff_logprior, p_approx
 import h5py
 import ray
 import matplotlib as mpl
@@ -605,24 +605,13 @@ class GSUMDiagnostics:
                 self.ref = np.ones(len(self.x)) * 1
                 self.ref_train = np.ones(len(self.x_train)) * 1
                 self.ref_test = np.ones(len(self.x_test)) * 1
-                # if self.observable_name == "AY":
-                #     self.ref = np.sin(np.radians(self.x_quantity_array))
-                #     self.interp_f_ref = interp1d(self.x, self.ref)
-                #     print("Radians are " + str(np.radians(self.x_quantity_array)))
-                #     print("AY's ref is " + str(self.ref))
-                #     self.ref_train = self.interp_f_ref(self.x_train)
-                #     self.ref_test = self.interp_f_ref(self.x_test)
-                # elif self.observable_name == "A":
-                #     self.ref = np.sin(np.radians(self.x_quantity_array) / 2)
-                #     self.interp_f_ref = interp1d(self.x, self.ref)
-                #     print("Radians are " + str(np.radians(self.x_quantity_array)))
-                #     print("A's ref is " + str(self.ref))
-                #     self.ref_train = self.interp_f_ref(self.x_train)
-                #     self.ref_test = self.interp_f_ref(self.x_test)
-                # else:
-                # 	self.ref = np.ones(len(self.x)) * 1
-                # 	self.ref_train = np.ones(len(self.x_train)) * 1
-                # 	self.ref_test = np.ones(len(self.x_test)) * 1
+
+                # self.ref = self.data[:, -1]
+                #
+                # self.interp_f_ref = interp1d(self.x, self.ref)
+                # self.ref_train = self.interp_f_ref(self.x_train)
+                # self.ref_test = self.interp_f_ref(self.x_test)
+
             elif self.ref_type == "dimensionful":
                 self.ref = self.data[:, -1]
 
@@ -2131,13 +2120,17 @@ class GSUMDiagnostics:
                                   whether_save_data=True,
                                   whether_save_plots=True,
                                   whether_save_opt=False,
-                                  plot_all_obs=False,):
+                                  plot_all_obs=False,
+                                  combine_all_obs=False,):
 
         # sets the number of orders and the corresponding colors
         order_num = int(orders)
         Lb_colors = self.light_colors[-1 * order_num:]
 
-        if self.observable_name == "SGT":
+        if combine_all_obs:
+            obs_name_corner = "All obs."
+            posterior_label = r'Obs.'
+        elif self.observable_name == "SGT":
             obs_name_corner = "SGT"
             posterior_label = r'$\sigma$'
         elif self.observable_name == "DSG":
@@ -2242,7 +2235,7 @@ class GSUMDiagnostics:
                 # generates names for files and searches for whether they exist
                 for order_counter in range(1, order_num + 1):
                     order = np.max(self.nn_orders) - order_num + order_counter
-                    print("order = " + str(order))
+                    # print("order = " + str(order))
 
                     # if they exist, they are read in, reshaped, and appended to like_list
                     # print(make_likelihood_filename(self,
@@ -2276,10 +2269,10 @@ class GSUMDiagnostics:
             for order_counter in range(1, order_num + 1):
                 # sets the order number
                 order = np.max(self.nn_orders) - order_num + order_counter
-                print("order = " + str(order))
+                # print("order = " + str(order))
                 orders_nho_ray = ray.put(self.nn_orders[:order])
 
-                if self.observable_name == "SGT" or plot_all_obs:
+                if self.observable_name == "SGT" or plot_all_obs or (slice_type == "angle" and combine_all_obs):
                     # converts the points in t_lab_pts to the current input space
                     t_lab_input = self.inputspace.input_space(**{"E_lab": t_lab,
                                                                  "interaction": self.nn_interaction})
@@ -2287,12 +2280,12 @@ class GSUMDiagnostics:
                                                                      "interaction": self.nn_interaction})
 
                     # sieves the data
-                    sgt_data = SGT[:, np.isin(t_lab, t_lab_pts)]
+                    obs_data = SGT[:, np.isin(t_lab, t_lab_pts)]
 
                     # creates and fits the TruncationGP object
-                    gp_post_sgt = gm.TruncationGP(self.kernel,
+                    gp_post_obs = gm.TruncationTP(self.kernel,
                                                       # ref=sgt_data[0],
-                                                        ref=sgt_data[-1],
+                                                        ref=obs_data[-1],
                                                       ratio=interp_f_ratio_posterior,
                                                       center=self.center,
                                                       disp=self.disp,
@@ -2300,17 +2293,19 @@ class GSUMDiagnostics:
                                                       scale=self.std_est,
                                                       excluded=self.excluded,
                                                       ratio_kws={"x_interp": t_lab_input,
-                                                                 "p": E_to_p(t_lab, interaction=self.nn_interaction),
+                                                                 # "p": E_to_p(t_lab, interaction=self.nn_interaction),
+                                                                 "p": p_approx(self.p_param, E_to_p(t_lab, interaction=self.nn_interaction), 60),
                                                                  "Q_param": self.Q_param,
                                                                  "mpi_var": mpi_true,
                                                                  "lambda_var": Lambda_b_true})
-                    gp_post_sgt.fit(t_lab_pts_input[:, None],
-                                        (sgt_data[:order]).T,
+                    gp_post_obs.fit(t_lab_pts_input[:, None],
+                                        (obs_data[:order]).T,
                                         orders=self.nn_orders_full[:order])
 
                     # puts important objects into ray objects
-                    gp_post_ray = ray.put(gp_post_sgt)
-                    t_lab_mom_ray = ray.put(E_to_p(t_lab, interaction=self.nn_interaction))
+                    gp_post_ray = ray.put(gp_post_obs)
+                    # t_lab_mom_ray = ray.put(E_to_p(t_lab, interaction=self.nn_interaction))
+                    t_lab_mom_ray = ray.put(p_approx(self.p_param, E_to_p(t_lab, interaction=self.nn_interaction), 60))
 
                     # calculates the posterior using ray
                     log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_ray,
@@ -2323,7 +2318,8 @@ class GSUMDiagnostics:
                     # log_like = list(itertools.chain(*ray.get(log_like_ids)))
                     obs_loglike = np.reshape(log_like, tuple(len(random_var.var) for random_var in variables_array))
                     obs_loglike_plots.append(obs_loglike)
-                if self.observable_name == "DSG" or plot_all_obs:
+                    print("Done.")
+                if self.observable_name == "DSG" or plot_all_obs or combine_all_obs:
                     obs_loglike = np.zeros(tuple(len(random_var.var) for random_var in variables_array))
 
                     if slice_type == "energy":
@@ -2336,19 +2332,20 @@ class GSUMDiagnostics:
                             degrees_input_ray = ray.put(degrees_input)
 
                             # not sure why we doubly transformed the energies here before
-                            ratio_points_ray = ray.put(E_to_p(t_lab_pt, interaction=self.nn_interaction))
+                            # ratio_points_ray = ray.put(E_to_p(t_lab_pt, interaction=self.nn_interaction))
+                            ratio_points_ray = ray.put(p_approx(self.p_param, t_lab_mom_pt, degrees))
 
                             # sieves the data
                             # print("DSG has shape " + str(np.shape(DSG)))
-                            dsg_data = np.reshape(DSG[:, np.isin(t_lab, t_lab_pt)][..., np.isin(degrees, degrees_pts)],
+                            obs_data = np.reshape(DSG[:, np.isin(t_lab, t_lab_pt)][..., np.isin(degrees, degrees_pts)],
                                                   (len(self.nn_orders_full), -1))
                             # print("dsg_data has shape " + str(np.shape(dsg_data)))
                             # print("dsg_data = " + str(dsg_data))
                             # print("yref = " + str(dsg_data[0]))
                             # creates and fits the TruncationGP object
-                            gp_post_dsg = gm.TruncationGP(self.kernel,
+                            gp_post_obs = gm.TruncationTP(self.kernel,
                                                           # ref=dsg_data[0],
-                                                          ref=dsg_data[-1],
+                                                          ref=obs_data[-1],
                                                           # ref=np.ones((len(degrees_pts))),
                                                           ratio=interp_f_ratio_posterior,
                                                           center=self.center,
@@ -2356,8 +2353,11 @@ class GSUMDiagnostics:
                                                           df=self.df,
                                                           scale=self.std_est,
                                                           excluded=self.excluded,
-                                                          ratio_kws={"x_interp": degrees_input,
-                                                                     "p": t_lab_mom_pt,
+                                                          ratio_kws={
+                                                                     "x_interp": degrees_input,
+                                                                     # "x_interp": degrees,
+                                                                     # "p": t_lab_mom_pt,
+                                                                     "p": p_approx(self.p_param, t_lab_mom_pt, degrees),
                                                                      "Q_param": self.Q_param,
                                                                      "mpi_var": mpi_true,
                                                                      "lambda_var": Lambda_b_true})
@@ -2365,12 +2365,12 @@ class GSUMDiagnostics:
                             #                       dsg_data.T,
                             #                       orders = self.nn_orders_full,
                             #                       orders_eval = self.nn_orders[:order])
-                            gp_post_dsg.fit(degrees_pts_input[:, None],
-                                                (dsg_data[:order, :]).T,
+                            gp_post_obs.fit(degrees_pts_input[:, None],
+                                                (obs_data[:order, :]).T,
                                                 orders=self.nn_orders_full[:order])
 
                             # puts important objects into ray objects
-                            gp_post_ray = ray.put(gp_post_dsg)
+                            gp_post_ray = ray.put(gp_post_obs)
 
                             # calculates the posterior using ray
                             log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_ray,
@@ -2383,6 +2383,7 @@ class GSUMDiagnostics:
                             # log_like = list(itertools.chain(*ray.get(log_like_ids)))
                             obs_loglike += np.reshape(log_like, tuple(len(random_var.var) for random_var in variables_array))
                         obs_loglike_plots.append(obs_loglike)
+                        print("Done.")
                     elif slice_type == "angle":
                         for degrees_pt in degrees_pts:
                             # converts the points in t_lab_pts to the current input space
@@ -2402,17 +2403,18 @@ class GSUMDiagnostics:
                             tlab_input_ray = ray.put(tlab_input)
 
                             # not sure why we doubly transformed the energies here before
-                            ratio_points_ray = ray.put(E_to_p(t_lab, interaction=self.nn_interaction))
+                            # ratio_points_ray = ray.put(E_to_p(t_lab, interaction=self.nn_interaction))
+                            ratio_points_ray = ray.put(p_approx(self.p_param, E_to_p(t_lab, interaction=self.nn_interaction), degrees_pt))
 
                             # sieves the data
-                            dsg_data = np.reshape(DSG[:, np.isin(t_lab, t_lab_pts), np.isin(degrees, degrees_pt)],
+                            obs_data = np.reshape(DSG[:, np.isin(t_lab, t_lab_pts), np.isin(degrees, degrees_pt)],
                                                   (len(self.nn_orders_full), -1))
-                            print("dsg_data has shape " + str(np.shape(dsg_data)))
+                            # print("dsg_data has shape " + str(np.shape(dsg_data)))
 
                             # creates and fits the TruncationGP object
-                            gp_post_dsg = gm.TruncationGP(self.kernel,
+                            gp_post_obs = gm.TruncationTP(self.kernel,
                                                               # ref=dsg_data[0],
-                                                                ref=dsg_data[-1],
+                                                                ref=obs_data[-1],
                                                               # ref=np.ones((len(degrees_pts))),
                                                               ratio=interp_f_ratio_posterior,
                                                               center=self.center,
@@ -2421,7 +2423,8 @@ class GSUMDiagnostics:
                                                               scale=self.std_est,
                                                               excluded=self.excluded,
                                                               ratio_kws={"x_interp": tlab_input,
-                                                                         "p": tlab_mom,
+                                                                         # "p": tlab_mom,
+                                                                         "p": p_approx(self.p_param, tlab_mom, degrees_pt),
                                                                          "Q_param": self.Q_param,
                                                                          "mpi_var": mpi_true,
                                                                          "lambda_var": Lambda_b_true})
@@ -2429,12 +2432,12 @@ class GSUMDiagnostics:
                             #                       dsg_data.T,
                             #                       orders = self.nn_orders_full,
                             #                       orders_eval = self.nn_orders[:order])
-                            gp_post_dsg.fit(tlab_pts_input[:, None],
-                                                (dsg_data[:order, :]).T,
+                            gp_post_obs.fit(tlab_pts_input[:, None],
+                                                (obs_data[:order, :]).T,
                                                 orders=self.nn_orders_full[:order])
 
                             # puts important objects into ray objects
-                            gp_post_ray = ray.put(gp_post_dsg)
+                            gp_post_ray = ray.put(gp_post_obs)
 
                             # calculates the posterior using ray
                             log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_ray,
@@ -2447,10 +2450,14 @@ class GSUMDiagnostics:
                             # log_like = list(itertools.chain(*ray.get(log_like_ids)))
                             obs_loglike += np.reshape(log_like,
                                                       tuple(len(random_var.var) for random_var in variables_array))
-                        obs_loglike_plots.append(obs_loglike)
+                        if combine_all_obs:
+                            obs_loglike_plots += obs_loglike
+                            print("Done.")
+                        else:
+                            obs_loglike_plots.append(obs_loglike)
                 if self.observable_name == "A" or self.observable_name == "AY" or \
                         self.observable_name == "D" or self.observable_name == "AYY" or \
-                        self.observable_name == "AXX"  or plot_all_obs:
+                        self.observable_name == "AXX"  or plot_all_obs or combine_all_obs:
                     obs_loglike = np.zeros(tuple(len(random_var.var) for random_var in variables_array))
                     # spin_obs_list = [AY, A, D, AXX, AYY]
                     spin_obs_list = [D]
@@ -2465,7 +2472,8 @@ class GSUMDiagnostics:
                             degrees_input_ray = ray.put(degrees_input)
 
                             # not sure why we doubly transformed the energies here before
-                            ratio_points_ray = ray.put(E_to_p(t_lab_pt, interaction=self.nn_interaction))
+                            # ratio_points_ray = ray.put(E_to_p(t_lab_pt, interaction=self.nn_interaction))
+                            ratio_points_ray = ray.put(p_approx(self.p_param, t_lab_mom_pt, degrees))
 
                             gp_fits_spins = []
                             # gp_fits_spins_ho = []
@@ -2477,7 +2485,7 @@ class GSUMDiagnostics:
                                     (len(self.nn_orders_full), -1))
 
                                 # creates and fits the TruncationGP object
-                                gp_fits_spins.append(gm.TruncationGP(self.kernel,
+                                gp_fits_spins.append(gm.TruncationTP(self.kernel,
                                                                          ref=np.ones((len(degrees_pts))),
                                                                          ratio=interp_f_ratio_posterior,
                                                                          center=self.center,
@@ -2486,7 +2494,10 @@ class GSUMDiagnostics:
                                                                          scale=self.std_est,
                                                                          excluded=self.excluded,
                                                                          ratio_kws={"x_interp": degrees_input,
-                                                                                    "p": t_lab_mom_pt,
+                                                                                    # "p": t_lab_mom_pt,
+                                                                                    "p": p_approx(self.p_param,
+                                                                                                  t_lab_mom_pt,
+                                                                                                  degrees),
                                                                                     "Q_param": self.Q_param,
                                                                                     "mpi_var": mpi_true,
                                                                                     "lambda_var": Lambda_b_true}))
@@ -2512,7 +2523,11 @@ class GSUMDiagnostics:
                                 #                                               degrees_input_ray, ratio_points_ray, batch))
                                 # log_like = list(itertools.chain(*ray.get(log_like_ids)))
                                 obs_loglike += np.reshape(log_like, tuple(len(random_var.var) for random_var in variables_array))
-                        obs_loglike_plots.append(obs_loglike)
+                        if combine_all_obs:
+                            obs_loglike_plots += obs_loglike
+                            print("Done.")
+                        else:
+                            obs_loglike_plots.append(obs_loglike)
                     elif slice_type == "angle":
                         for degrees_pt in degrees_pts:
                             # converts the points in t_lab_pts to the current input space
@@ -2532,7 +2547,9 @@ class GSUMDiagnostics:
                             tlab_input_ray = ray.put(tlab_input)
 
                             # not sure why we doubly transformed the energies here before
-                            ratio_points_ray = ray.put(E_to_p(t_lab, interaction=self.nn_interaction))
+                            # ratio_points_ray = ray.put(E_to_p(t_lab, interaction=self.nn_interaction))
+                            ratio_points_ray = ray.put(
+                                p_approx(self.p_param, E_to_p(t_lab, interaction=self.nn_interaction), degrees_pt))
 
                             gp_fits_spins = []
 
@@ -2543,7 +2560,7 @@ class GSUMDiagnostics:
                                                   (len(self.nn_orders_full), -1))
 
                                 # creates and fits the TruncationGP object
-                                gp_fits_spins.append(gm.TruncationGP(self.kernel,
+                                gp_fits_spins.append(gm.TruncationTP(self.kernel,
                                                                   ref=np.ones((len(t_lab_pts))),
                                                                   ratio=interp_f_ratio_posterior,
                                                                   center=self.center,
@@ -2552,7 +2569,9 @@ class GSUMDiagnostics:
                                                                   scale=self.std_est,
                                                                   excluded=self.excluded,
                                                                   ratio_kws={"x_interp": tlab_input,
-                                                                         "p": tlab_mom,
+                                                                         # "p": tlab_mom,
+                                                                         "p": p_approx(self.p_param, tlab_mom,
+                                                                                       degrees_pt),
                                                                          "Q_param": self.Q_param,
                                                                          "mpi_var": mpi_true,
                                                                          "lambda_var": Lambda_b_true}))
@@ -2579,7 +2598,11 @@ class GSUMDiagnostics:
                                 # log_like = list(itertools.chain(*ray.get(log_like_ids)))
                                 obs_loglike += np.reshape(log_like,
                                                           tuple(len(random_var.var) for random_var in variables_array))
-                        obs_loglike_plots.append(obs_loglike)
+                        if combine_all_obs:
+                            obs_loglike_plots += obs_loglike
+                            print("Done.")
+                        else:
+                            obs_loglike_plots.append(obs_loglike)
                 # loglike_list.append(obs_loglike)
 
                 # adds the log-priors to the log-likelihoods
@@ -2594,18 +2617,18 @@ class GSUMDiagnostics:
                 #                                         ),
                 #                                 np.roll(np.arange(0, len(variables_array), dtype=int), i + 1))
                 # Makes sure that the values don't get too big or too small
-                print(np.shape(obs_loglike_plots))
+                # print(np.shape(obs_loglike_plots))
                 obs_like = [np.exp(oll - np.max(oll)) for oll in obs_loglike_plots]
-                print(np.shape(obs_like))
+                # print(np.shape(obs_like))
                 # like_list.append(obs_like)
-                print(np.shape(like_list))
-                print("We made it this far!")
-                print(make_likelihood_filename(self,
-                                            "data",
-                                            self.orders_names_dict[order],
-                                            [variable.logprior_name for variable in variables_array],
-                                            variables_array,
-                                            ))
+                # print(np.shape(like_list))
+                # print("We made it this far!")
+                # print(make_likelihood_filename(self,
+                #                             "data",
+                #                             self.orders_names_dict[order],
+                #                             [variable.logprior_name for variable in variables_array],
+                #                             variables_array,
+                #                             ))
                 if whether_save_data:
                     np.savetxt(make_likelihood_filename(self,
                                                     "data",
@@ -2618,10 +2641,10 @@ class GSUMDiagnostics:
 
         # we reshape obs_like so that observables are grouped sequentially, in order of increased order
         like_list = obs_like
-        print(np.shape(like_list))
+        # print(np.shape(like_list))
         like_list = np.reshape(np.reshape(like_list, (np.shape(like_list)[0] // orders, orders) + np.shape(like_list)[1:], order = 'F'),
                               np.shape(like_list))
-        print(np.shape(like_list))
+        # print(np.shape(like_list))
 
         if whether_plot_posteriors or whether_plot_corner:
             marg_post_array, joint_post_array = marginalize_likelihoods(variables_array, like_list, order_num)
@@ -2667,10 +2690,10 @@ class GSUMDiagnostics:
         # marg_post_array = np.reshape(marg_post_list, (len(variables_array), order_num), order='F')
         # joint_post_array = np.reshape(joint_post_list,
         #                               (len(variables_array) * (len(variables_array) - 1) // 2, order_num), order='F')
-        print("marg_post_array has shape " + str(np.shape(marg_post_array)))
+        # print("marg_post_array has shape " + str(np.shape(marg_post_array)))
         if whether_plot_posteriors:
             for (variable, result) in zip(variables_array, marg_post_array):
-                print(np.shape(result))
+                # print(np.shape(result))
                 fig = plot_marg_posteriors(variable, result, posterior_label, Lb_colors, order_num,
                                            self.nn_orders, self.orders_labels_dict)
             #     # Plot each posterior and its summary statistics
@@ -2726,7 +2749,7 @@ class GSUMDiagnostics:
 
         if whether_plot_corner:
             with plt.rc_context({"text.usetex": True}):
-                print("joint_post_array has shape " + str(np.shape(joint_post_array)))
+                # print("joint_post_array has shape " + str(np.shape(joint_post_array)))
                 fig = plot_corner_posteriors('Blues', order_num, variables_array, marg_post_array, joint_post_array, self, obs_name_corner)
                 # cmap_name = 'Blues'
                 # cmap = mpl.cm.get_cmap(cmap_name)

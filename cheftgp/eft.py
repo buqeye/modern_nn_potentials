@@ -112,9 +112,14 @@ def Elab_fn(E_lab, **kwargs):
     return E_lab
 
 
-def sin_thing(deg, **kwargs):
+def sin_thing(deg_input, **kwargs):
     # converts degrees to an abortive sine-based input space
-    return np.array([np.sin(np.radians(d)) if d <= 90 else 2 - np.sin(np.radians(d)) for d in deg])
+    # if hasattr(deg_input, '__iter__'):
+    #     return np.array([np.sin(np.radians(d)) if d <= 90 else 2 - np.sin(np.radians(d)) for d in deg_input])
+    # else:
+    #     return np.sin(np.radians(deg_input)) if deg_input <= 90 else 2 - np.sin(np.radians(deg_input))
+    return 0.6 * (1.6 + np.arctanh(np.radians(deg_input - 90) / 1.7))
+
 
 
 def softmax_mom(p, q, n=5):
