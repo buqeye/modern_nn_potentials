@@ -10,7 +10,7 @@ def Q_approx(p, Q_parametrization, Lambda_b, m_pi=138,
     Parameters
     ----------
     p (float or array) : momentum (in MeV)
-    Q_parametrization (str) : can be "smoothmax", "max", or "sum"
+    Q_parametrization (str) : can be "smax", "max", or "sum"
     Lambda_b (float) : value for the cutoff (in MeV)
     m_pi (float) : value for the pion mass (in MeV)
         default : 138
@@ -21,7 +21,7 @@ def Q_approx(p, Q_parametrization, Lambda_b, m_pi=138,
         # for expansions with the momentum p as the only soft scale
         m_pi = 0
 
-    if Q_parametrization == "smoothmax":
+    if Q_parametrization == "smax":
         # Interpolate to smooth the transition from m_pi to p with a ratio
         # of polynomials
         n = 8
@@ -46,8 +46,8 @@ def Qsum_to_Qsmoothmax(m_pi):
     # function that converts the denominator of the dimensionless expansion parameter
     # from the Qsmoothmax to the Qsum prescription, based on a rough empirical formula,
     # in terms of the value of m_pi in the numerator
-    return m_pi / 320 + 1
-
+    # return m_pi / 320 + 1
+    return (m_pi + 750) / 600
 def p_approx(p_name, prel, degrees):
     """
     Returns the dimensionless expansion parameter Q.

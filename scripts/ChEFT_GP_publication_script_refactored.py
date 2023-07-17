@@ -272,6 +272,15 @@ Middleanglessplit1 = TrainTestSplit(
     xmin_test_factor=1 / 5,
     xmax_test_factor=4 / 5,
 )
+Middleanglessplit2 = TrainTestSplit(
+    "middleangles2",
+    6,
+    3,
+    xmin_train_factor=1/6,
+    xmax_train_factor=5/6,
+    xmin_test_factor=1/6,
+    xmax_test_factor=5/6,
+)
 # Split1704 = TrainTestSplit("1704", 1, )
 traintestsplit_vsangle_array = [
     Fullspaceanglessplit,
@@ -281,6 +290,8 @@ traintestsplit_vsangle_array = [
     Backwardanglessplit2,
     Fullspaceanglessplit1,
     Fullspaceanglessplit2,
+    Middleanglessplit1,
+    Middleanglessplit2
 ]
 
 # creates the training and testing masks for observables plotted against energy
@@ -294,6 +305,15 @@ Nolowenergysplit = TrainTestSplit(
     xmin_test_factor=100 / 350,
     offset_train_max_factor=-50 / 350,
     offset_test_max_factor=-50 / 350,
+)
+Nolowenergysplit1 = TrainTestSplit(
+    "nolowenergy1",
+    3,
+    4,
+    offset_train_min_factor=50 / 350,
+    xmin_train_factor=50 / 350,
+    offset_test_min_factor=50 / 350,
+    xmin_test_factor=50 / 350,
 )
 Yeslowenergysplit = TrainTestSplit(
     "yeslowenergy",
@@ -323,12 +343,22 @@ Allenergysplit1 = TrainTestSplit(
 Allenergysplit2 = TrainTestSplit(
     "allenergy2", 4, 4, xmin_train_factor=0, xmax_train_factor=1
 )
+Midenergysplit = TrainTestSplit(
+    "midenergysplit",
+    7,
+    3,
+    xmin_train_factor=1/7,
+    xmax_train_factor=6/7,
+    xmin_test_factor=1/7,
+    xmax_test_factor=6/7,
+)
 traintestsplit_vsenergy_array = [
     Nolowenergysplit,
     Yeslowenergysplit,
     Allenergysplit,
     Allenergysplit1,
     Allenergysplit2,
+    Midenergysplit,
 ]
 
 
@@ -781,13 +811,13 @@ def gp_analysis(
                             # )
 
                             # sets the meshes for the random variable arrays
-                            mpi_vals = np.linspace(70, 400, 49, dtype=np.dtype('f4'))
+                            mpi_vals = np.linspace(50, 400, 59, dtype=np.dtype('f4'))
                             # mpi_vals = 200 * np.array([0.9999, 1.0001])
                             # ls_vals = np.linspace(0.02, 4.00, 25, dtype=np.dtype('f'))
                             # print(ls_vals)
                             if E_angle_pair[0]:
                                 ls_vals = np.linspace(0.01,
-                                                    2 * (VsQuantity.input_space(
+                                                    1 * (VsQuantity.input_space(
                                                         **{"p_input": E_to_p(E_lab, nn_interaction),
                                                             "deg_input": max(degrees),
                                                             "interaction": nn_interaction}) - \
@@ -795,11 +825,11 @@ def gp_analysis(
                                                              **{"p_input": E_to_p(E_lab, nn_interaction),
                                                                 "deg_input": min(degrees),
                                                                 "interaction": nn_interaction})),
-                                                    50)
+                                                    40)
                             else:
-                                ls_vals = np.linspace(1, 200, 50, dtype=np.dtype('f4'))
+                                ls_vals = np.linspace(1, 200, 40, dtype=np.dtype('f4'))
                             # print(ls_vals)
-                            lambda_vals = np.linspace(300, 800, 51, dtype=np.dtype('f4'))
+                            lambda_vals = np.linspace(300, 800, 61, dtype=np.dtype('f4'))
                             # lambda_vals = 600 * np.array([0.9999, 1.0001])
 
                             mesh_cart = gm.cartesian(lambda_vals, np.log(ls_vals), mpi_vals)
@@ -812,7 +842,8 @@ def gp_analysis(
                                                              units="MeV",
                                                              ticks=[300, 600, 900, 1200],
                                                              logprior=Lb_logprior(lambda_vals),
-                                                             logprior_name="Lambdab_uniformlogprior")
+                                                             logprior_name="Lambdab_uniformlogprior",
+                                                             marg_bool = True)
                             # this will need to change for SGT vs. other observables
                             LsVariable = RandomVariable(var=ls_vals,
                                                         user_val=None,
@@ -821,7 +852,8 @@ def gp_analysis(
                                                         units="",
                                                         ticks=[],
                                                         logprior=np.zeros(len(ls_vals)),
-                                                        logprior_name="ls_nologprior")
+                                                        logprior_name="ls_nologprior",
+                                                        marg_bool = False)
                             MpieffVariable = RandomVariable(var=mpi_vals,
                                                             user_val=m_pi_eff,
                                                             name='mpieff',
@@ -829,7 +861,8 @@ def gp_analysis(
                                                             units="MeV",
                                                             ticks=[50, 100, 150, 200, 250, 300, 350],
                                                             logprior=mpieff_logprior(mpi_vals),
-                                                            logprior_name="mpieff_uniformlogprior")
+                                                            logprior_name="mpieff_uniformlogprior",
+                                                            marg_bool = True)
                             variables_array = np.array([LambdabVariable, LsVariable, MpieffVariable])
 
                             # runs through the training and testing masks
@@ -902,7 +935,7 @@ def gp_analysis(
                                     m_pi=m_pi_eff,
                                 )
                                 center = 0
-                                df = 30
+                                df = 1
                                 disp = 0
                                 std_scale = 1
                                 GPHyper = GPHyperparameters(
@@ -1016,7 +1049,9 @@ def gp_analysis(
                                         AXX=AXX,
                                         AYY=AYY,
                                         t_lab=t_lab,
-                                        t_lab_pts=np.array([5, 21, 48, 85, 133, 192]),
+                                        # t_lab_pts=np.array([5, 21, 48, 85, 133, 192]),
+                                        t_lab_pts=np.array([5, 21, 48, 85, 133, 192, 261]),
+                                        # t_lab_pts=np.array([50, 100, 150, 200, 250, 300]),
                                         # t_lab_pts=np.array([1, 5, 12, 21, 33, 48]),
                                         # t_lab_pts=np.array([1, 10, 25, 48]),
                                         # t_lab_pts=np.array([1, 10, 25]),
@@ -1037,8 +1072,8 @@ def gp_analysis(
                                         whether_save_data=False,
                                         whether_save_plots=save_lambdapost_curvewise_bool,
                                         plot_all_obs=plot_all_obs,
-                                        combine_all_obs=False,
-                                        whether_save_opt=False,
+                                        combine_all_obs=True,
+                                        whether_save_opt=True,
                                     )
                                 if plot_plotzilla_bool:
                                     MyPlot.plotzilla(whether_save=save_plotzilla_bool)
@@ -1363,13 +1398,13 @@ def gp_analysis(
 gp_analysis(
     nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
-    observable_input=["D"],
-    E_input_array=[],
-    deg_input_array=[90],
+    observable_input=["DSG"],
+    E_input_array=[100],
+    deg_input_array=[],
     Q_param_method_array=["sum"],
-    p_param_method_array=["Qofqcm"],
-    input_space_input=["prel"],
-    train_test_split_array=[Allenergysplit1],
+    p_param_method_array=["Qofpq"],
+    input_space_input=["cos"],
+    train_test_split_array=[Fullspaceanglessplit1],
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
@@ -1382,20 +1417,20 @@ gp_analysis(
     plot_coeffs_bool=True,
     plot_md_bool=True,
     plot_pc_bool=True,
-    plot_ci_bool=True,
+    plot_ci_bool=False,
     plot_pdf_bool=False,
     plot_trunc_bool=False,
     plot_lambdapost_pointwise_bool=False,
     plot_lambdapost_curvewise_bool=True,
     plot_plotzilla_bool=False,
-    save_coeffs_bool=False,
-    save_md_bool=False,
-    save_pc_bool=False,
+    save_coeffs_bool=True,
+    save_md_bool=True,
+    save_pc_bool=True,
     save_ci_bool=False,
     save_pdf_bool=False,
     save_trunc_bool=False,
     save_lambdapost_pointwise_bool=False,
-    save_lambdapost_curvewise_bool=False,
+    save_lambdapost_curvewise_bool=True,
     save_plotzilla_bool=False,
-    filename_addendum="_paper",
+    filename_addendum="_noell",
 )

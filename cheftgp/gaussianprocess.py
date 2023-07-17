@@ -126,7 +126,7 @@ class PosteriorBounds:
 
 
 class RandomVariable:
-    def __init__(self, var, user_val, name, label, units, ticks, logprior, logprior_name):
+    def __init__(self, var, user_val, name, label, units, ticks, logprior, logprior_name, marg_bool = True):
         """
         Instantiates the information in a class necessary for a random variable for Bayesian parameter estimation.
 
@@ -149,6 +149,7 @@ class RandomVariable:
         self.ticks = ticks
         self.logprior = logprior
         self.logprior_name = logprior_name
+        self.marg_bool = marg_bool
 
 
 class OrderInfo:
@@ -607,6 +608,7 @@ class GSUMDiagnostics:
                 self.ref_test = np.ones(len(self.x_test)) * 1
 
                 # self.ref = self.data[:, -1]
+                # print("self.ref = " + str(self.ref))
                 #
                 # self.interp_f_ref = interp1d(self.x, self.ref)
                 # self.ref_train = self.interp_f_ref(self.x_train)
@@ -652,6 +654,10 @@ class GSUMDiagnostics:
                 self.interp_f_ref = interp1d(self.x, self.ref)
                 self.ref_train = self.interp_f_ref(self.x_train)
                 self.ref_test = self.interp_f_ref(self.x_test)
+
+                # self.ref = np.ones(len(self.x)) * 1
+                # self.ref_train = np.ones(len(self.x_train)) * 1
+                # self.ref_test = np.ones(len(self.x_test)) * 1
 
         # uses interpolation to find the proper reference scales
         self.interp_f_ref = interp1d(self.x, self.ref)
@@ -707,6 +713,10 @@ class GSUMDiagnostics:
             self.kernel, center=self.center, disp=self.disp, df=self.df,
             scale=self.std_est, n_restarts_optimizer=50, random_state=self.seed,
             sd=self.sd)
+        # self.gp = gm.ConjugateStudentProcess(
+        #     self.kernel, center=self.center, disp=self.disp, df=self.df,
+        #     scale=self.std_est, n_restarts_optimizer=50, random_state=self.seed,
+        #     sd=self.sd)
 
         # restricts coeffs and colors to only those orders desired for
         # evaluating statistical diagnostics
@@ -749,6 +759,7 @@ class GSUMDiagnostics:
         #                                 return_std = True)
         self.pred, self.std = self.gp.predict(self.X, return_std=True)
         self.underlying_std = np.sqrt(self.gp.cov_factor_)
+        print("underlying_std = " + str(self.underlying_std))
 
         # plots the coefficients against the given input space
         if ax is None:
@@ -2128,19 +2139,25 @@ class GSUMDiagnostics:
         Lb_colors = self.light_colors[-1 * order_num:]
 
         if combine_all_obs:
-            obs_name_corner = "All obs."
-            posterior_label = r'Obs.'
+            obs_name_corner = "ALLOBS"
+            posterior_label = [r'Obs.']
         elif self.observable_name == "SGT":
             obs_name_corner = "SGT"
-            posterior_label = r'$\sigma$'
+            posterior_label = [r'$\sigma$']
         elif self.observable_name == "DSG":
             obs_name_corner = "DSG"
-            posterior_label = r'$\displaystyle\frac{d\sigma}{d\Omega}$'
+            posterior_label = [r'$\displaystyle\frac{d\sigma}{d\Omega}$']
         elif self.observable_name == "A" or self.observable_name == "AY" or \
                 self.observable_name == "D" or self.observable_name == "AYY" or \
                 self.observable_name == "AXX":
             obs_name_corner = "spins"
-            posterior_label = r'$X_{pqik}$'
+            posterior_label = [r'$X_{pqik}$']
+        if plot_all_obs:
+            posterior_label = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$', r'$X_{pqik}$']
+
+        # creates boolean array for treatment of the length scale (and any other variables) on an observable-by-
+        # observable basis instead of a cross-observable basis
+        marg_bool_array = np.array([v.marg_bool for v in variables_array])
 
         # # sets the meshes for the random variable arrays
         # mpi_vals = np.linspace(50, 425, 49, dtype=np.dtype('f4'))
@@ -2285,7 +2302,8 @@ class GSUMDiagnostics:
                     # creates and fits the TruncationGP object
                     gp_post_obs = gm.TruncationTP(self.kernel,
                                                       # ref=sgt_data[0],
-                                                        ref=obs_data[-1],
+                                                      ref=obs_data[-1],
+                                                      # ref=np.ones((len(t_lab_pts))),
                                                       ratio=interp_f_ratio_posterior,
                                                       center=self.center,
                                                       disp=self.disp,
@@ -2317,6 +2335,24 @@ class GSUMDiagnostics:
                     #                                               t_lab_input, t_lab_mom_ray, batch))
                     # log_like = list(itertools.chain(*ray.get(log_like_ids)))
                     obs_loglike = np.reshape(log_like, tuple(len(random_var.var) for random_var in variables_array))
+
+                    # experimental new code
+                    # adds the log-priors to the log-likelihoods
+                    obs_loglike = add_logpriors(variables_array, obs_loglike)
+                    # makes sure that the values don't get too big or too small
+                    obs_like = np.exp(obs_loglike - np.max(obs_loglike))
+                    print(np.shape(obs_like))
+                    # marginalizes partially
+                    print(np.array(range(len(variables_array)))[~marg_bool_array])
+                    print(variables_array[~marg_bool_array])
+                    for v, var in zip(np.array(range(len(variables_array)))[~marg_bool_array], variables_array[~marg_bool_array]):
+                        # print("While marginalizing, " + str(v))
+                        obs_like = np.trapz(obs_like, x=variables_array[v].var, axis=v)
+                    print(np.shape(obs_like))
+                    # takes the log again to revert to the log-likelihood
+                    obs_loglike = np.log(obs_like)
+
+                    # appends log-likelihood
                     obs_loglike_plots.append(obs_loglike)
                     print("Done.")
                 if self.observable_name == "DSG" or plot_all_obs or combine_all_obs:
@@ -2382,6 +2418,24 @@ class GSUMDiagnostics:
                             #                                               degrees_input_ray, ratio_points_ray, batch))
                             # log_like = list(itertools.chain(*ray.get(log_like_ids)))
                             obs_loglike += np.reshape(log_like, tuple(len(random_var.var) for random_var in variables_array))
+
+                            # experimental new code
+                            # adds the log-priors to the log-likelihoods
+                            obs_loglike = add_logpriors(variables_array, obs_loglike)
+                            # makes sure that the values don't get too big or too small
+                            obs_like = np.exp(obs_loglike - np.max(obs_loglike))
+                            print(np.shape(obs_like))
+                            # marginalizes partially
+                            print(np.array(range(len(variables_array)))[~marg_bool_array])
+                            print(variables_array[~marg_bool_array])
+                            for v, var in zip(np.array(range(len(variables_array)))[~marg_bool_array],
+                                              variables_array[~marg_bool_array]):
+                                # print("While marginalizing, " + str(v))
+                                obs_like = np.trapz(obs_like, x=variables_array[v].var, axis=v)
+                            print(np.shape(obs_like))
+                            # takes the log again to revert to the log-likelihood
+                            obs_loglike_2d = np.log(obs_like)
+                        obs_loglike = obs_loglike_2d
                         obs_loglike_plots.append(obs_loglike)
                         print("Done.")
                     elif slice_type == "angle":
@@ -2450,6 +2504,24 @@ class GSUMDiagnostics:
                             # log_like = list(itertools.chain(*ray.get(log_like_ids)))
                             obs_loglike += np.reshape(log_like,
                                                       tuple(len(random_var.var) for random_var in variables_array))
+
+                            # experimental new code
+                            # adds the log-priors to the log-likelihoods
+                            obs_loglike = add_logpriors(variables_array, obs_loglike)
+                            # makes sure that the values don't get too big or too small
+                            obs_like = np.exp(obs_loglike - np.max(obs_loglike))
+                            print(np.shape(obs_like))
+                            # marginalizes partially
+                            print(np.array(range(len(variables_array)))[~marg_bool_array])
+                            print(variables_array[~marg_bool_array])
+                            for v, var in zip(np.array(range(len(variables_array)))[~marg_bool_array],
+                                              variables_array[~marg_bool_array]):
+                                # print("While marginalizing, " + str(v))
+                                obs_like = np.trapz(obs_like, x=variables_array[v].var, axis=v)
+                            print(np.shape(obs_like))
+                            # takes the log again to revert to the log-likelihood
+                            obs_loglike_2d = np.log(obs_like)
+                        obs_loglike = obs_loglike_2d
                         if combine_all_obs:
                             obs_loglike_plots += obs_loglike
                             print("Done.")
@@ -2459,8 +2531,8 @@ class GSUMDiagnostics:
                         self.observable_name == "D" or self.observable_name == "AYY" or \
                         self.observable_name == "AXX"  or plot_all_obs or combine_all_obs:
                     obs_loglike = np.zeros(tuple(len(random_var.var) for random_var in variables_array))
-                    # spin_obs_list = [AY, A, D, AXX, AYY]
-                    spin_obs_list = [D]
+                    spin_obs_list = [AY, A, D, AXX, AYY]
+                    # spin_obs_list = [D, AXX]
 
                     if slice_type == "energy":
                         for t_lab_pt, t_lab_mom_pt in zip(t_lab_pts, E_to_p(t_lab_pts, interaction=self.nn_interaction)):
@@ -2487,6 +2559,7 @@ class GSUMDiagnostics:
                                 # creates and fits the TruncationGP object
                                 gp_fits_spins.append(gm.TruncationTP(self.kernel,
                                                                          ref=np.ones((len(degrees_pts))),
+                                                                         # ref=spin_data[-1],
                                                                          ratio=interp_f_ratio_posterior,
                                                                          center=self.center,
                                                                          disp=self.disp,
@@ -2523,6 +2596,24 @@ class GSUMDiagnostics:
                                 #                                               degrees_input_ray, ratio_points_ray, batch))
                                 # log_like = list(itertools.chain(*ray.get(log_like_ids)))
                                 obs_loglike += np.reshape(log_like, tuple(len(random_var.var) for random_var in variables_array))
+
+                                # experimental new code
+                                # adds the log-priors to the log-likelihoods
+                                obs_loglike = add_logpriors(variables_array, obs_loglike)
+                                # makes sure that the values don't get too big or too small
+                                obs_like = np.exp(obs_loglike - np.max(obs_loglike))
+                                print(np.shape(obs_like))
+                                # marginalizes partially
+                                print(np.array(range(len(variables_array)))[~marg_bool_array])
+                                print(variables_array[~marg_bool_array])
+                                for v, var in zip(np.array(range(len(variables_array)))[~marg_bool_array],
+                                                  variables_array[~marg_bool_array]):
+                                    # print("While marginalizing, " + str(v))
+                                    obs_like = np.trapz(obs_like, x=variables_array[v].var, axis=v)
+                                print(np.shape(obs_like))
+                                # takes the log again to revert to the log-likelihood
+                                obs_loglike_2d = np.log(obs_like)
+                        obs_loglike = obs_loglike_2d
                         if combine_all_obs:
                             obs_loglike_plots += obs_loglike
                             print("Done.")
@@ -2562,6 +2653,7 @@ class GSUMDiagnostics:
                                 # creates and fits the TruncationGP object
                                 gp_fits_spins.append(gm.TruncationTP(self.kernel,
                                                                   ref=np.ones((len(t_lab_pts))),
+                                                                  # ref=spin_data[-1],
                                                                   ratio=interp_f_ratio_posterior,
                                                                   center=self.center,
                                                                   disp=self.disp,
@@ -2598,6 +2690,24 @@ class GSUMDiagnostics:
                                 # log_like = list(itertools.chain(*ray.get(log_like_ids)))
                                 obs_loglike += np.reshape(log_like,
                                                           tuple(len(random_var.var) for random_var in variables_array))
+
+                                # experimental new code
+                                # adds the log-priors to the log-likelihoods
+                                obs_loglike = add_logpriors(variables_array, obs_loglike)
+                                # makes sure that the values don't get too big or too small
+                                obs_like = np.exp(obs_loglike - np.max(obs_loglike))
+                                print(np.shape(obs_like))
+                                # marginalizes partially
+                                print(np.array(range(len(variables_array)))[~marg_bool_array])
+                                print(variables_array[~marg_bool_array])
+                                for v, var in zip(np.array(range(len(variables_array)))[~marg_bool_array],
+                                                  variables_array[~marg_bool_array]):
+                                    # print("While marginalizing, " + str(v))
+                                    obs_like = np.trapz(obs_like, x=variables_array[v].var, axis=v)
+                                print(np.shape(obs_like))
+                                # takes the log again to revert to the log-likelihood
+                                obs_loglike_2d = np.log(obs_like)
+                        obs_loglike = obs_loglike_2d
                         if combine_all_obs:
                             obs_loglike_plots += obs_loglike
                             print("Done.")
@@ -2605,19 +2715,13 @@ class GSUMDiagnostics:
                             obs_loglike_plots.append(obs_loglike)
                 # loglike_list.append(obs_loglike)
 
-                # adds the log-priors to the log-likelihoods
-                obs_loglike_plots = [add_logpriors(variables_array, oll) for oll in obs_loglike_plots]
-                # for i, logprior in enumerate([variable.logprior for variable in variables_array]):
-                #     obs_loglike += np.transpose(np.tile(logprior,
-                #                                         (
-                #                                             np.shape(obs_loglike)[(i + 1) % len(variables_array)],
-                #                                             np.shape(obs_loglike)[(i + 2) % len(variables_array)],
-                #                                             1
-                #                                         )
-                #                                         ),
-                #                                 np.roll(np.arange(0, len(variables_array), dtype=int), i + 1))
+                # # adds the log-priors to the log-likelihoods
+                # obs_loglike_plots = [add_logpriors(variables_array, oll) for oll in obs_loglike_plots]
+
                 # Makes sure that the values don't get too big or too small
                 # print(np.shape(obs_loglike_plots))
+                print(np.shape(obs_loglike_plots))
+                print(obs_loglike_plots)
                 obs_like = [np.exp(oll - np.max(oll)) for oll in obs_loglike_plots]
                 # print(np.shape(obs_like))
                 # like_list.append(obs_like)
@@ -2640,6 +2744,7 @@ class GSUMDiagnostics:
                 # np.savetxt('data/posterior_pdf_curvewise_SGT_SMS_500MeV_N3LO_Qsmoothmax_Qofprel_Elab_Lambdab_uniformlogprior_ls_nologprior_mpieff_uniformlogprior_Lambdab26pts213p90to1500p00_ls25pts1p00to300p00_mpieff24pts44p52to427p80.txt', np.reshape(obs_like, (np.prod([len(random_var.var) for random_var in variables_array]))))
 
         # we reshape obs_like so that observables are grouped sequentially, in order of increased order
+        print(obs_like)
         like_list = obs_like
         # print(np.shape(like_list))
         like_list = np.reshape(np.reshape(like_list, (np.shape(like_list)[0] // orders, orders) + np.shape(like_list)[1:], order = 'F'),
@@ -2647,7 +2752,7 @@ class GSUMDiagnostics:
         # print(np.shape(like_list))
 
         if whether_plot_posteriors or whether_plot_corner:
-            marg_post_array, joint_post_array = marginalize_likelihoods(variables_array, like_list, order_num)
+            marg_post_array, joint_post_array = marginalize_likelihoods(variables_array[marg_bool_array], like_list, order_num)
         # marg_post_list = []
         # joint_post_list = []
         #
@@ -2692,7 +2797,7 @@ class GSUMDiagnostics:
         #                               (len(variables_array) * (len(variables_array) - 1) // 2, order_num), order='F')
         # print("marg_post_array has shape " + str(np.shape(marg_post_array)))
         if whether_plot_posteriors:
-            for (variable, result) in zip(variables_array, marg_post_array):
+            for (variable, result) in zip(variables_array[marg_bool_array], marg_post_array):
                 # print(np.shape(result))
                 fig = plot_marg_posteriors(variable, result, posterior_label, Lb_colors, order_num,
                                            self.nn_orders, self.orders_labels_dict)
@@ -2750,7 +2855,7 @@ class GSUMDiagnostics:
         if whether_plot_corner:
             with plt.rc_context({"text.usetex": True}):
                 # print("joint_post_array has shape " + str(np.shape(joint_post_array)))
-                fig = plot_corner_posteriors('Blues', order_num, variables_array, marg_post_array, joint_post_array, self, obs_name_corner)
+                fig = plot_corner_posteriors('Blues', order_num, variables_array[marg_bool_array], marg_post_array, joint_post_array, self, obs_name_corner)
                 # cmap_name = 'Blues'
                 # cmap = mpl.cm.get_cmap(cmap_name)
                 #
@@ -2869,9 +2974,15 @@ class GSUMDiagnostics:
 
             # creates a list of the values of the random variables corresponding to the
             # point of highest probability in the posterior
+            print(np.shape(like_list))
+            print(like_list)
             indices_opt = np.where(like_list[-1] == np.amax(like_list[-1]))
+            print(indices_opt)
             opt_vals_list = []
-            for idx, var in zip(indices_opt, [variable.var for variable in variables_array]):
+            for idx, var in zip(indices_opt, [variable.var for variable in variables_array[marg_bool_array]]):
+                print(idx)
+                print(var)
+                print(var[idx])
                 opt_vals_list.append((var[idx])[0])
             print("opt_vals_list = " + str(opt_vals_list))
 
@@ -2880,7 +2991,7 @@ class GSUMDiagnostics:
                 self.inputspace.mom,
                 self.Q_param,
                 Lambda_b=opt_vals_list[0],
-                m_pi=opt_vals_list[2],
+                m_pi=opt_vals_list[1],
             )
 
             # Extract the coefficients and define kernel
@@ -2898,28 +3009,28 @@ class GSUMDiagnostics:
                                                ref=self.ref_test,
                                                orders=self.nn_orders_full)
 
-            # defines the kernel
-            if self.fixed_quantity_name == "energy" and \
-                    self.fixed_quantity_value < 70.1 and \
-                    self.fixed_quantity_value >= 1.:
-                self.kernel = RBF(length_scale=opt_vals_list[1],
-                                  length_scale_bounds=(opt_vals_list[1], opt_vals_list[1])) + \
-                              WhiteKernel(1e-6, noise_level_bounds='fixed')
-            else:
-                self.kernel = RBF(length_scale=opt_vals_list[1],
-                                  length_scale_bounds=(opt_vals_list[1], opt_vals_list[1])) + \
-                              WhiteKernel(1e-10, noise_level_bounds='fixed')
+            # # defines the kernel
+            # if self.fixed_quantity_name == "energy" and \
+            #         self.fixed_quantity_value < 70.1 and \
+            #         self.fixed_quantity_value >= 1.:
+            #     self.kernel = RBF(length_scale=opt_vals_list[1],
+            #                       length_scale_bounds=(opt_vals_list[1], opt_vals_list[1])) + \
+            #                   WhiteKernel(1e-6, noise_level_bounds='fixed')
+            # else:
+            #     self.kernel = RBF(length_scale=opt_vals_list[1],
+            #                       length_scale_bounds=(opt_vals_list[1], opt_vals_list[1])) + \
+            #                   WhiteKernel(1e-10, noise_level_bounds='fixed')
             # self.kernel = RBF(length_scale=self.ls,
             #                   length_scale_bounds=(self.ls_lower, self.ls_upper)) + \
             #               WhiteKernel(1e-4, noise_level_bounds='fixed')
-            self.ls = opt_vals_list[1]
+            # self.ls = opt_vals_list[1]
             # print(self.kernel)
 
-            # Define the GP
-            self.gp = gm.ConjugateGaussianProcess(
-                self.kernel, center=self.center, disp=self.disp, df=self.df,
-                scale=self.std_est, n_restarts_optimizer=50, random_state=self.seed,
-                sd=self.sd)
+            # # Define the GP
+            # self.gp = gm.ConjugateGaussianProcess(
+            #     self.kernel, center=self.center, disp=self.disp, df=self.df,
+            #     scale=self.std_est, n_restarts_optimizer=50, random_state=self.seed,
+            #     sd=self.sd)
 
             self.coeffs = (self.coeffs.T[self.mask_restricted]).T
             self.coeffs_train = (self.coeffs_train.T[self.mask_restricted]).T
@@ -4736,6 +4847,7 @@ def marginalize_likelihoods(variables_array, like_list, order_num):
     """
     marg_post_list = []
     joint_post_list = []
+    print("like_list has shape " + str(np.shape(like_list)))
 
     for like_idx, like in enumerate(like_list):
         # creates the normalized fully marginalized posteriors
@@ -4750,7 +4862,7 @@ def marginalize_likelihoods(variables_array, like_list, order_num):
                 marg_post = np.trapz(marg_post, x=variables_array[idx].var, axis=idx)
 
             marg_post /= np.trapz(marg_post, x=variables_array[v].var, axis=0)
-            print("This marg_post has shape " + str(np.shape(marg_post)))
+            # print("This marg_post has shape " + str(np.shape(marg_post)))
 
             marg_post_list.append(list(marg_post))
 
@@ -4761,25 +4873,41 @@ def marginalize_likelihoods(variables_array, like_list, order_num):
         comb_array = np.delete(comb_array, [comb[0] >= comb[1] for comb in comb_array], axis=0)
         p = np.argsort(comb_array[:, 1])
         comb_array = np.flip(comb_array[p], axis=0)
+        print(comb_array)
+        print(np.flip(np.roll(np.arange(0, np.shape(variables_array)[0], 1, dtype=int), 1)))
+        print(np.shape(like))
 
-        for v in np.flip(np.roll(np.arange(0, np.shape(variables_array)[0], 1, dtype=int), 1)):
-            print("While marginalizing, " + str(v))
-            joint_post = np.trapz(like, x=variables_array[v].var, axis=v)
-
-            joint_post /= np.trapz(np.trapz(joint_post,
-                                            x=variables_array[comb_array[v, 1]].var, axis=1),
-                                   x=variables_array[comb_array[v, 0]].var, axis=0
-                                   )
-            print("This joint_post has shape " + str(np.shape(joint_post)))
-            joint_post_list.append(joint_post)
+        # for v in np.flip(np.roll(np.arange(0, np.shape(variables_array)[0], 1, dtype=int), 1)):
+        #     # print("While marginalizing, " + str(v))
+        #     print(v)
+        #     joint_post = np.trapz(like, x=variables_array[v].var, axis=v)
+        #     print(comb_array[v, 0])
+        #     print(comb_array[v, 1])
+        #     joint_post = like / np.trapz(np.trapz(like,
+        #                                     x=variables_array[comb_array[v, 1]].var, axis=1),
+        #                            x=variables_array[comb_array[v, 0]].var, axis=0
+        #                            )
+        #     # joint_post /= np.trapz(np.trapz(joint_post,
+        #     #                                 x=variables_array[comb_array[v, 1]].var, axis=1),
+        #     #                        x=variables_array[comb_array[v, 0]].var, axis=0
+        #     #                        )
+        #     print(np.shape(joint_post))
+        #     # print("This joint_post has shape " + str(np.shape(joint_post)))
+        #     joint_post_list.append(joint_post)
+        joint_post_list.append(like / np.trapz(np.trapz(like,
+                x=variables_array[1].var, axis=1),
+                x=variables_array[0].var, axis=0
+                ))
+        print(np.shape(joint_post_list))
 
     # print(np.shape(marg_post_list))
-    print(np.shape(joint_post_list))
+    # print(np.shape(joint_post_list))
     # print(np.shape(marg_post_list))
     marg_post_array = np.reshape(marg_post_list, (len(variables_array), np.shape(like_list)[0]), order='F')
     # print(np.shape(marg_post_array))
     # marg_post_array = np.array(marg_post_list)
-    joint_post_array = np.reshape(joint_post_list,
-                                  (len(variables_array) * (len(variables_array) - 1) // 2, np.shape(like_list)[0]), order='F')
+    # joint_post_array = np.reshape(joint_post_list,
+    #                               (len(variables_array) * (len(variables_array) - 1) // 2, np.shape(like_list)[0]), order='F')
+    joint_post_array = np.array(joint_post_list)
 
     return marg_post_array, joint_post_array
