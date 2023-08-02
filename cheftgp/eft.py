@@ -141,7 +141,7 @@ def Lb_logprior(Lambda_b):
     Similar to Melendez et al., Eq. (31)
     """
     # return np.where((300 <= Lambda_b) & (Lambda_b <= 1500), np.log(1. / Lambda_b), -np.inf)
-    return np.where((200 <= Lambda_b) & (Lambda_b <= 2000), 0, -np.inf)
+    return np.where((200 <= Lambda_b) & (Lambda_b <= 1000), 0, -np.inf)
 
 def mpieff_logprior(m_pi):
     """

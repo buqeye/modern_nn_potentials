@@ -388,6 +388,7 @@ def gp_analysis(
     plot_pdf_bool=True,
     plot_trunc_bool=True,
     plot_lambdapost_pointwise_bool=False,
+    curvewise_pdf_data = None,
     plot_lambdapost_curvewise_bool=False,
     plot_plotzilla_bool=True,
     save_coeffs_bool=True,
@@ -811,7 +812,7 @@ def gp_analysis(
                             # )
 
                             # sets the meshes for the random variable arrays
-                            mpi_vals = np.linspace(50, 400, 59, dtype=np.dtype('f4'))
+                            mpi_vals = np.linspace(50, 400, 49, dtype=np.dtype('f4'))
                             # mpi_vals = 200 * np.array([0.9999, 1.0001])
                             # ls_vals = np.linspace(0.02, 4.00, 25, dtype=np.dtype('f'))
                             # print(ls_vals)
@@ -825,11 +826,11 @@ def gp_analysis(
                                                              **{"p_input": E_to_p(E_lab, nn_interaction),
                                                                 "deg_input": min(degrees),
                                                                 "interaction": nn_interaction})),
-                                                    40)
+                                                    50)
                             else:
-                                ls_vals = np.linspace(1, 200, 40, dtype=np.dtype('f4'))
+                                ls_vals = np.linspace(1, 200, 50, dtype=np.dtype('f4'))
                             # print(ls_vals)
-                            lambda_vals = np.linspace(300, 800, 61, dtype=np.dtype('f4'))
+                            lambda_vals = np.linspace(300, 900, 51, dtype=np.dtype('f4'))
                             # lambda_vals = 600 * np.array([0.9999, 1.0001])
 
                             mesh_cart = gm.cartesian(lambda_vals, np.log(ls_vals), mpi_vals)
@@ -840,7 +841,7 @@ def gp_analysis(
                                                              name='Lambdab',
                                                              label="\Lambda_{b}",
                                                              units="MeV",
-                                                             ticks=[300, 600, 900, 1200],
+                                                             ticks=[450, 600, 750],
                                                              logprior=Lb_logprior(lambda_vals),
                                                              logprior_name="Lambdab_uniformlogprior",
                                                              marg_bool = True)
@@ -859,7 +860,7 @@ def gp_analysis(
                                                             name='mpieff',
                                                             label="m_{\pi}",
                                                             units="MeV",
-                                                            ticks=[50, 100, 150, 200, 250, 300, 350],
+                                                            ticks=[100, 150, 200, 250, 300, 350],
                                                             logprior=mpieff_logprior(mpi_vals),
                                                             logprior_name="mpieff_uniformlogprior",
                                                             marg_bool = True)
@@ -1032,25 +1033,59 @@ def gp_analysis(
                                         whether_save=save_lambdapost_pointwise_bool,
                                     )
                                 if plot_lambdapost_curvewise_bool:
+                                    obs_dict = {"SGT": SGTBunch, "DSG": DSGBunch, "D": DBunch, "AXX": AXXBunch, "AYY": AYYBunch, "A": ABunch, "AY": AYBunch}
+
+                                    # plot_obs_list = [["SGT"]]
+                                    # obs_name_grouped_list = ["SGT"]
+                                    # obs_labels_grouped_list = [r'$\sigma$']
+
+                                    # plot_obs_list = [["DSG"]]
+                                    # obs_name_grouped_list = ["DSG"]
+                                    # obs_labels_grouped_list = [r'$\displaystyle\frac{d\sigma}{d\Omega}$']
+
+                                    # plot_obs_list = [["D", "AXX", "AYY", "A", "AY"]]
+                                    # obs_name_grouped_list = ["spins"]
+                                    # obs_labels_grouped_list = [r'$X_{pqik}$']
+
+                                    # plot_obs_list = [["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]]
+                                    # obs_name_grouped_list = ["ALLOBS"]
+                                    # obs_labels_grouped_list = [r'Obs.']
+
+                                    plot_obs_list = [["SGT"], ["DSG"], ["D", "AXX", "AYY", "A", "AY"]]
+                                    obs_name_grouped_list = ["SGT", "DSG", "spins"]
+                                    obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$', r'$X_{pqik}$']
+
+                                    obs_list = ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]
+                                    obs_groupings = [len(a) for a in plot_obs_list]
+                                    # print(obs_groupings)
+                                    obs_grouped_list = [
+                                        [obs_dict[obs_name] for obs_name in obs_list[list_idx:list_idx + obs_idx]] for
+                                        list_idx, obs_idx in enumerate(obs_groupings)]
+                                    # print(obs_grouped)
+
                                     if E_angle_pair[0]:
-                                        plot_all_obs = False
+                                        # plot_all_obs = False
                                         orders = 1
                                         slice_type="energy"
                                     else:
-                                        plot_all_obs = False
-                                        orders = 1
+                                        # plot_all_obs = False
+                                        orders = 3
                                         slice_type="angle"
                                     MyPlot.plot_posteriors_curvewise(
-                                        SGT=SGT,
-                                        DSG=DSG,
-                                        AY=AY,
-                                        A=A,
-                                        D=D,
-                                        AXX=AXX,
-                                        AYY=AYY,
+                                        obs_data_grouped_list = obs_grouped_list,
+                                        obs_name_grouped_list = obs_name_grouped_list,
+                                        obs_labels_grouped_list = obs_labels_grouped_list,
+                                        # SGT=SGT,
+                                        # DSG=DSG,
+                                        # AY=AY,
+                                        # A=A,
+                                        # D=D,
+                                        # AXX=AXX,
+                                        # AYY=AYY,
                                         t_lab=t_lab,
                                         # t_lab_pts=np.array([5, 21, 48, 85, 133, 192]),
-                                        t_lab_pts=np.array([5, 21, 48, 85, 133, 192, 261]),
+                                        # t_lab_pts=np.array([5, 21, 48, 85, 133, 192, 261]),
+                                        t_lab_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]),
                                         # t_lab_pts=np.array([50, 100, 150, 200, 250, 300]),
                                         # t_lab_pts=np.array([1, 5, 12, 21, 33, 48]),
                                         # t_lab_pts=np.array([1, 10, 25, 48]),
@@ -1059,8 +1094,11 @@ def gp_analysis(
                                         # t_lab_pts=np.array([65, 100, 143, 192]),
                                         # t_lab_pts=np.array([100, 143, 192]),
                                         degrees=degrees,
+                                        # degrees_pts=np.array(
+                                        #     [26, 51, 77, 103, 129, 154]
+                                        # ),
                                         degrees_pts=np.array(
-                                            [26, 51, 77, 103, 129, 154]
+                                            [23, 45, 68, 90, 113, 135, 158]
                                         ),
                                         slice_type=slice_type,
                                         variables_array=variables_array,
@@ -1068,12 +1106,12 @@ def gp_analysis(
                                         Lambda_b_true=Lambdab,
                                         mpi_true=m_pi_eff,
                                         orders=orders,
-                                        whether_use_data=False,
-                                        whether_save_data=False,
+                                        whether_use_data=True,
+                                        whether_save_data=True,
                                         whether_save_plots=save_lambdapost_curvewise_bool,
-                                        plot_all_obs=plot_all_obs,
-                                        combine_all_obs=True,
-                                        whether_save_opt=True,
+                                        # plot_all_obs=plot_all_obs,
+                                        # combine_all_obs=True,
+                                        whether_save_opt=False,
                                     )
                                 if plot_plotzilla_bool:
                                     MyPlot.plotzilla(whether_save=save_plotzilla_bool)
@@ -1399,19 +1437,19 @@ gp_analysis(
     nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
     observable_input=["DSG"],
-    E_input_array=[100],
-    deg_input_array=[],
-    Q_param_method_array=["sum"],
-    p_param_method_array=["Qofpq"],
-    input_space_input=["cos"],
-    train_test_split_array=[Fullspaceanglessplit1],
+    E_input_array=[],
+    deg_input_array=[90],
+    Q_param_method_array=["sum", "smax"],
+    p_param_method_array=["Qofprel"],
+    input_space_input=["prel", "Elab"],
+    train_test_split_array=[Allenergysplit1],
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
     length_scale_input=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
     fixed_sd=None,
     m_pi_eff=138,
-    Lambdab=600,
+    Lambdab=200,
     print_all_classes=False,
     savefile_type="png",
     plot_coeffs_bool=True,
@@ -1423,14 +1461,14 @@ gp_analysis(
     plot_lambdapost_pointwise_bool=False,
     plot_lambdapost_curvewise_bool=True,
     plot_plotzilla_bool=False,
-    save_coeffs_bool=True,
-    save_md_bool=True,
-    save_pc_bool=True,
+    save_coeffs_bool=False,
+    save_md_bool=False,
+    save_pc_bool=False,
     save_ci_bool=False,
     save_pdf_bool=False,
     save_trunc_bool=False,
     save_lambdapost_pointwise_bool=False,
-    save_lambdapost_curvewise_bool=True,
+    save_lambdapost_curvewise_bool=False,
     save_plotzilla_bool=False,
-    filename_addendum="_noell",
+    filename_addendum="_refactor",
 )

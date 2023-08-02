@@ -261,7 +261,7 @@ def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_
             pass
 
     # Plot formatting
-    ax.set_yticks([0])
+    ax.set_yticks([-1, -4, -7])
     ax.set_yticklabels(y_label)
     ax.tick_params(axis='both', which='both', direction='in')
     ax.tick_params(which='major', length=0)
@@ -302,10 +302,17 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
     """
     # cmap_name = 'Blues'
     cmap = mpl.cm.get_cmap(cmap_name)
-
-    for obs_idx in 2 * np.arange(0, (np.shape(marg_post_array))[1] // order_num, 1, dtype = int):
-        # print("obs_idx = " + str(obs_idx))
+    print(np.shape(marg_post_array))
+    print(2 * np.arange(0, (np.shape(marg_post_array))[1] // order_num, 1, dtype = int))
+    for obs_idx in np.arange(0, (np.shape(marg_post_array))[1] // order_num, 1, dtype = int):
         for i in range(order_num):
+            joint_post_obs_array = joint_post_array[i + obs_idx * order_num, ...]
+            print(np.shape(joint_post_obs_array))
+            if joint_post_obs_array.ndim == 2:
+                joint_post_obs_array = np.reshape(joint_post_obs_array, (
+                1, np.shape(joint_post_obs_array)[0], np.shape(joint_post_obs_array)[1]))
+            print(np.shape(joint_post_obs_array))
+
             # sets up axes
             n_plots = np.shape(variables_array)[0]
             fig, ax_joint_array, ax_marg_array, ax_title = corner_plot(n_plots=n_plots)
@@ -316,7 +323,7 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
             for variable_idx, variable in enumerate(np.roll(variables_array, 1)):
                 # Now plot the marginal distributions
                 try:
-                    dist_mean, dist_stddev = mean_and_stddev(variable.var, marg_post_array[variable_idx - 1, i + obs_idx])
+                    dist_mean, dist_stddev = mean_and_stddev(variable.var, marg_post_array[variable_idx - 1, i + obs_idx * order_num])
                 except:
                     dist_mean, dist_stddev = variable.var[0], 1e-5
                 ax_marg_array[variable_idx].set_xlim(left=np.max([0, dist_mean - 5 * dist_stddev]),
@@ -329,10 +336,10 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
                 ax_marg_array[variable_idx].set_title(rf'${variable.label}$ = {dist_mean} $\pm$ {dist_stddev}',
                                                       fontsize=18)
 
-                ax_marg_array[variable_idx].plot(variable.var, marg_post_array[variable_idx - 1, i + obs_idx],
+                ax_marg_array[variable_idx].plot(variable.var, marg_post_array[variable_idx - 1, i + obs_idx * order_num],
                                                  c=cmap(0.8), lw=1)
                 ax_marg_array[variable_idx].fill_between(variable.var, np.zeros_like(variable.var),
-                                                         marg_post_array[variable_idx - 1, i + obs_idx],
+                                                         marg_post_array[variable_idx - 1, i + obs_idx * order_num],
                                                          facecolor=cmap(0.2), lw=1)
                 if np.roll([variable.user_val for variable in variables_array], 1)[variable_idx] is not None:
                     ax_marg_array[variable_idx].axvline(
@@ -348,13 +355,21 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
             p = np.argsort(comb_array[:, 1])
             comb_array = comb_array[p]
 
-            for joint_idx, joint in enumerate(joint_post_array):
+            for joint_idx, joint in enumerate(joint_post_obs_array):
             # for joint_idx, joint in enumerate(joint_post_array[:, i + obs_idx]):
+                print(joint_idx)
+                print(np.shape(joint))
+                print(np.shape(joint_post_array))
                 # plots contours
+                print("ax_joint_array has shape " + str(np.shape(ax_joint_array)))
+                print(ax_joint_array)
+                print("comb_array has shape " + str(np.shape(comb_array)))
+                print(comb_array)
                 ax_joint_array[joint_idx].set_xlim(left=np.max(
                     [0, mean_list[comb_array[joint_idx, 0]] - 5 * stddev_list[comb_array[joint_idx, 0]]]),
                     right=mean_list[comb_array[joint_idx, 0]] + 5 * stddev_list[
                         comb_array[joint_idx, 0]])
+
                 ax_joint_array[joint_idx].set_ylim(bottom=np.max(
                     [0, mean_list[comb_array[joint_idx, 1]] - 5 * stddev_list[comb_array[joint_idx, 1]]]),
                     top=mean_list[comb_array[joint_idx, 1]] + 5 * stddev_list[
@@ -422,7 +437,7 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
                             comb_array[joint_idx, 1]], 0, 1, c=gray, lw=1)
 
             ax_title.text(.99, .99,
-                        obs_name_corner + '\n' +
+                        obs_name_corner[obs_idx] + '\n' +
                         GP.scheme + '\,' + GP.scale + '\n' +
                         r'' + GP.orders_labels_dict[max(GP.nn_orders) - order_num + 1 + i] + '\n' +
                         r'$Q_{\mathrm{' + GP.Q_param + '}}$' + '\n' +
