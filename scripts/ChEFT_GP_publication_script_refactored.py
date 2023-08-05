@@ -1051,21 +1051,35 @@ def gp_analysis(
                                     # obs_name_grouped_list = ["ALLOBS"]
                                     # obs_labels_grouped_list = [r'Obs.']
 
-                                    plot_obs_list = [["SGT"], ["DSG"], ["D", "AXX", "AYY", "A", "AY"]]
-                                    obs_name_grouped_list = ["SGT", "DSG", "spins"]
-                                    obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$', r'$X_{pqik}$']
+                                    # plot_obs_list = [["SGT"], ["DSG"], ["D", "AXX", "AYY", "A", "AY"],
+                                    #                  ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]]
+                                    # obs_name_grouped_list = ["SGT", "DSG", "spins", "ALLOBS"]
+                                    # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$', r'$X_{pqik}$',
+                                    #                            r'Obs.']
 
-                                    obs_list = ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]
+                                    # plot_obs_list = [["DSG"], ["D", "AXX", "AYY", "A", "AY"]]
+                                    # obs_name_grouped_list = ["DSG", "spins"]
+                                    # obs_labels_grouped_list = [r'$\displaystyle\frac{d\sigma}{d\Omega}$',
+                                    #                            r'$X_{pqik}$']
+
+                                    plot_obs_list = [["SGT"], ["DSG"], ["D"], ["AXX"], ["AYY"], ["A"], ["AY"],
+                                                     ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]]
+                                    obs_name_grouped_list = ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY", "ALLOBS"]
+                                    obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$',
+                                                               r'$D$', r'$A_{xx}$', r'$A_{yy}$', r'$A$', r'$A_{y}$', r'$X_{pqik}$']
+
+                                    obs_list = ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY",
+                                                "SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]
                                     obs_groupings = [len(a) for a in plot_obs_list]
-                                    # print(obs_groupings)
+                                    print(obs_groupings)
                                     obs_grouped_list = [
                                         [obs_dict[obs_name] for obs_name in obs_list[list_idx:list_idx + obs_idx]] for
                                         list_idx, obs_idx in enumerate(obs_groupings)]
-                                    # print(obs_grouped)
+                                    print(obs_grouped_list)
 
                                     if E_angle_pair[0]:
                                         # plot_all_obs = False
-                                        orders = 1
+                                        orders = 3
                                         slice_type="energy"
                                     else:
                                         # plot_all_obs = False
@@ -1085,11 +1099,16 @@ def gp_analysis(
                                         t_lab=t_lab,
                                         # t_lab_pts=np.array([5, 21, 48, 85, 133, 192]),
                                         # t_lab_pts=np.array([5, 21, 48, 85, 133, 192, 261]),
-                                        t_lab_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]),
+                                        # t_lab_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]),
+                                        # t_lab_pts=np.array([1, 12, 33, 65]),
+                                        # t_lab_pts=np.array([108, 161, 225, 300]),
+                                        # t_lab_pts=np.array([1, 5, 12, 21]),
+                                        # t_lab_pts=np.array([33, 48, 65, 85]),
+                                        t_lab_pts=np.array([108, 133, 161, 192]),
+
                                         # t_lab_pts=np.array([50, 100, 150, 200, 250, 300]),
                                         # t_lab_pts=np.array([1, 5, 12, 21, 33, 48]),
-                                        # t_lab_pts=np.array([1, 10, 25, 48]),
-                                        # t_lab_pts=np.array([1, 10, 25]),
+                                        # t_lab_pts=np.array([1, 10, 25, 48]),                                        # t_lab_pts=np.array([1, 10, 25]),
                                         # t_lab_pts=np.array([65, 85, 108, 133, 161, 192]),
                                         # t_lab_pts=np.array([65, 100, 143, 192]),
                                         # t_lab_pts=np.array([100, 143, 192]),
@@ -1441,15 +1460,15 @@ gp_analysis(
     deg_input_array=[90],
     Q_param_method_array=["sum", "smax"],
     p_param_method_array=["Qofprel"],
-    input_space_input=["prel", "Elab"],
+    input_space_input=["Elab", "prel"],
     train_test_split_array=[Allenergysplit1],
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
     length_scale_input=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
     fixed_sd=None,
-    m_pi_eff=138,
-    Lambdab=200,
+    m_pi_eff=200,
+    Lambdab=600,
     print_all_classes=False,
     savefile_type="png",
     plot_coeffs_bool=True,
@@ -1468,7 +1487,7 @@ gp_analysis(
     save_pdf_bool=False,
     save_trunc_bool=False,
     save_lambdapost_pointwise_bool=False,
-    save_lambdapost_curvewise_bool=False,
+    save_lambdapost_curvewise_bool=True,
     save_plotzilla_bool=False,
-    filename_addendum="_refactor",
+    filename_addendum="_refactor_hiE",
 )

@@ -214,7 +214,7 @@ def draw_summary_statistics(bounds68, bounds95, median, height=0, ax=None):
     ax.plot(bounds95, [height, height], c='gray', lw=2, solid_capstyle='round')
     ax.plot([median], [height], c='white', marker='o', zorder=10, markersize=3)
 
-def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_orders, orders_labels_dict):
+def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_orders, orders_labels_dict, GP, whether_save_plots, obs_name_corner):
     """
     Plots the fully marginalized posteriors.
 
@@ -261,7 +261,8 @@ def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_
             pass
 
     # Plot formatting
-    ax.set_yticks([-1, -4, -7])
+    print(-1 * (order_num * np.arange(len(y_label)) + (order_num - 1) / 2))
+    ax.set_yticks(-1 * (order_num * np.arange(len(y_label)) + (order_num - 1)))
     ax.set_yticklabels(y_label)
     ax.tick_params(axis='both', which='both', direction='in')
     ax.tick_params(which='major', length=0)
@@ -279,10 +280,19 @@ def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_
 
     plt.show()
 
+    fig.tight_layout()
+
+    obs_name_corner_concat = ''.join(obs_name_corner)
+    fig.savefig(('figures/' + GP.scheme + '_' + GP.scale + '/' +
+                 variable.name + '_posterior_pdf_curvewise' + '_' + obs_name_corner_concat +
+                 '_' + GP.scheme + '_' +
+                 GP.scale + '_Q' + GP.Q_param + '_' + GP.p_param + '_' + GP.vs_what +
+                 GP.filename_addendum).replace('_0MeVlab_', '_'))
+
     return fig
 
 def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_array,
-                           joint_post_array, GP, obs_name_corner):
+                           joint_post_array, GP, obs_name_corner, whether_save_plots):
     """
     Plots the fully marginalized posteriors.
 
@@ -302,16 +312,16 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
     """
     # cmap_name = 'Blues'
     cmap = mpl.cm.get_cmap(cmap_name)
-    print(np.shape(marg_post_array))
-    print(2 * np.arange(0, (np.shape(marg_post_array))[1] // order_num, 1, dtype = int))
+    # print(np.shape(marg_post_array))
+    # print(np.arange(0, (np.shape(marg_post_array))[1] // order_num, 1, dtype = int))
     for obs_idx in np.arange(0, (np.shape(marg_post_array))[1] // order_num, 1, dtype = int):
         for i in range(order_num):
             joint_post_obs_array = joint_post_array[i + obs_idx * order_num, ...]
-            print(np.shape(joint_post_obs_array))
+            # print(np.shape(joint_post_obs_array))
             if joint_post_obs_array.ndim == 2:
                 joint_post_obs_array = np.reshape(joint_post_obs_array, (
                 1, np.shape(joint_post_obs_array)[0], np.shape(joint_post_obs_array)[1]))
-            print(np.shape(joint_post_obs_array))
+            # print(np.shape(joint_post_obs_array))
 
             # sets up axes
             n_plots = np.shape(variables_array)[0]
@@ -357,14 +367,14 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
 
             for joint_idx, joint in enumerate(joint_post_obs_array):
             # for joint_idx, joint in enumerate(joint_post_array[:, i + obs_idx]):
-                print(joint_idx)
-                print(np.shape(joint))
-                print(np.shape(joint_post_array))
+            #     print(joint_idx)
+            #     print(np.shape(joint))
+            #     print(np.shape(joint_post_array))
                 # plots contours
-                print("ax_joint_array has shape " + str(np.shape(ax_joint_array)))
-                print(ax_joint_array)
-                print("comb_array has shape " + str(np.shape(comb_array)))
-                print(comb_array)
+                # print("ax_joint_array has shape " + str(np.shape(ax_joint_array)))
+                # print(ax_joint_array)
+                # print("comb_array has shape " + str(np.shape(comb_array)))
+                # print(comb_array)
                 ax_joint_array[joint_idx].set_xlim(left=np.max(
                     [0, mean_list[comb_array[joint_idx, 0]] - 5 * stddev_list[comb_array[joint_idx, 0]]]),
                     right=mean_list[comb_array[joint_idx, 0]] + 5 * stddev_list[
@@ -403,7 +413,7 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
 
                 # if joint_idx == len(joint_post_array[:, i + obs_idx]) - 1:
                 #     joint = joint.T
-                print(np.shape(joint))
+                # print(np.shape(joint))
                 ax_joint_array[joint_idx].contour(np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
                                                   np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
                                                   joint,
@@ -448,5 +458,13 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
                         fontsize=25)
 
             plt.show()
+
+            if whether_save_plots:
+                fig.tight_layout()
+
+                fig.savefig(('figures/' + GP.scheme + '_' + GP.scale + '/' +
+                             'corner_plot_curvewise' + '_' + obs_name_corner[obs_idx] + '_' + GP.scheme + '_' +
+                             GP.scale + '_Q' + GP.Q_param + '_' + GP.p_param + '_' + GP.vs_what +
+                             GP.filename_addendum).replace('_0MeVlab_', '_'))
 
     return fig

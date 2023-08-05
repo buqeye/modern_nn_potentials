@@ -2254,10 +2254,11 @@ class GSUMDiagnostics:
 
         BATCH_SIZE = 100
 
-        like_list = []
-        obs_loglike_plots = []
+        # obs_loglike_plots = []
 
         try:
+            like_list = []
+
             if not whether_use_data:
                 raise ValueError("You elected not to use saved data.")
             else:
@@ -2298,6 +2299,8 @@ class GSUMDiagnostics:
                         # print(like_list)
 
         except:
+            like_list = []
+
             for (obs_grouping, obs_name) in zip(obs_data_grouped_list, obs_name_grouped_list):
                 for order_counter in range(1, order_num + 1):
                     # sets the order number
@@ -2654,6 +2657,7 @@ class GSUMDiagnostics:
 
                     # print(obs_like)
                     like_list.append(obs_like)
+                    print("Before reshaping, like_list has shape " + str(np.shape(like_list)))
 
                     # if self.observable_name == "SGT" or plot_all_obs or (slice_type == "angle" and combine_all_obs):
                     #     # converts the points in t_lab_pts to the current input space
@@ -3168,7 +3172,7 @@ class GSUMDiagnostics:
             for (variable, result) in zip(variables_array[marg_bool_array], marg_post_array):
                 # print(np.shape(result))
                 fig = plot_marg_posteriors(variable, result, obs_labels_grouped_list, Lb_colors, order_num,
-                                           self.nn_orders, self.orders_labels_dict)
+                                           self.nn_orders, self.orders_labels_dict, self, whether_save_plots, obs_name_grouped_list)
             #     # Plot each posterior and its summary statistics
             #     fig, ax = plt.subplots(1, 1, figsize=(3.4, 3.4))
             #
@@ -3211,21 +3215,21 @@ class GSUMDiagnostics:
             #
             #     plt.show()
 
-                if 'fig' in locals() and whether_save_plots:
-                    fig.tight_layout()
-
-                    fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' +
-                                 variable.name + '_posterior_pdf_curvewise' + '_' + obs_name_corner +
-                                 '_' + self.scheme + '_' +
-                                 self.scale + '_Q' + self.Q_param + '_' + self.p_param + '_' + self.vs_what +
-                                 self.filename_addendum).replace('_0MeVlab_', '_'))
+                # if 'fig' in locals() and whether_save_plots:
+                #     fig.tight_layout()
+                #
+                #     fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' +
+                #                  variable.name + '_posterior_pdf_curvewise' + '_' + obs_name_corner +
+                #                  '_' + self.scheme + '_' +
+                #                  self.scale + '_Q' + self.Q_param + '_' + self.p_param + '_' + self.vs_what +
+                #                  self.filename_addendum).replace('_0MeVlab_', '_'))
 
         if whether_plot_corner:
             with plt.rc_context({"text.usetex": True}):
                 # for joint_post_idx, (obs_grouping, obs_name) in enumerate(zip(obs_data_grouped_list, obs_name_grouped_list)):
                 print("joint_post_array has shape " + str(np.shape(joint_post_array)))
                 print("marg_post_array has shape " + str(np.shape(marg_post_array)))
-                fig = plot_corner_posteriors('Blues', order_num, variables_array[marg_bool_array], marg_post_array, joint_post_array, self, obs_name_grouped_list)
+                fig = plot_corner_posteriors('Blues', order_num, variables_array[marg_bool_array], marg_post_array, joint_post_array, self, obs_name_grouped_list, whether_plot_corner)
                 # cmap_name = 'Blues'
                 # cmap = mpl.cm.get_cmap(cmap_name)
                 #
@@ -3334,13 +3338,13 @@ class GSUMDiagnostics:
                 #
                 # plt.show()
 
-                if 'fig' in locals() and whether_save_plots:
-                    fig.tight_layout()
-
-                    fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' +
-                                 'corner_plot_curvewise' + '_' + obs_name_corner + '_' + self.scheme + '_' +
-                                 self.scale + '_Q' + self.Q_param + '_' + self.p_param + '_' + self.vs_what +
-                                 self.filename_addendum).replace('_0MeVlab_', '_'))
+                # if 'fig' in locals() and whether_save_plots:
+                #     fig.tight_layout()
+                #
+                #     fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' +
+                #                  'corner_plot_curvewise' + '_' + obs_name_corner + '_' + self.scheme + '_' +
+                #                  self.scale + '_Q' + self.Q_param + '_' + self.p_param + '_' + self.vs_what +
+                #                  self.filename_addendum).replace('_0MeVlab_', '_'))
 
             # creates a list of the values of the random variables corresponding to the
             # point of highest probability in the posterior
@@ -3350,9 +3354,9 @@ class GSUMDiagnostics:
             print(indices_opt)
             opt_vals_list = []
             for idx, var in zip(indices_opt, [variable.var for variable in variables_array[marg_bool_array]]):
-                print(idx)
-                print(var)
-                print(var[idx])
+                # print(idx)
+                # print(var)
+                # print(var[idx])
                 opt_vals_list.append((var[idx])[0])
             print("opt_vals_list = " + str(opt_vals_list))
 
