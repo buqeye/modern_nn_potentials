@@ -283,7 +283,8 @@ def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_
     fig.tight_layout()
 
     obs_name_corner_concat = ''.join(obs_name_corner)
-    fig.savefig(('figures/' + GP.scheme + '_' + GP.scale + '/' +
+    if whether_save_plots:
+        fig.savefig(('figures/' + GP.scheme + '_' + GP.scale + '/' +
                  variable.name + '_posterior_pdf_curvewise' + '_' + obs_name_corner_concat +
                  '_' + GP.scheme + '_' +
                  GP.scale + '_Q' + GP.Q_param + '_' + GP.p_param + '_' + GP.vs_what +
@@ -446,7 +447,8 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
                         np.roll([variable.user_val for variable in variables_array], 1)[
                             comb_array[joint_idx, 1]], 0, 1, c=gray, lw=1)
 
-            ax_title.text(.99, .99,
+            try:
+                ax_title.text(.99, .99,
                         obs_name_corner[obs_idx] + '\n' +
                         GP.scheme + '\,' + GP.scale + '\n' +
                         r'' + GP.orders_labels_dict[max(GP.nn_orders) - order_num + 1 + i] + '\n' +
@@ -456,6 +458,8 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
                         ha='right', va='top',
                         transform=ax_title.transAxes,
                         fontsize=25)
+            except:
+                pass
 
             plt.show()
 

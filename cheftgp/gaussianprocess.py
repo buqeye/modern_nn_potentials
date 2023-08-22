@@ -2255,17 +2255,23 @@ class GSUMDiagnostics:
         BATCH_SIZE = 100
 
         # obs_loglike_plots = []
+        like_list = []
 
-        try:
-            like_list = []
+        for (obs_grouping, obs_name) in zip(obs_data_grouped_list, obs_name_grouped_list):
+            # generates names for files and searches for whether they exist
+            for order_counter in range(1, order_num + 1):
+                order = np.max(self.nn_orders) - order_num + order_counter
 
-            if not whether_use_data:
-                raise ValueError("You elected not to use saved data.")
-            else:
-                for obs_name in obs_name_grouped_list:
-                    # generates names for files and searches for whether they exist
-                    for order_counter in range(1, order_num + 1):
-                        order = np.max(self.nn_orders) - order_num + order_counter
+                try:
+                    # like_list = []
+
+                    if not whether_use_data:
+                        raise ValueError("You elected not to use saved data.")
+                    else:
+                        # for obs_name in obs_name_grouped_list:
+                        #     # generates names for files and searches for whether they exist
+                        #     for order_counter in range(1, order_num + 1):
+                        # order = np.max(self.nn_orders) - order_num + order_counter
                         # print("order = " + str(order))
 
                         # if they exist, they are read in, reshaped, and appended to like_list
@@ -2298,13 +2304,13 @@ class GSUMDiagnostics:
                         # print(tuple([len(random_var.var) for random_var in variables_array]))
                         # print(like_list)
 
-        except:
-            like_list = []
+                except:
+            # like_list = []
 
-            for (obs_grouping, obs_name) in zip(obs_data_grouped_list, obs_name_grouped_list):
-                for order_counter in range(1, order_num + 1):
+            # for (obs_grouping, obs_name) in zip(obs_data_grouped_list, obs_name_grouped_list):
+            #     for order_counter in range(1, order_num + 1):
                     # sets the order number
-                    order = np.max(self.nn_orders) - order_num + order_counter
+                    # order = np.max(self.nn_orders) - order_num + order_counter
                     # print("order = " + str(order))
                     orders_nho_ray = ray.put(self.nn_orders[:order])
 
@@ -2373,8 +2379,8 @@ class GSUMDiagnostics:
                                 # marginalizes partially
                                 # print(np.array(range(len(variables_array)))[~marg_bool_array])
                                 # print(variables_array[~marg_bool_array])
-                                for v, var in zip(np.array(range(len(variables_array)))[~marg_bool_array],
-                                                  variables_array[~marg_bool_array]):
+                                for v, var in zip(np.flip(np.array(range(len(variables_array)))[~marg_bool_array]),
+                                                  np.flip(variables_array[~marg_bool_array])):
                                     # print("While marginalizing, " + str(v))
                                     obs_like = np.trapz(obs_like, x=variables_array[v].var, axis=v)
                                 # print(np.shape(obs_like))
@@ -2460,8 +2466,8 @@ class GSUMDiagnostics:
                                     # marginalizes partially
                                     # print(np.array(range(len(variables_array)))[~marg_bool_array])
                                     # print(variables_array[~marg_bool_array])
-                                    for v, var in zip(np.array(range(len(variables_array)))[~marg_bool_array],
-                                                      variables_array[~marg_bool_array]):
+                                    for v, var in zip(np.flip(np.array(range(len(variables_array)))[~marg_bool_array]),
+                                                      np.flip(variables_array[~marg_bool_array])):
                                         # print("While marginalizing, " + str(v))
                                         obs_like = np.trapz(obs_like, x=variables_array[v].var, axis=v)
                                     # print(np.shape(obs_like))
@@ -2534,8 +2540,8 @@ class GSUMDiagnostics:
                                 # marginalizes partially
                                 # print(np.array(range(len(variables_array)))[~marg_bool_array])
                                 # print(variables_array[~marg_bool_array])
-                                for v, var in zip(np.array(range(len(variables_array)))[~marg_bool_array],
-                                                  variables_array[~marg_bool_array]):
+                                for v, var in zip(np.flip(np.array(range(len(variables_array)))[~marg_bool_array]),
+                                                  np.flip(variables_array[~marg_bool_array])):
                                     # print("While marginalizing, " + str(v))
                                     obs_like = np.trapz(obs_like, x=variables_array[v].var, axis=v)
                                 # print(np.shape(obs_like))
@@ -2615,8 +2621,8 @@ class GSUMDiagnostics:
                                     # marginalizes partially
                                     # print(np.array(range(len(variables_array)))[~marg_bool_array])
                                     # print(variables_array[~marg_bool_array])
-                                    for v, var in zip(np.array(range(len(variables_array)))[~marg_bool_array],
-                                                      variables_array[~marg_bool_array]):
+                                    for v, var in zip(np.flip(np.array(range(len(variables_array)))[~marg_bool_array]),
+                                                      np.flip(variables_array[~marg_bool_array])):
                                         # print("While marginalizing, " + str(v))
                                         obs_like = np.trapz(obs_like, x=variables_array[v].var, axis=v)
                                     # print(np.shape(obs_like))
