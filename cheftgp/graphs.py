@@ -269,6 +269,12 @@ def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_
     ax.tick_params(which='minor', length=7, right=True)
     ax.set_xticks(variable.ticks)
     ax.set_xlabel((r'$' + variable.label + r'$ (' + variable.units + ')').replace('()', ''))
+    print("colors_array has type " + str(type(colors_array)))
+    print("colors_array = " + str(colors_array))
+    print("orders_labels_dict has type " + str(type(orders_labels_dict)))
+    print("orders_labels_dict = " + str(orders_labels_dict))
+    print("nn_orders has type " + str(type(nn_orders)))
+    print("nn_orders = " + str(nn_orders))
     ax.legend(title=r'$\mathrm{pr}(' + variable.label + r' \, | \, \vec{\mathbf{y}}_{k}, \mathbf{f})$',
               handles=[Patch(facecolor=colors_array[o],
                              edgecolor='gray',

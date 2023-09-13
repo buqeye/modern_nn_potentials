@@ -30,10 +30,14 @@ def Q_approx(p, Q_parametrization, Lambda_b, m_pi=138,
 
     elif Q_parametrization == "max":
         # Transition from m_pi to p with a maximum function
+        # try:
+        #     q = [max(P, m_pi) / Lambda_b for P in p]
+        # except:
+        #     q = max(p, m_pi) / Lambda_b
         try:
-            q = [max(P, m_pi) / Lambda_b for P in p]
-        except:
             q = max(p, m_pi) / Lambda_b
+        except:
+            q = np.reshape([max(p_val, m_pi) for p_val in np.array(p).flatten()], np.shape(p)) / Lambda_b
         return q
 
     elif Q_parametrization == "sum":
@@ -60,17 +64,21 @@ def p_approx(p_name, prel, degrees):
     """
 
     if p_name == "Qofprel":
-        try:
-            return np.array(prel * np.ones(len(degrees)))
-        except:
-            return np.array(prel)
+        # try:
+        #     return np.array(prel * np.ones(len(degrees)))
+        # except:
+        #     return np.array(prel)
+        return np.tile(np.array(prel), (len(degrees), 1))
 
     elif p_name == "Qofqcm":
-        return np.array(deg_to_qcm(prel, degrees))
+        # return np.array(deg_to_qcm(prel, degrees))
+        return np.array([np.array(deg_to_qcm(prel, d)) for d in degrees])
 
     elif p_name == "Qofpq":
-        return np.array([softmax_mom(prel, q)
-                         for q in deg_to_qcm(prel, degrees)])
+        # return np.array([softmax_mom(prel, q)
+        #                  for q in deg_to_qcm(prel, degrees)])
+        return np.array([[softmax_mom(p, deg_to_qcm(p, d))
+                         for p in prel] for d in degrees])
 
 
 def deg_fn(deg_input, **kwargs):

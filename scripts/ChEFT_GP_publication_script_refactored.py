@@ -371,6 +371,8 @@ def gp_analysis(
     Q_param_method_array=["sum"],
     p_param_method_array=["Qofprel"],
     input_space_input=["cos"],
+    input_space_deg="deg",
+    input_space_tlab="prel",
     train_test_split_array=[Fullspaceanglessplit1],
     orders_excluded=[],
     orders_names_dict=None,
@@ -626,7 +628,7 @@ def gp_analysis(
                             deg_fn,
                             p_approx(
                                 PParamMethod,
-                                E_to_p(E_lab, interaction=nn_interaction),
+                                E_to_p(t_lab, interaction=nn_interaction),
                                 degrees,
                             ),
                             r"$\theta$ (deg)",
@@ -643,7 +645,7 @@ def gp_analysis(
                             neg_cos,
                             p_approx(
                                 PParamMethod,
-                                E_to_p(E_lab, interaction=nn_interaction),
+                                E_to_p(t_lab, interaction=nn_interaction),
                                 degrees,
                             ),
                             r"$-\mathrm{cos}(\theta)$",
@@ -660,7 +662,7 @@ def gp_analysis(
                             sin_thing,
                             p_approx(
                                 PParamMethod,
-                                E_to_p(E_lab, interaction=nn_interaction),
+                                E_to_p(t_lab, interaction=nn_interaction),
                                 degrees,
                             ),
                             r"$\mathrm{sin}(\theta)$",
@@ -677,7 +679,7 @@ def gp_analysis(
                             deg_to_qcm,
                             p_approx(
                                 PParamMethod,
-                                E_to_p(E_lab, interaction=nn_interaction),
+                                E_to_p(t_lab, interaction=nn_interaction),
                                 degrees,
                             ),
                             r"$q_{\mathrm{cm}}$ (MeV)",
@@ -694,7 +696,7 @@ def gp_analysis(
                             deg_to_qcm2,
                             p_approx(
                                 PParamMethod,
-                                E_to_p(E_lab, interaction=nn_interaction),
+                                E_to_p(t_lab, interaction=nn_interaction),
                                 degrees,
                             ),
                             r"$q_{\mathrm{cm}}^{2}$ (MeV$^{2}$)",
@@ -707,13 +709,40 @@ def gp_analysis(
                             ],
                         )
 
-                        vsquantity_array = [
+                        vsquantity_array_deg = [
                             DegBunch,
                             CosBunch,
                             QcmBunch,
                             Qcm2Bunch,
                             SinBunch,
                         ]
+                        vsquantity_array = vsquantity_array_deg
+
+                        ElabBunch = InputSpaceBunch(
+                            "Elab",
+                            Elab_fn,
+                            p_approx(
+                                "Qofprel",
+                                E_to_p(t_lab, interaction=nn_interaction),
+                                degrees,
+                            ),
+                            r"$E_{\mathrm{lab}}$ (MeV)",
+                            [r"$", Observable.title, r"(E_{\mathrm{lab}})$"],
+                        )
+
+                        PrelBunch = InputSpaceBunch(
+                            "prel",
+                            E_to_p,
+                            p_approx(
+                                "Qofprel",
+                                E_to_p(t_lab, interaction=nn_interaction),
+                                degrees,
+                            ),
+                            r"$p_{\mathrm{rel}}$ (MeV)",
+                            [r"$", Observable.title, r"(p_{\mathrm{rel}})$"],
+                        )
+
+                        vsquantity_array_tlab = [ElabBunch, PrelBunch]
 
                     else:
                         # creates the bunches for the vs-energy input spaces
@@ -741,7 +770,103 @@ def gp_analysis(
                             [r"$", Observable.title, r"(p_{\mathrm{rel}})$"],
                         )
 
-                        vsquantity_array = [ElabBunch, PrelBunch]
+                        vsquantity_array_tlab = [ElabBunch, PrelBunch]
+                        vsquantity_array = vsquantity_array_tlab
+
+                        # creates the bunches for the vs-angle input spaces
+                        DegBunch = InputSpaceBunch(
+                            "deg",
+                            deg_fn,
+                            p_approx(
+                                PParamMethod,
+                                E_to_p(1, interaction=nn_interaction),
+                                degrees,
+                            ),
+                            r"$\theta$ (deg)",
+                            [
+                                r"$",
+                                Observable.title,
+                                r"(\theta, E_{\mathrm{lab}}= ",
+                                1,
+                                "\,\mathrm{MeV})$",
+                            ],
+                        )
+                        CosBunch = InputSpaceBunch(
+                            "cos",
+                            neg_cos,
+                            p_approx(
+                                PParamMethod,
+                                E_to_p(1, interaction=nn_interaction),
+                                degrees,
+                            ),
+                            r"$-\mathrm{cos}(\theta)$",
+                            [
+                                r"$",
+                                Observable.title,
+                                r"(-\mathrm{cos}(\theta), E_{\mathrm{lab}}= ",
+                                1,
+                                "\,\mathrm{MeV})$",
+                            ],
+                        )
+                        SinBunch = InputSpaceBunch(
+                            "sin",
+                            sin_thing,
+                            p_approx(
+                                PParamMethod,
+                                E_to_p(1, interaction=nn_interaction),
+                                degrees,
+                            ),
+                            r"$\mathrm{sin}(\theta)$",
+                            [
+                                r"$",
+                                Observable.title,
+                                r"(\mathrm{sin}(\theta), E_{\mathrm{lab}}= ",
+                                1,
+                                "\,\mathrm{MeV})$",
+                            ],
+                        )
+                        QcmBunch = InputSpaceBunch(
+                            "qcm",
+                            deg_to_qcm,
+                            p_approx(
+                                PParamMethod,
+                                E_to_p(1, interaction=nn_interaction),
+                                degrees,
+                            ),
+                            r"$q_{\mathrm{cm}}$ (MeV)",
+                            [
+                                r"$",
+                                Observable.title,
+                                r"(q_{\mathrm{cm}}, E_{\mathrm{lab}}= ",
+                                1,
+                                "\,\mathrm{MeV})$",
+                            ],
+                        )
+                        Qcm2Bunch = InputSpaceBunch(
+                            "qcm2",
+                            deg_to_qcm2,
+                            p_approx(
+                                PParamMethod,
+                                E_to_p(1, interaction=nn_interaction),
+                                degrees,
+                            ),
+                            r"$q_{\mathrm{cm}}^{2}$ (MeV$^{2}$)",
+                            [
+                                r"$",
+                                Observable.title,
+                                r"(q_{\mathrm{cm}}^{2}, E_{\mathrm{lab}}= ",
+                                1,
+                                "\,\mathrm{MeV})$",
+                            ],
+                        )
+
+                        vsquantity_array_deg = [
+                            DegBunch,
+                            CosBunch,
+                            QcmBunch,
+                            Qcm2Bunch,
+                            SinBunch,
+                        ]
 
                     vsquantity_array = [
                         b for b in vsquantity_array if b.name in input_space_input
@@ -814,39 +939,47 @@ def gp_analysis(
                             # )
 
                             # sets the meshes for the random variable arrays
-                            mpi_vals = np.linspace(50, 400, 49, dtype=np.dtype('f4'))
+                            mpi_vals = np.linspace(50, 400, 29, dtype=np.dtype('f4'))
                             # mpi_vals = 225 * np.array([0.9999, 1.0001])
                             # ls_vals = np.linspace(0.02, 4.00, 25, dtype=np.dtype('f'))
                             # print(ls_vals)
-                            if E_angle_pair[0]:
-                                ls_vals = np.linspace(0.01,
-                                                    2 * (VsQuantity.input_space(
-                                                        **{"p_input": E_to_p(E_lab, nn_interaction),
-                                                            "deg_input": max(degrees),
-                                                            "interaction": nn_interaction}) - \
-                                                         VsQuantity.input_space(
-                                                             **{"p_input": E_to_p(E_lab, nn_interaction),
-                                                                "deg_input": min(degrees),
-                                                                "interaction": nn_interaction})),
-                                                    50)
-                            else:
-                                ls_vals = np.linspace(1, 200, 50, dtype=np.dtype('f4'))
+                            # if E_angle_pair[0]:
+                            #     ls_vals = np.linspace(0.01,
+                            #                         2 * (VsQuantity.input_space(
+                            #                             **{"p_input": E_to_p(E_lab, nn_interaction),
+                            #                                 "deg_input": max(degrees),
+                            #                                 "interaction": nn_interaction}) - \
+                            #                              VsQuantity.input_space(
+                            #                                  **{"p_input": E_to_p(E_lab, nn_interaction),
+                            #                                     "deg_input": min(degrees),
+                            #                                     "interaction": nn_interaction})),
+                            #                         50)
+                            # else:
+                            #     ls_vals = np.linspace(1, 200, 50, dtype=np.dtype('f4'))
                             # print(ls_vals)
-                            # ls_deg_vals = np.linspace(0.01,
-                            #                       2 * (VsQuantity.input_space(
-                            #                           **{"p_input": E_to_p(E_lab, nn_interaction),
-                            #                              "deg_input": max(degrees),
-                            #                              "interaction": nn_interaction}) - \
-                            #                            VsQuantity.input_space(
-                            #                                **{"p_input": E_to_p(E_lab, nn_interaction),
-                            #                                   "deg_input": min(degrees),
-                            #                                   "interaction": nn_interaction})),
-                            #                       50)
-                            # ls_tlab_vals = np.linspace(1, 200, 50, dtype=np.dtype('f4'))
-                            lambda_vals = np.linspace(300, 900, 51, dtype=np.dtype('f4'))
+                            VsQuantityPosteriorDeg = [
+                                b for b in vsquantity_array_deg if b.name == input_space_deg
+                            ][0]
+                            VsQuantityPosteriorTlab = [
+                                b for b in vsquantity_array_tlab if b.name == input_space_tlab
+                            ][0]
+
+                            ls_deg_vals = np.linspace(0.01,
+                                                  2 * (VsQuantityPosteriorDeg.input_space(
+                                                      **{"p_input": E_to_p(E_lab, nn_interaction),
+                                                         "deg_input": max(degrees),
+                                                         "interaction": nn_interaction}) - \
+                                                       VsQuantityPosteriorDeg.input_space(
+                                                           **{"p_input": E_to_p(E_lab, nn_interaction),
+                                                              "deg_input": min(degrees),
+                                                              "interaction": nn_interaction})),
+                                                  32)
+                            ls_tlab_vals = np.linspace(1, 200, 30, dtype=np.dtype('f4'))
+                            lambda_vals = np.linspace(300, 900, 31, dtype=np.dtype('f4'))
                             # lambda_vals = 600 * np.array([0.9999, 1.0001])
 
-                            mesh_cart = gm.cartesian(lambda_vals, np.log(ls_vals), mpi_vals)
+                            # mesh_cart = gm.cartesian(lambda_vals, np.log(ls_vals), mpi_vals)
+                            mesh_cart = gm.cartesian(lambda_vals, np.log(ls_deg_vals), np.log(ls_tlab_vals), mpi_vals)
 
                             # sets the RandomVariable objects
                             LambdabVariable = RandomVariable(var=lambda_vals,
@@ -858,33 +991,33 @@ def gp_analysis(
                                                              logprior=Lb_logprior(lambda_vals),
                                                              logprior_name="Lambdab_uniformlogprior",
                                                              marg_bool = True)
-                            LsVariable = RandomVariable(var=ls_vals,
-                                                        user_val=None,
-                                                        name='ls',
-                                                        label="\ell",
-                                                        units="",
-                                                        ticks=[],
-                                                        logprior=np.zeros(len(ls_vals)),
-                                                        logprior_name="ls_nologprior",
-                                                        marg_bool = False)
-                            # LsDegVariable = RandomVariable(var=ls_deg_vals,
+                            # LsVariable = RandomVariable(var=ls_vals,
                             #                             user_val=None,
-                            #                             name='lsdeg',
-                            #                             label="\ell_{\theta}",
+                            #                             name='ls',
+                            #                             label="\ell",
                             #                             units="",
                             #                             ticks=[],
-                            #                             logprior=np.zeros(len(ls_deg_vals)),
+                            #                             logprior=np.zeros(len(ls_vals)),
                             #                             logprior_name="ls_nologprior",
-                            #                             marg_bool=False)
-                            # LsTlabVariable = RandomVariable(var=ls_tlab_vals,
-                            #                             user_val=None,
-                            #                             name='lstlab',
-                            #                             label="\ell_{T}",
-                            #                             units="MeV",
-                            #                             ticks=[],
-                            #                             logprior=np.zeros(len(ls_tlab_vals)),
-                            #                             logprior_name="ls_nologprior",
-                            #                             marg_bool=False)
+                            #                             marg_bool = False)
+                            LsDegVariable = RandomVariable(var=ls_deg_vals,
+                                                        user_val=None,
+                                                        name='lsdeg',
+                                                        label="\ell_{\theta}",
+                                                        units="",
+                                                        ticks=[],
+                                                        logprior=np.zeros(len(ls_deg_vals)),
+                                                        logprior_name="ls_nologprior",
+                                                        marg_bool=False)
+                            LsTlabVariable = RandomVariable(var=ls_tlab_vals,
+                                                        user_val=None,
+                                                        name='lstlab',
+                                                        label="\ell_{T}",
+                                                        units="MeV",
+                                                        ticks=[],
+                                                        logprior=np.zeros(len(ls_tlab_vals)),
+                                                        logprior_name="ls_nologprior",
+                                                        marg_bool=False)
                             MpieffVariable = RandomVariable(var=mpi_vals,
                                                             user_val=m_pi_eff,
                                                             name='mpieff',
@@ -894,8 +1027,8 @@ def gp_analysis(
                                                             logprior=mpieff_logprior(mpi_vals),
                                                             logprior_name="mpieff_uniformlogprior",
                                                             marg_bool = True)
-                            variables_array = np.array([LambdabVariable, LsVariable, MpieffVariable])
-                            # variables_array = np.array([LambdabVariable, LsDegVariable, LsTlabVariable, MpieffVariable])
+                            # variables_array = np.array([LambdabVariable, LsVariable, MpieffVariable])
+                            variables_array = np.array([LambdabVariable, LsTlabVariable, LsDegVariable, MpieffVariable])
 
                             # runs through the training and testing masks
                             for l, TrainingTestingSplit in enumerate(
@@ -962,20 +1095,39 @@ def gp_analysis(
                                     )
 
                                 # creates the GP with all its hyperparameters
-                                ratio_dsg = Q_approx(
+                                print("VsQuantity.mom has shape " + str(np.shape(VsQuantity.mom)))
+                                ratio = Q_approx(
                                     VsQuantity.mom,
                                     QParamMethod,
                                     Lambda_b=Lambdab,
                                     m_pi=m_pi_eff,
                                 )
+                                print("ratio has shape " + str(np.shape(ratio)))
+                                if not E_angle_pair[0]:
+                                    if not E_angle_pair[1]:
+                                        ratio = ratio[0, :]
+                                        print("ratio has shape " + str(np.shape(ratio)))
+                                        ratio = np.reshape(ratio, (len(t_lab)))
+                                        print("ratio has shape " + str(np.shape(ratio)))
+                                    else:
+                                        ratio = ratio[np.isin(degrees, E_angle_pair[1]), :]
+                                        print("ratio has shape " + str(np.shape(ratio)))
+                                        ratio = np.reshape(ratio, (len(t_lab)))
+                                        print("ratio has shape " + str(np.shape(ratio)))
+                                else:
+                                    ratio = ratio[:, np.isin(t_lab, E_angle_pair[0])]
+                                    print("ratio has shape " + str(np.shape(ratio)))
+                                    ratio = np.reshape(ratio, (len(degrees)))
+                                    print("ratio has shape " + str(np.shape(ratio)))
                                 center = 0
                                 df = 1
                                 disp = 0
+                                # std_scale = 0.25
                                 std_scale = 1
                                 GPHyper = GPHyperparameters(
                                     LengthScaleGuess,
                                     center,
-                                    ratio_dsg,
+                                    ratio,
                                     df=df,
                                     disp=disp,
                                     scale=std_scale,
@@ -1078,10 +1230,20 @@ def gp_analysis(
                                     # obs_name_grouped_list = ["DSG"]
                                     # obs_labels_grouped_list = [r'$\displaystyle\frac{d\sigma}{d\Omega}$']
 
+                                    # # just D
+                                    # plot_obs_list = [["D"]]
+                                    # obs_name_grouped_list = ["D"]
+                                    # obs_labels_grouped_list = [r'$D$']
+
                                     # # for equalizing SGT and DSG
                                     # plot_obs_list = [["SGT"], ["DSG"]]
                                     # obs_name_grouped_list = ["SGT", "DSG"]
                                     # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$']
+
+                                    # for SGT, DSG, and D
+                                    plot_obs_list = [["SGT"], ["DSG"], ["D"]]
+                                    obs_name_grouped_list = ["SGT", "DSG", "D"]
+                                    obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$', r'$D$']
 
                                     # # spins
                                     # plot_obs_list = [["D", "AXX", "AYY", "A", "AY"]]
@@ -1093,10 +1255,10 @@ def gp_analysis(
                                     # obs_name_grouped_list = ["ALLOBS"]
                                     # obs_labels_grouped_list = [r'Obs.']
 
-                                    # ALLOBS for angle input spaces
-                                    plot_obs_list = [["DSG", "D", "AXX", "AYY", "A", "AY"]]
-                                    obs_name_grouped_list = ["ALLOBS"]
-                                    obs_labels_grouped_list = [r'Obs.']
+                                    # # ALLOBS for angle input spaces
+                                    # plot_obs_list = [["DSG", "D", "AXX", "AYY", "A", "AY"]]
+                                    # obs_name_grouped_list = ["ALLOBS"]
+                                    # obs_labels_grouped_list = [r'Obs.']
 
                                     # # SGT, DSG, spins, ALLOBS for energy input spaces
                                     # plot_obs_list = [["SGT"], ["DSG"], ["D", "AXX", "AYY", "A", "AY"],
@@ -1135,15 +1297,54 @@ def gp_analysis(
                                         obs_sublist in plot_obs_list]
                                     print(obs_grouped_list)
 
-                                    if E_angle_pair[0]:
-                                        # plot_all_obs = False
-                                        orders = 1
-                                        slice_type="energy"
-                                    else:
-                                        # plot_all_obs = False
-                                        orders = 1
-                                        slice_type="angle"
+                                    # if E_angle_pair[0]:
+                                    #     # plot_all_obs = False
+                                    #     orders = 2
+                                    #     slice_type="energy"
+                                    # else:
+                                    #     # plot_all_obs = False
+                                    #     orders = 2
+                                    #     slice_type="angle"
+                                    orders = 1
+
+                                    LengthScaleTlabInput.make_guess(
+                                        VsQuantityPosteriorTlab.input_space(
+                                            **{
+                                                "E_lab": t_lab,
+                                                "interaction": nn_interaction,
+                                            }
+                                        )
+                                    )
+                                    LengthScaleDegInput.make_guess(
+                                        VsQuantityPosteriorDeg.input_space(
+                                            **{
+                                                "deg_input": degrees,
+                                                "p_input": E_to_p(
+                                                    E_lab, interaction=nn_interaction
+                                                ),
+                                            }
+                                        )
+                                    )
+
                                     MyPlot.plot_posteriors_curvewise(
+                                        # order stuff
+                                        light_colors = Orders.lightcolors_array,
+                                        nn_orders_array = Orders.orders_restricted,
+                                        nn_orders_full_array = Orders.orders_full,
+                                        excluded = Orders.excluded,
+                                        orders_labels_dict = {6: r'N$^{4}$LO$^{+}$', 5: r'N$^{4}$LO',
+                                                               4: r'N$^{3}$LO', 3: r'N$^{2}$LO',
+                                                               2: r'NLO'},
+                                        # strings
+                                        p_param = PParamMethod,
+                                        Q_param = QParamMethod,
+                                        nn_interaction = nn_interaction,
+                                        # hyperparameters
+                                        center = center,
+                                        disp = disp,
+                                        df = df,
+                                        std_est = std_scale,
+                                        # filename stuff
                                         obs_data_grouped_list = obs_grouped_list,
                                         obs_name_grouped_list = obs_name_grouped_list,
                                         obs_labels_grouped_list = obs_labels_grouped_list,
@@ -1157,7 +1358,7 @@ def gp_analysis(
                                         t_lab=t_lab,
                                         # t_lab_pts=np.array([5, 21, 48, 85, 133, 192]),
                                         # t_lab_pts=np.array([5, 21, 48, 85, 133, 192, 261]),
-                                        t_lab_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]), # set0 / refactor
+                                        t_lab_train_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]), # set0 / refactor
                                         # t_lab_pts=np.array([25, 75, 125, 175, 225, 275, 325]), # set1
                                         # t_lab_pts=np.array([1, 10, 28, 55, 90, 133, 185]), # set2
                                         # t_lab_pts=np.array([1, 9, 23, 45, 73, 108, 150]), # set3
@@ -1177,6 +1378,10 @@ def gp_analysis(
                                         # t_lab_pts=np.array([65, 85, 108, 133, 161, 192]),
                                         # t_lab_pts=np.array([65, 100, 143, 192]),
                                         # t_lab_pts=np.array([100, 143, 192]),
+                                        # t_lab_train_pts=np.array([4, 20, 47, 81, 129, 188, 249]),
+                                        t_lab_test_pts=np.array([4, 20, 47, 81, 129, 188, 249]),
+                                        InputSpaceTlab=VsQuantityPosteriorTlab,
+                                        LsTlab=LengthScaleTlabInput,
                                         degrees=degrees,
                                         # degrees_pts=np.array(
                                         #     [26, 51, 77, 103, 129, 154]
@@ -1184,24 +1389,32 @@ def gp_analysis(
                                         # degrees_pts=np.array(
                                         #     [23, 45, 68, 90, 113, 135, 158]
                                         # ),
-                                        degrees_pts=np.array(
+                                        degrees_train_pts=np.array(
                                             [41, 60, 76, 90, 104, 120, 139]
                                         ), # evencos
                                         # degrees_pts=np.array(
                                         #     [15, 31, 50, 90, 130, 149, 165]
                                         # ),  # evensin
-                                        slice_type=slice_type,
+                                        # degrees_train_pts=np.array(
+                                        #     [50, 67, 82, 98, 113, 130]
+                                        # ),
+                                        degrees_test_pts=np.array(
+                                            [50, 67, 82, 98, 113, 130]
+                                        ),
+                                        InputSpaceDeg=VsQuantityPosteriorDeg,
+                                        LsDeg=LengthScaleDegInput,
+                                        # slice_type=slice_type,
                                         variables_array=variables_array,
                                         mesh_cart=mesh_cart,
                                         Lambda_b_true=Lambdab,
                                         mpi_true=m_pi_eff,
                                         orders=orders,
-                                        whether_use_data=True,
-                                        whether_save_data=True,
+                                        whether_use_data=False,
+                                        whether_save_data=False,
                                         whether_save_plots=save_lambdapost_curvewise_bool,
                                         # plot_all_obs=plot_all_obs,
                                         # combine_all_obs=True,
-                                        whether_save_opt=True,
+                                        whether_save_opt=False,
                                     )
                                 if plot_plotzilla_bool:
                                     MyPlot.plotzilla(whether_save=save_plotzilla_bool)
@@ -1516,7 +1729,7 @@ def gp_analysis(
         print("\n\n************************************")
         print("Available potentials: " + str(scalescheme_current_list))
         print("Available observables: " + str(observable_current_list))
-        print("Available Q parametrizations: ['smoothmax', 'max', 'sum']")
+        print("Available Q parametrizations: ['smax', 'max', 'sum']")
         print("Available input spaces: " + str(inputspace_current_list))
         print("Available train/test splits: " + str(traintest_current_list))
         print("Available length scales: " + str(lengthscale_current_list))
@@ -1527,12 +1740,14 @@ gp_analysis(
     nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
     observable_input=["DSG"],
-    E_input_array=[100],
-    deg_input_array=[],
-    Q_param_method_array=["smax"],
-    p_param_method_array=["Qofpq"],
-    input_space_input=["cos"],
-    train_test_split_array=[Fullspaceanglessplit1],
+    E_input_array=[],
+    deg_input_array=[90],
+    Q_param_method_array=["sum"],
+    p_param_method_array=["Qofprel"],
+    input_space_input=["prel"],
+    input_space_deg="cos",
+    input_space_tlab="prel",
+    train_test_split_array=[Allenergysplit1],
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
@@ -1540,8 +1755,8 @@ gp_analysis(
     LengthScaleTlabInput=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
     LengthScaleDegInput=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
     fixed_sd=None,
-    m_pi_eff=220,
-    Lambdab=610,
+    m_pi_eff=200,
+    Lambdab=600,
     print_all_classes=False,
     savefile_type="png",
     plot_coeffs_bool=True,
@@ -1560,7 +1775,7 @@ gp_analysis(
     save_pdf_bool=False,
     save_trunc_bool=False,
     save_lambdapost_pointwise_bool=False,
-    save_lambdapost_curvewise_bool=True,
+    save_lambdapost_curvewise_bool=False,
     save_plotzilla_bool=False,
-    filename_addendum="_refactor",
+    filename_addendum="_2dsave",
 )
