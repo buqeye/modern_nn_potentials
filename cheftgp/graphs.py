@@ -323,12 +323,22 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
     # print(np.arange(0, (np.shape(marg_post_array))[1] // order_num, 1, dtype = int))
     for obs_idx in np.arange(0, (np.shape(marg_post_array))[1] // order_num, 1, dtype = int):
         for i in range(order_num):
-            joint_post_obs_array = joint_post_array[i + obs_idx * order_num, ...]
+            print("joint_post_array has shape " + str(np.shape(joint_post_array)))
+            # print("joint_post_array has maximum " + str(np.amax(joint_post_array)))
+            # print("joint_post_array = " + str(joint_post_array))
+            joint_post_obs_array = joint_post_array[(i + obs_idx * order_num) * np.shape(variables_array)[0] * (np.shape(variables_array)[0] - 1) // 2 :
+                                                    (1 + i + obs_idx * order_num) * np.shape(variables_array)[0] * (np.shape(variables_array)[0] - 1) // 2]
             # print(np.shape(joint_post_obs_array))
             if joint_post_obs_array.ndim == 2:
                 joint_post_obs_array = np.reshape(joint_post_obs_array, (
                 1, np.shape(joint_post_obs_array)[0], np.shape(joint_post_obs_array)[1]))
+                print("We did the if-statement.")
             # print(np.shape(joint_post_obs_array))
+
+            # joint_post_obs_array = np.reshape(joint_post_obs_array, (1,) + np.shape(joint_post_obs_array))
+            print("joint_post_obs_array has shape " + str(np.shape(joint_post_obs_array)))
+            # print("joint_post_obs_array has maximum " + str(np.amax(joint_post_obs_array)))
+            # print("joint_post_obs_array = " + str(joint_post_obs_array))
 
             # sets up axes
             n_plots = np.shape(variables_array)[0]
@@ -337,10 +347,11 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
             mean_list = []
             stddev_list = []
 
-            for variable_idx, variable in enumerate(np.roll(variables_array, 1)):
+            # for variable_idx, variable in enumerate(np.roll(variables_array, 1)):
+            for variable_idx, variable in enumerate(variables_array):
                 # Now plot the marginal distributions
                 try:
-                    dist_mean, dist_stddev = mean_and_stddev(variable.var, marg_post_array[variable_idx - 1, i + obs_idx * order_num])
+                    dist_mean, dist_stddev = mean_and_stddev(variable.var, marg_post_array[variable_idx, i + obs_idx * order_num])
                 except:
                     dist_mean, dist_stddev = variable.var[0], 1e-5
                 ax_marg_array[variable_idx].set_xlim(left=np.max([0, dist_mean - 5 * dist_stddev]),
@@ -353,24 +364,38 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
                 ax_marg_array[variable_idx].set_title(rf'${variable.label}$ = {dist_mean} $\pm$ {dist_stddev}',
                                                       fontsize=18)
 
-                ax_marg_array[variable_idx].plot(variable.var, marg_post_array[variable_idx - 1, i + obs_idx * order_num],
+                ax_marg_array[variable_idx].plot(variable.var, marg_post_array[variable_idx, i + obs_idx * order_num],
                                                  c=cmap(0.8), lw=1)
                 ax_marg_array[variable_idx].fill_between(variable.var, np.zeros_like(variable.var),
-                                                         marg_post_array[variable_idx - 1, i + obs_idx * order_num],
+                                                         marg_post_array[variable_idx, i + obs_idx * order_num],
                                                          facecolor=cmap(0.2), lw=1)
-                if np.roll([variable.user_val for variable in variables_array], 1)[variable_idx] is not None:
+                # if np.roll([variable.user_val for variable in variables_array], 1)[variable_idx] is not None:
+                if [variable.user_val for variable in variables_array][variable_idx] is not None:
                     ax_marg_array[variable_idx].axvline(
-                        np.roll([variable.user_val for variable in variables_array], 1)[variable_idx], 0, 1,
+                        [variable.user_val for variable in variables_array][variable_idx], 0, 1,
                         c=gray, lw=1)
                 # if variable_idx == np.shape(variables_array)[0] - 1:
                 #     ax_marg_array[variable_idx].set_xticklabels(variable.ticks)
 
-            comb_array = np.array(np.meshgrid(np.arange(0, np.shape(variables_array)[0], 1, dtype=int),
-                                              np.arange(0, np.shape(variables_array)[0], 1,
-                                                        dtype=int))).T.reshape(-1, 2)
-            comb_array = np.delete(comb_array, [comb[0] >= comb[1] for comb in comb_array], axis=0)
-            p = np.argsort(comb_array[:, 1])
-            comb_array = comb_array[p]
+            # comb_array = np.array(np.meshgrid(np.arange(0, np.shape(variables_array)[0], 1, dtype=int),
+            #                                   np.arange(0, np.shape(variables_array)[0], 1,
+            #                                             dtype=int))).T.reshape(-1, 2)
+            # comb_array = np.delete(comb_array, [comb[0] >= comb[1] for comb in comb_array], axis=0)
+            # p = np.argsort(comb_array[:, 1])
+            # comb_array = comb_array[p]
+            # print("comb_array = " + str(comb_array))
+
+            comb_array = []
+            for ca in range(1, np.shape(variables_array)[0]):
+                for ca_less in range(0, ca):
+                    comb_array.append([ca, ca_less])
+            # comb_array = np.array(comb_array)
+            comb_array = np.flip(np.array(comb_array), axis=1)
+            print("comb_array = " + str(comb_array))
+            # print(np.flip(np.roll(np.arange(0, np.shape(variables_array)[0], 1, dtype=int), 1)))
+            print(np.flip(np.array([np.arange(0, np.shape(variables_array)[0], 1, dtype=int)[
+                                        ~np.isin(np.arange(0, np.shape(variables_array)[0], 1, dtype=int), c)] for c in
+                                    comb_array]), axis=1))
 
             for joint_idx, joint in enumerate(joint_post_obs_array):
             # for joint_idx, joint in enumerate(joint_post_array[:, i + obs_idx]):
@@ -421,36 +446,68 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
                 # if joint_idx == len(joint_post_array[:, i + obs_idx]) - 1:
                 #     joint = joint.T
                 # print(np.shape(joint))
-                ax_joint_array[joint_idx].contour(np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-                                                  np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-                                                  joint,
+                print("joint_idx = " + str(joint_idx))
+                print("x has shape " + str(np.shape(variables_array[comb_array[joint_idx, 0]].var)))
+                print("y has shape " + str(np.shape(variables_array[comb_array[joint_idx, 1]].var)))
+                print("joint has shape " + str(np.shape(joint)))
+                # print("joint = " + str(joint))
+                # print("maximum of joint = " + str(np.amax(joint)))
+                # print("levels = " + str([np.amax(joint) * level for level in \
+                #                                           ([np.exp(-0.5 * r ** 2) for r in
+                #                                             np.arange(9, 0, -0.5)] + [0.999])]))
+                try:
+                    ax_joint_array[joint_idx].contour(variables_array[comb_array[joint_idx, 0]].var,
+                                                      variables_array[comb_array[joint_idx, 1]].var,
+                    # ax_joint_array[joint_idx].contour(
+                    #                                   np.roll(variables_array, 2)[comb_array[joint_idx, 1]].var,
+                    #                                   np.roll(variables_array, 2)[comb_array[joint_idx, 0]].var,
+                                                      joint,
+                                                      levels=[np.amax(joint) * level for level in \
+                                                              ([np.exp(-0.5 * r ** 2) for r in
+                                                                np.arange(9, 0, -0.5)] + [0.999])],
+                                                      cmap=cmap_name)
+                except:
+                    ax_joint_array[joint_idx].contour(variables_array[comb_array[joint_idx, 0]].var,
+                                                  variables_array[comb_array[joint_idx, 1]].var,
+                                                  # ax_joint_array[joint_idx].contour(
+                                                  #                                   np.roll(variables_array, 2)[comb_array[joint_idx, 1]].var,
+                                                  #                                   np.roll(variables_array, 2)[comb_array[joint_idx, 0]].var,
+                                                  joint.T,
                                                   levels=[np.amax(joint) * level for level in \
                                                           ([np.exp(-0.5 * r ** 2) for r in
                                                             np.arange(9, 0, -0.5)] + [0.999])],
                                                   cmap=cmap_name)
                 try:
                     corr_coeff = correlation_coefficient(
-                        np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-                        np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
+                        variables_array[comb_array[joint_idx, 0]].var,
+                        variables_array[comb_array[joint_idx, 1]].var,
                         joint)
                     ax_joint_array[joint_idx].text(.99, .99, rf'$\rho$ = {corr_coeff:.2f}',
                        ha='right', va='top',
                        transform=ax_joint_array[joint_idx].transAxes,
                        fontsize=18)
                 except:
-                    corr_coeff = None
-                    ax_joint_array[joint_idx].text(.99, .99, rf'$\rho$ = ',
-                                               ha='right', va='top',
-                                               transform=ax_joint_array[joint_idx].transAxes,
-                                               fontsize=18)
+                    # corr_coeff = None
+                    # ax_joint_array[joint_idx].text(.99, .99, rf'$\rho$ = ',
+                    #                            ha='right', va='top',
+                    #                            transform=ax_joint_array[joint_idx].transAxes,
+                    #                            fontsize=18)
+                    corr_coeff = correlation_coefficient(
+                        variables_array[comb_array[joint_idx, 0]].var,
+                        variables_array[comb_array[joint_idx, 1]].var,
+                        joint.T)
+                    ax_joint_array[joint_idx].text(.99, .99, rf'$\rho$ = {corr_coeff:.2f}',
+                                                   ha='right', va='top',
+                                                   transform=ax_joint_array[joint_idx].transAxes,
+                                                   fontsize=18)
 
-                if np.roll([variable.user_val for variable in variables_array], 1)[comb_array[joint_idx, 0]] is not None:
+                if [variable.user_val for variable in variables_array][comb_array[joint_idx, 0]] is not None:
                     ax_joint_array[joint_idx].axvline(
-                        np.roll([variable.user_val for variable in variables_array], 1)[
+                        [variable.user_val for variable in variables_array][
                             comb_array[joint_idx, 0]], 0, 1, c=gray, lw=1)
-                if np.roll([variable.user_val for variable in variables_array], 1)[comb_array[joint_idx, 1]] is not None:
+                if [variable.user_val for variable in variables_array][comb_array[joint_idx, 1]] is not None:
                     ax_joint_array[joint_idx].axhline(
-                        np.roll([variable.user_val for variable in variables_array], 1)[
+                        [variable.user_val for variable in variables_array][
                             comb_array[joint_idx, 1]], 0, 1, c=gray, lw=1)
 
             try:

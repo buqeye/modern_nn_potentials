@@ -5781,7 +5781,7 @@ def add_logpriors(variables_array, obs_loglike):
                                             (
                                                 np.shape(obs_loglike)[(i + 1) % len(variables_array)],
                                                 np.shape(obs_loglike)[(i + 2) % len(variables_array)],
-                                                np.shape(obs_loglike)[(i + 3) % len(variables_array)],
+                                                # np.shape(obs_loglike)[(i + 3) % len(variables_array)],
                                                 1
                                             )
                                             ),
@@ -5812,8 +5812,11 @@ def marginalize_likelihoods(variables_array, like_list, order_num):
         # creates the normalized fully marginalized posteriors
         for v, var in enumerate(variables_array):
             var_idx_array = np.arange(0, np.shape(variables_array)[0], 1, dtype=int)
+            print("var_idx_array = " + str(var_idx_array))
             var_idx_array = var_idx_array[var_idx_array != v]
+            print("var_idx_array = " + str(var_idx_array))
             var_idx_array = np.flip(var_idx_array)
+            print("var_idx_array = " + str(var_idx_array))
 
             marg_post = np.copy(like)
 
@@ -5821,43 +5824,89 @@ def marginalize_likelihoods(variables_array, like_list, order_num):
                 marg_post = np.trapz(marg_post, x=variables_array[idx].var, axis=idx)
 
             marg_post /= np.trapz(marg_post, x=variables_array[v].var, axis=0)
-            # print("This marg_post has shape " + str(np.shape(marg_post)))
+            print("This marg_post has shape " + str(np.shape(marg_post)))
 
             marg_post_list.append(list(marg_post))
 
         # creates the normalized joint posteriors
-        comb_array = np.array(np.meshgrid(np.arange(0, np.shape(variables_array)[0], 1, dtype=int),
-                                          np.arange(0, np.shape(variables_array)[0], 1, dtype=int))).T.reshape(-1,
-                                                                                                               2)
-        comb_array = np.delete(comb_array, [comb[0] >= comb[1] for comb in comb_array], axis=0)
-        p = np.argsort(comb_array[:, 1])
-        comb_array = np.flip(comb_array[p], axis=0)
-        print(comb_array)
-        print(np.flip(np.roll(np.arange(0, np.shape(variables_array)[0], 1, dtype=int), 1)))
-        print(np.shape(like))
+        # comb_array = np.array(np.meshgrid(np.arange(0, np.shape(variables_array)[0], 1, dtype=int),
+        #                                   np.arange(0, np.shape(variables_array)[0], 1, dtype=int))).T.reshape(-1,
+        #                                                                                                        2)
+        # comb_array = np.delete(comb_array, [comb[0] >= comb[1] for comb in comb_array], axis=0)
+        # p = np.argsort(comb_array[:, 1])
+        # comb_array = np.flip(comb_array[p], axis=0)
+        # print("comb_array = " + str(comb_array))
+        # print(np.flip(np.roll(np.arange(0, np.shape(variables_array)[0], 1, dtype=int), 1)))
+        # # print(np.shape(like))
+        comb_array = []
+        for ca in range(1, np.shape(variables_array)[0]):
+            for ca_less in range(0, ca):
+                comb_array.append([ca, ca_less])
+        # comb_array = np.array(comb_array)
+        comb_array = np.flip(np.array(comb_array), axis=1)
+        print("comb_array = " + str(comb_array))
+        # print(np.flip(np.roll(np.arange(0, np.shape(variables_array)[0], 1, dtype=int), 1)))
+        print(np.flip(np.array([np.arange(0, np.shape(variables_array)[0], 1, dtype=int)[
+                                    ~np.isin(np.arange(0, np.shape(variables_array)[0], 1, dtype=int), c)] for c in
+                                comb_array]), axis=1))
 
         # for v in np.flip(np.roll(np.arange(0, np.shape(variables_array)[0], 1, dtype=int), 1)):
-        #     # print("While marginalizing, " + str(v))
-        #     print(v)
-        #     joint_post = np.trapz(like, x=variables_array[v].var, axis=v)
-        #     print(comb_array[v, 0])
-        #     print(comb_array[v, 1])
-        #     joint_post = like / np.trapz(np.trapz(like,
-        #                                     x=variables_array[comb_array[v, 1]].var, axis=1),
-        #                            x=variables_array[comb_array[v, 0]].var, axis=0
-        #                            )
-        #     # joint_post /= np.trapz(np.trapz(joint_post,
-        #     #                                 x=variables_array[comb_array[v, 1]].var, axis=1),
-        #     #                        x=variables_array[comb_array[v, 0]].var, axis=0
-        #     #                        )
-        #     print(np.shape(joint_post))
-        #     # print("This joint_post has shape " + str(np.shape(joint_post)))
-        #     joint_post_list.append(joint_post)
-        joint_post_list.append(like / np.trapz(np.trapz(like,
-                x=variables_array[1].var, axis=1),
-                x=variables_array[0].var, axis=0
-                ))
-        print(np.shape(joint_post_list))
+        # for v_idx, v in zip(np.flip(np.roll(np.arange(0, np.shape(variables_array)[0] * (np.shape(variables_array)[0] - 1) // 2, 1, dtype=int), 1)),
+        #                 np.flip(np.roll(np.flip(np.array([np.arange(0, np.shape(variables_array)[0], 1, dtype=int)[
+        #                 ~np.isin(np.arange(0, np.shape(variables_array)[0], 1, dtype=int), c)] for
+        #                 c in comb_array]), axis=1), 1, axis=0), axis=0)):
+        for (v_norm, v_marg) in zip(comb_array,
+                                    np.flip(np.array([np.arange(0, np.shape(variables_array)[0], 1, dtype=int)[
+                                                          ~np.isin(
+                                                              np.arange(0, np.shape(variables_array)[0], 1, dtype=int),
+                                                              c)] for c in
+                                                      comb_array]), axis=1)
+                                    ):
+            print("v_norm = " + str(v_norm))
+            print("v_marg = " + str(v_marg))
+            print("like has shape " + str(np.shape(like)))
+            if like.ndim > 2:
+                joint_post = np.trapz(like, x=variables_array[v_marg[0]].var, axis=v_marg[0])
+                print("After first marginalization, joint_post has shape " + str(np.shape(joint_post)))
+                # print(comb_array[v_idx, 0])
+                # print(comb_array[v_idx, 1])
+                if like.ndim > 3:
+                    for vmarg in v_marg[1:]:
+                        joint_post = np.trapz(joint_post, x=variables_array[vmarg].var, axis=vmarg)
+                print("After full marginalization, joint_post has shape " + str(np.shape(joint_post)))
+                joint_post /= np.trapz(np.trapz(joint_post,
+                                                x=variables_array[v_norm[1]].var, axis=1),
+                                       x=variables_array[v_norm[0]].var, axis=0
+                                       )
+            else:
+                joint_post = like
+            print("joint_post has shape " + str(np.shape(joint_post)))
+            # print(comb_array[v, 0])
+            # print(comb_array[v, 1])
+            # joint_post = like / np.trapz(np.trapz(like,
+            #                                 x=variables_array[comb_array[v, 1]].var, axis=1),
+            #                        x=variables_array[comb_array[v, 0]].var, axis=0
+            #                        )
+            # joint_post /= np.trapz(np.trapz(joint_post,
+            #                                 x=variables_array[comb_array[v, 1]].var, axis=1),
+            #                        x=variables_array[comb_array[v, 0]].var, axis=0
+            #                        )
+            # print("ax_idx range = " + str(np.flip(range(len(variables_array) - 1))))
+            # for ax_idx in np.flip(range(len(variables_array) - 1)):
+            #     joint_post /= np.trapz(joint_post, x=variables_array[comb_array[v, ax_idx]].var, axis=ax_idx)
+            print(np.shape(joint_post))
+            # print("This joint_post has shape " + str(np.shape(joint_post)))
+            joint_post_list.append(joint_post)
+        # print("like has shape " + str(np.shape(like)))
+        # print("maximum of like = " + str(np.amax(like)))
+        # # print("like = " + str(like))
+        # joint_post_list.append(like / np.trapz(np.trapz(like,
+        #         x=variables_array[1].var, axis=1),
+        #         x=variables_array[0].var, axis=0
+        #         ))
+        print("joint_post_list has shape " + str(np.shape(joint_post_list)))
+        # print("joint_post_list has maximum " + str(np.amax(np.array(joint_post_list))))
+        # print("joint_post_list = " + str(joint_post_list))
 
     # print(np.shape(marg_post_list))
     # print(np.shape(joint_post_list))
@@ -5868,5 +5917,6 @@ def marginalize_likelihoods(variables_array, like_list, order_num):
     # joint_post_array = np.reshape(joint_post_list,
     #                               (len(variables_array) * (len(variables_array) - 1) // 2, np.shape(like_list)[0]), order='F')
     joint_post_array = np.array(joint_post_list)
+    # print("joint_post_array has maximum " + str(np.amax(joint_post_array)))
 
     return marg_post_array, joint_post_array
