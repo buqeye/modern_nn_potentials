@@ -939,7 +939,7 @@ def gp_analysis(
                             # )
 
                             # sets the meshes for the random variable arrays
-                            mpi_vals = np.linspace(50, 400, 29, dtype=np.dtype('f4'))
+                            mpi_vals = np.linspace(50, 300, 29, dtype=np.dtype('f4'))
                             # mpi_vals = 225 * np.array([0.9999, 1.0001])
                             # ls_vals = np.linspace(0.02, 4.00, 25, dtype=np.dtype('f'))
                             # print(ls_vals)
@@ -974,12 +974,15 @@ def gp_analysis(
                                                               "deg_input": min(degrees),
                                                               "interaction": nn_interaction})),
                                                   32)
+                            print("ls_deg_vals = " + str(ls_deg_vals))
                             ls_tlab_vals = np.linspace(1, 200, 30, dtype=np.dtype('f4'))
                             lambda_vals = np.linspace(300, 900, 31, dtype=np.dtype('f4'))
                             # lambda_vals = 600 * np.array([0.9999, 1.0001])
 
                             # mesh_cart = gm.cartesian(lambda_vals, np.log(ls_vals), mpi_vals)
                             mesh_cart = gm.cartesian(lambda_vals, np.log(ls_deg_vals), np.log(ls_tlab_vals), mpi_vals)
+                            # mesh_cart = gm.cartesian(lambda_vals, np.log(ls_tlab_vals), mpi_vals)
+                            print("mesh_cart = " + str(mesh_cart))
 
                             # sets the RandomVariable objects
                             LambdabVariable = RandomVariable(var=lambda_vals,
@@ -1003,12 +1006,12 @@ def gp_analysis(
                             LsDegVariable = RandomVariable(var=ls_deg_vals,
                                                         user_val=None,
                                                         name='lsdeg',
-                                                        label="\ell_{\theta}",
+                                                        label="\ell_{\Theta}",
                                                         units="",
                                                         ticks=[],
                                                         logprior=np.zeros(len(ls_deg_vals)),
                                                         logprior_name="ls_nologprior",
-                                                        marg_bool=False)
+                                                        marg_bool=True)
                             LsTlabVariable = RandomVariable(var=ls_tlab_vals,
                                                         user_val=None,
                                                         name='lstlab',
@@ -1017,7 +1020,7 @@ def gp_analysis(
                                                         ticks=[],
                                                         logprior=np.zeros(len(ls_tlab_vals)),
                                                         logprior_name="ls_nologprior",
-                                                        marg_bool=False)
+                                                        marg_bool=True)
                             MpieffVariable = RandomVariable(var=mpi_vals,
                                                             user_val=m_pi_eff,
                                                             name='mpieff',
@@ -1028,7 +1031,9 @@ def gp_analysis(
                                                             logprior_name="mpieff_uniformlogprior",
                                                             marg_bool = True)
                             # variables_array = np.array([LambdabVariable, LsVariable, MpieffVariable])
-                            variables_array = np.array([LambdabVariable, LsTlabVariable, LsDegVariable, MpieffVariable])
+                            # variables_array = np.array([LambdabVariable, LsTlabVariable, LsDegVariable, MpieffVariable])
+                            variables_array = np.array([LambdabVariable, LsDegVariable, LsTlabVariable, MpieffVariable])
+                            # variables_array = np.array([LambdabVariable, LsTlabVariable, MpieffVariable])
 
                             # runs through the training and testing masks
                             for l, TrainingTestingSplit in enumerate(
@@ -1141,6 +1146,7 @@ def gp_analysis(
                                     ScaleScheme.cutoff_string,
                                     QParamMethod,
                                     PParamMethod,
+                                    VsQuantity.name,
                                     filename_addendum=filename_addendum,
                                 )
 
@@ -1326,7 +1332,7 @@ def gp_analysis(
                                         )
                                     )
 
-                                    MyPlot.plot_posteriors_curvewise(
+                                    plot_posteriors_curvewise(
                                         # order stuff
                                         light_colors = Orders.lightcolors_array,
                                         nn_orders_array = Orders.orders_restricted,
@@ -1335,6 +1341,9 @@ def gp_analysis(
                                         orders_labels_dict = {6: r'N$^{4}$LO$^{+}$', 5: r'N$^{4}$LO',
                                                                4: r'N$^{3}$LO', 3: r'N$^{2}$LO',
                                                                2: r'NLO'},
+                                        orders_names_dict={6: 'N4LO+', 5: 'N4LO',
+                                                            4: 'N3LO', 3: 'N2LO',
+                                                            2: 'NLO'},
                                         # strings
                                         p_param = PParamMethod,
                                         Q_param = QParamMethod,
@@ -1379,7 +1388,7 @@ def gp_analysis(
                                         # t_lab_pts=np.array([65, 100, 143, 192]),
                                         # t_lab_pts=np.array([100, 143, 192]),
                                         # t_lab_train_pts=np.array([4, 20, 47, 81, 129, 188, 249]),
-                                        t_lab_test_pts=np.array([4, 20, 47, 81, 129, 188, 249]),
+                                        # t_lab_test_pts=np.array([4, 20, 47, 81, 129, 188, 249]),
                                         InputSpaceTlab=VsQuantityPosteriorTlab,
                                         LsTlab=LengthScaleTlabInput,
                                         degrees=degrees,
@@ -1398,9 +1407,9 @@ def gp_analysis(
                                         # degrees_train_pts=np.array(
                                         #     [50, 67, 82, 98, 113, 130]
                                         # ),
-                                        degrees_test_pts=np.array(
-                                            [50, 67, 82, 98, 113, 130]
-                                        ),
+                                        # degrees_test_pts=np.array(
+                                        #     [50, 67, 82, 98, 113, 130]
+                                        # ),
                                         InputSpaceDeg=VsQuantityPosteriorDeg,
                                         LsDeg=LengthScaleDegInput,
                                         # slice_type=slice_type,
@@ -1408,7 +1417,24 @@ def gp_analysis(
                                         mesh_cart=mesh_cart,
                                         Lambda_b_true=Lambdab,
                                         mpi_true=m_pi_eff,
+
+                                        ratio_fn=ratio_fn_posterior,
+                                        ratio_fn_kwargs={
+                                            "p_param": PParamMethod,
+                                            "Q_param": QParamMethod,
+                                            "mpi_var": m_pi_eff,
+                                            "lambda_var": Lambdab
+                                        },
+                                        log_likelihood_fn=log_likelihood,
+                                        log_likelihood_fn_kwargs={
+                                            "p_param": PParamMethod,
+                                            "Q_param": QParamMethod
+                                        },
+
                                         orders=orders,
+
+                                        FileName = FileNaming,
+
                                         whether_use_data=False,
                                         whether_save_data=False,
                                         whether_save_plots=save_lambdapost_curvewise_bool,
@@ -1777,5 +1803,5 @@ gp_analysis(
     save_lambdapost_pointwise_bool=False,
     save_lambdapost_curvewise_bool=False,
     save_plotzilla_bool=False,
-    filename_addendum="_2dsave",
+    filename_addendum="_posttoy",
 )
