@@ -3828,7 +3828,7 @@ def interp_f_ratio_posterior(x_map, x_interp, p, Q_param, mpi_var, lambda_var):
     #                  * np.ones(np.shape(x_interp)))
     return interpn(x_interp, Q_approx(p, Q_param, Lambda_b=lambda_var, m_pi=mpi_var), x_map)
 
-def ratio_fn_posterior(X, p_param, p_shape, Q_param, mpi_var, lambda_var):
+def ratio_fn_posterior(X, p_grid_train, p_param, p_shape, Q_param, mpi_var, lambda_var):
     """
     Function for interpolating between the input space and the ratio across that input space.
 
@@ -3843,7 +3843,7 @@ def ratio_fn_posterior(X, p_param, p_shape, Q_param, mpi_var, lambda_var):
     mpi_var (float) : value of the breakdown scale (in MeV) for calculating the ratio.
     """
     p = np.array([])
-    for pt in X:
+    for pt in p_grid_train:
         # print("pt = " + str(pt))
         # p = np.append(p, p_approx(p_name=p_param, degrees=np.array([pt[0]]), prel=np.array([pt[1]])))
         try:
@@ -4216,10 +4216,19 @@ def plot_posteriors_curvewise(
                           mesh_cart,
                           Lambda_b_true,
                           mpi_true,
+
+                          mom_fn,
+                          mom_fn_kwargs,
+
+                          scaling_fn,
+                          scaling_fn_kwargs,
+
                           ratio_fn,
                           ratio_fn_kwargs,
+
                           log_likelihood_fn,
                           log_likelihood_fn_kwargs,
+
                           # slice_type,
                           orders=2,
                           FileName = None,
@@ -4525,9 +4534,12 @@ def plot_posteriors_curvewise(
                             # tlab_test_pts_input = InputSpaceTlab.input_space(**{"E_lab": t_lab_test_pts,
                             #                                             "interaction": nn_interaction}).T
                             # print("tlab_test_pts_input = " + str(tlab_test_pts_input))
-                            tlab_mom = E_to_p(t_lab, interaction=nn_interaction)
+                            # tlab_mom = E_to_p(t_lab, interaction=nn_interaction)
+                            # # print("tlab_mom = " + str(tlab_mom))
+                            # tlab_train_pts_mom = E_to_p(t_lab_train_pts, interaction=nn_interaction)
+                            tlab_mom = mom_fn(t_lab, **mom_fn_kwargs)
                             # print("tlab_mom = " + str(tlab_mom))
-                            tlab_train_pts_mom = E_to_p(t_lab_train_pts, interaction=nn_interaction)
+                            tlab_train_pts_mom = mom_fn(t_lab_train_pts, **mom_fn_kwargs)
                             print("tlab_train_pts_mom = " + str(tlab_train_pts_mom))
                             # tlab_test_pts_mom = E_to_p(t_lab_test_pts, interaction=nn_interaction)
                             # print("tlab_test_pts_mom = " + str(tlab_test_pts_mom))
@@ -4595,11 +4607,15 @@ def plot_posteriors_curvewise(
                                                           #           "Q_param": Q_param,
                                                           #           "mpi_var": mpi_true,
                                                           #           "lambda_var": Lambda_b_true})
-                                                          ratio_kws = {**ratio_fn_kwargs, **{"p_shape" : (len(tlab_train_pts_mom))}})
+                                                          ratio_kws = {**ratio_fn_kwargs,
+                                                                       **{"p_shape" : (len(tlab_train_pts_mom))},
+                                                                       **{"p_grid_train" : tlab_train_pts_mom[:, None]}
+                                                                       }
+                                                          )
                             print("train data has shape " + str(np.shape((obs_data_train[:order, :]).T)))
                             print("tlab_train_pts_mom = " + str(tlab_train_pts_mom))
+                            gp_post_obs.fit(tlab_train_pts_input[:, None],
                             # gp_post_obs.fit(tlab_train_pts_mom[:, None],
-                            gp_post_obs.fit(tlab_train_pts_mom[:, None],
                                             (obs_data_train[:order, :]).T,
                                             # orders=self.nn_orders_full[:order])
                                             orders = nn_orders_full_array[:order])
@@ -4635,7 +4651,9 @@ def plot_posteriors_curvewise(
                                                         # p_shape = (len(tlab_train_pts_mom)),
                                                         # Q_param = Q_param,
                                                         log_likelihood_fn_kwargs={**log_likelihood_fn_kwargs,
-                                                                                  **{"p_shape" : (len(t_lab_train_pts))}}
+                                                                                  **{"p_shape" : (len(t_lab_train_pts))},
+                                                                                  **{"p_grid_train" : tlab_train_pts_mom[:, None]}
+                                                                                  }
                                                         )
                             print("log_like has shape " + str(np.shape(log_like)))
                             obs_loglike = np.reshape(log_like, tuple(
@@ -4716,16 +4734,20 @@ def plot_posteriors_curvewise(
                         # tlab_test_pts_input = InputSpaceTlab.input_space(**{"E_lab": t_lab_test_pts,
                         #                                                "interaction": nn_interaction})
                         # print("tlab_test_pts_input = " + str(tlab_test_pts_input))
-                        tlab_mom = E_to_p(t_lab, interaction=nn_interaction)
+                        # tlab_mom = E_to_p(t_lab, interaction=nn_interaction)
+                        # # print("tlab_mom = " + str(tlab_mom))
+                        # tlab_train_pts_mom = E_to_p(t_lab_train_pts, interaction=nn_interaction)
+                        tlab_mom = mom_fn(t_lab, **mom_fn_kwargs)
                         # print("tlab_mom = " + str(tlab_mom))
-                        tlab_train_pts_mom = E_to_p(t_lab_train_pts, interaction=nn_interaction)
+                        tlab_train_pts_mom = mom_fn(t_lab_train_pts, **mom_fn_kwargs)
                         # print("tlab_train_pts_mom = " + str(tlab_train_pts_mom))
                         # tlab_test_pts_mom = E_to_p(t_lab_test_pts, interaction=nn_interaction)
                         # print("tlab_test_pts_mom = " + str(tlab_test_pts_mom))
                         # tlab_input_ray = ray.put(tlab_input)
 
-                        # grid_train = np.flip(np.array(list(itertools.product(tlab_train_pts_input, degrees_train_pts_input))), axis = 1)
-                        grid_train = np.flip(np.array(list(itertools.product(tlab_train_pts_mom, degrees_train_pts_input))), axis=1)
+                        grid_train = scaling_fn(np.flip(np.array(list(itertools.product(tlab_train_pts_input, degrees_train_pts_input))), axis = 1),
+                                                **scaling_fn_kwargs)
+                        # grid_train = np.flip(np.array(list(itertools.product(tlab_train_pts_mom, degrees_train_pts_input))), axis=1)
                         # grid_test = np.flip(np.array(list(itertools.product(tlab_test_pts_input, degrees_test_pts_input))), axis = 1)
 
                         # not sure why we doubly transformed the energies here before
@@ -4806,7 +4828,15 @@ def plot_posteriors_curvewise(
                                                       #     "mpi_var": mpi_true,
                                                       #     "lambda_var": Lambda_b_true
                                                       # })
-                                                      ratio_kws={**ratio_fn_kwargs, **{"p_shape": (len(degrees_train_pts) * len(tlab_train_pts_mom))}})
+                                                      ratio_kws={**ratio_fn_kwargs,
+                                                                 **{"p_shape" : (len(degrees_train_pts) * len(tlab_train_pts_mom))},
+                                                                 **{"p_grid_train" : np.flip(np.array(list(itertools.product(tlab_train_pts_mom, degrees_train_pts))), axis = 1)}
+                                                                 #   **{"p_grid_train": np.flip(np.array(list(
+                                                                 #     itertools.product(t_lab_train_pts,
+                                                                 #                       degrees_train_pts))), axis=1)}
+                                                                 }
+
+                                                      )
                         # print("obs_data_train up to order = " + str(obs_data_train[:order, :]))
                         # print("obs_data_train transposed up to order = " + str((obs_data_train[:order, :]).T))
                         # gp_post_obs.fit(np.array(list(itertools.product(degrees_train_pts_input, tlab_train_pts_input))),
@@ -4838,7 +4868,14 @@ def plot_posteriors_curvewise(
                                                     # p_shape=(len(degrees_train_pts) * len(tlab_train_pts_mom)),
                                                     # Q_param=Q_param,
                                                     log_likelihood_fn_kwargs={**log_likelihood_fn_kwargs,
-                                                                              **{"p_shape" : (len(degrees_train_pts) * len(tlab_train_pts_mom))}}
+                                                                              **{"p_shape" : (len(degrees_train_pts) * len(tlab_train_pts_mom))},
+                                                                              **{"p_grid_train" : np.flip(np.array(list(itertools.product(tlab_train_pts_mom, degrees_train_pts))), axis = 1)}
+                                                                                # ** {"p_grid_train": np.flip(
+                                                                                #   np.array(list(
+                                                                                #       itertools.product(t_lab_train_pts,
+                                                                                #                         degrees_train_pts))),
+                                                                                #   axis=1)}
+                                                                              }
                                                     )
                         obs_loglike = np.reshape(log_like, tuple(
                             len(random_var.var) for random_var in variables_array))
@@ -5789,7 +5826,9 @@ def plot_posteriors_curvewise(
                                          joint_post_array,
                                          FileName,
                                          obs_name_grouped_list,
-                                         whether_save_plots)
+                                         whether_save_plots,
+                                         nn_orders_array,
+                                         orders_labels_dict)
             # cmap_name = 'Blues'
             # cmap = mpl.cm.get_cmap(cmap_name)
             #
@@ -5994,3 +6033,22 @@ def plot_posteriors_curvewise(
 
         # except:
         #     print("Error in plotting the curvewise posterior PDF.")
+
+def scaling_fn(pts_array):
+    try:
+        # pass
+        # for pt_idx, pt in enumerate(pts_array):
+        #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0],
+        #                                      pts_array[pt_idx, 1] * 0.5])
+        # for pt_idx, pt in enumerate(pts_array):
+        #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0] * 25 / (2600 * (pts_array[pt_idx, 1])**(-0.79)),
+        #                                      pts_array[pt_idx, 1]])
+        # for pt_idx, pt in enumerate(pts_array):
+        #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0] * 25 / (700 * (pts_array[pt_idx, 1]) ** (-0.58)),
+        #                                      pts_array[pt_idx, 1]])
+        for pt_idx, pt in enumerate(pts_array):
+            pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0] * 25 / (3200 * (pts_array[pt_idx, 1]) ** (-0.83)),
+                                             pts_array[pt_idx, 1]])
+    except:
+        pass
+    return pts_array

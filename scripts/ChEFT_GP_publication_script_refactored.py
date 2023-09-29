@@ -939,7 +939,7 @@ def gp_analysis(
                             # )
 
                             # sets the meshes for the random variable arrays
-                            mpi_vals = np.linspace(50, 300, 29, dtype=np.dtype('f4'))
+                            mpi_vals = np.linspace(50, 300, 59, dtype=np.dtype('f4'))
                             # mpi_vals = 225 * np.array([0.9999, 1.0001])
                             # ls_vals = np.linspace(0.02, 4.00, 25, dtype=np.dtype('f'))
                             # print(ls_vals)
@@ -965,7 +965,7 @@ def gp_analysis(
                             ][0]
 
                             ls_deg_vals = np.linspace(0.01,
-                                                  2 * (VsQuantityPosteriorDeg.input_space(
+                                                  0.5 * (VsQuantityPosteriorDeg.input_space(
                                                       **{"p_input": E_to_p(E_lab, nn_interaction),
                                                          "deg_input": max(degrees),
                                                          "interaction": nn_interaction}) - \
@@ -973,16 +973,17 @@ def gp_analysis(
                                                            **{"p_input": E_to_p(E_lab, nn_interaction),
                                                               "deg_input": min(degrees),
                                                               "interaction": nn_interaction})),
-                                                  32)
+                                                  62)
                             print("ls_deg_vals = " + str(ls_deg_vals))
-                            ls_tlab_vals = np.linspace(1, 200, 30, dtype=np.dtype('f4'))
-                            lambda_vals = np.linspace(300, 900, 31, dtype=np.dtype('f4'))
+                            ls_tlab_vals = np.linspace(1, 150, 60, dtype=np.dtype('f4'))
+                            lambda_vals = np.linspace(300, 900, 61, dtype=np.dtype('f4'))
                             # lambda_vals = 600 * np.array([0.9999, 1.0001])
 
                             # mesh_cart = gm.cartesian(lambda_vals, np.log(ls_vals), mpi_vals)
                             mesh_cart = gm.cartesian(lambda_vals, np.log(ls_deg_vals), np.log(ls_tlab_vals), mpi_vals)
                             # mesh_cart = gm.cartesian(lambda_vals, np.log(ls_tlab_vals), mpi_vals)
                             print("mesh_cart = " + str(mesh_cart))
+                            print("SGT's mesh_cart = " + str(np.delete(mesh_cart, 1, 1)))
 
                             # sets the RandomVariable objects
                             LambdabVariable = RandomVariable(var=lambda_vals,
@@ -992,7 +993,7 @@ def gp_analysis(
                                                              units="MeV",
                                                              ticks=[450, 600, 750],
                                                              logprior=Lb_logprior(lambda_vals),
-                                                             logprior_name="Lambdab_uniformlogprior",
+                                                             logprior_name="Lambdab_uniformprior",
                                                              marg_bool = True)
                             # LsVariable = RandomVariable(var=ls_vals,
                             #                             user_val=None,
@@ -1010,7 +1011,7 @@ def gp_analysis(
                                                         units="",
                                                         ticks=[],
                                                         logprior=np.zeros(len(ls_deg_vals)),
-                                                        logprior_name="ls_nologprior",
+                                                        logprior_name="ls_noprior",
                                                         marg_bool=True)
                             LsTlabVariable = RandomVariable(var=ls_tlab_vals,
                                                         user_val=None,
@@ -1019,7 +1020,7 @@ def gp_analysis(
                                                         units="MeV",
                                                         ticks=[],
                                                         logprior=np.zeros(len(ls_tlab_vals)),
-                                                        logprior_name="ls_nologprior",
+                                                        logprior_name="ls_noprior",
                                                         marg_bool=True)
                             MpieffVariable = RandomVariable(var=mpi_vals,
                                                             user_val=m_pi_eff,
@@ -1028,7 +1029,7 @@ def gp_analysis(
                                                             units="MeV",
                                                             ticks=[100, 150, 200, 250, 300, 350],
                                                             logprior=mpieff_logprior(mpi_vals),
-                                                            logprior_name="mpieff_uniformlogprior",
+                                                            logprior_name="mpieff_uniformprior",
                                                             marg_bool = True)
                             # variables_array = np.array([LambdabVariable, LsVariable, MpieffVariable])
                             # variables_array = np.array([LambdabVariable, LsTlabVariable, LsDegVariable, MpieffVariable])
@@ -1241,15 +1242,25 @@ def gp_analysis(
                                     # obs_name_grouped_list = ["D"]
                                     # obs_labels_grouped_list = [r'$D$']
 
+                                    # # just AXX
+                                    # plot_obs_list = [["AXX"]]
+                                    # obs_name_grouped_list = ["AXX"]
+                                    # obs_labels_grouped_list = [r'$A_{xx}$']
+
+                                    # just AY
+                                    plot_obs_list = [["AY"]]
+                                    obs_name_grouped_list = ["AY"]
+                                    obs_labels_grouped_list = [r'$A_{y}$']
+
                                     # # for equalizing SGT and DSG
                                     # plot_obs_list = [["SGT"], ["DSG"]]
                                     # obs_name_grouped_list = ["SGT", "DSG"]
                                     # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$']
 
-                                    # for SGT, DSG, and D
-                                    plot_obs_list = [["SGT"], ["DSG"], ["D"]]
-                                    obs_name_grouped_list = ["SGT", "DSG", "D"]
-                                    obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$', r'$D$']
+                                    # # for SGT, DSG, and D
+                                    # plot_obs_list = [["SGT"], ["DSG"], ["D"]]
+                                    # obs_name_grouped_list = ["SGT", "DSG", "D"]
+                                    # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$', r'$D$']
 
                                     # # spins
                                     # plot_obs_list = [["D", "AXX", "AYY", "A", "AY"]]
@@ -1286,6 +1297,11 @@ def gp_analysis(
                                     # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$',
                                     #                            r'$D$', r'$A_{xx}$', r'$A_{yy}$', r'$A$', r'$A_{y}$', r'Obs.']
 
+                                    # # ALLOBS for energy input spaces
+                                    # plot_obs_list = [["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]]
+                                    # obs_name_grouped_list = ["ALLOBS"]
+                                    # obs_labels_grouped_list = [r'Obs.']
+
                                     # # # EACHOBS and ALLOBS for angle input spaces
                                     # plot_obs_list = [["DSG"], ["D"], ["AXX"], ["AYY"], ["A"], ["AY"],
                                     #                  ["DSG", "D", "AXX", "AYY", "A", "AY"]]
@@ -1293,6 +1309,12 @@ def gp_analysis(
                                     # obs_labels_grouped_list = [r'$\displaystyle\frac{d\sigma}{d\Omega}$',
                                     #                            r'$D$', r'$A_{xx}$', r'$A_{yy}$', r'$A$', r'$A_{y}$',
                                     #                            r'Obs.']
+
+                                    # # # EACHOBS and ALLOBS for angle input spaces
+                                    # plot_obs_list = [["DSG"], ["D"], ["AXX"], ["AYY"], ["A"], ["AY"]]
+                                    # obs_name_grouped_list = ["DSG", "D", "AXX", "AYY", "A", "AY"]
+                                    # obs_labels_grouped_list = [r'$\displaystyle\frac{d\sigma}{d\Omega}$',
+                                    #                            r'$D$', r'$A_{xx}$', r'$A_{yy}$', r'$A$', r'$A_{y}$']
 
                                     # obs_list = ["DSG", "D", "AXX", "AYY", "A", "AY",
                                     #             "DSG", "D", "AXX", "AYY", "A", "AY"]
@@ -1374,6 +1396,7 @@ def gp_analysis(
                                         # t_lab_pts=np.array([1, 8, 19, 36, 58, 85, 118]),  # set4
                                         # t_lab_pts=np.array([1, 11, 31, 61, 100, 150]),  # set5
                                         # t_lab_pts=np.array([1, 6, 15, 28, 45, 65, 90, 118, 150]),  # set6
+                                        # t_lab_train_pts=np.array([36, 58, 85, 118, 155, 198, 246, 300]),  # set7
                                         # t_lab_pts=np.array([1, 12, 33, 65]),
                                         # t_lab_pts=np.array([108, 161, 225, 300]),
                                         # t_lab_pts=np.array([1, 5, 12, 21]),
@@ -1418,6 +1441,12 @@ def gp_analysis(
                                         Lambda_b_true=Lambdab,
                                         mpi_true=m_pi_eff,
 
+                                        mom_fn=E_to_p,
+                                        mom_fn_kwargs={"interaction" : "np"},
+
+                                        scaling_fn=scaling_fn,
+                                        scaling_fn_kwargs={},
+
                                         ratio_fn=ratio_fn_posterior,
                                         ratio_fn_kwargs={
                                             "p_param": PParamMethod,
@@ -1433,10 +1462,10 @@ def gp_analysis(
 
                                         orders=orders,
 
-                                        FileName = FileNaming,
+                                        FileName = FileName,
 
-                                        whether_use_data=False,
-                                        whether_save_data=False,
+                                        whether_use_data=True,
+                                        whether_save_data=True,
                                         whether_save_plots=save_lambdapost_curvewise_bool,
                                         # plot_all_obs=plot_all_obs,
                                         # combine_all_obs=True,
@@ -1765,13 +1794,13 @@ def gp_analysis(
 gp_analysis(
     nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
-    observable_input=["DSG"],
+    observable_input=["AY"],
     E_input_array=[],
     deg_input_array=[90],
     Q_param_method_array=["sum"],
     p_param_method_array=["Qofprel"],
     input_space_input=["prel"],
-    input_space_deg="cos",
+    input_space_deg="deg",
     input_space_tlab="prel",
     train_test_split_array=[Allenergysplit1],
     orders_excluded=[],
@@ -1801,7 +1830,7 @@ gp_analysis(
     save_pdf_bool=False,
     save_trunc_bool=False,
     save_lambdapost_pointwise_bool=False,
-    save_lambdapost_curvewise_bool=False,
+    save_lambdapost_curvewise_bool=True,
     save_plotzilla_bool=False,
-    filename_addendum="_posttoy",
+    filename_addendum="_0specscale",
 )
