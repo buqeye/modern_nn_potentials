@@ -10,7 +10,7 @@ def Q_approx(p, Q_parametrization, Lambda_b, m_pi=138,
     Parameters
     ----------
     p (float or array) : momentum (in MeV)
-    Q_parametrization (str) : can be "smax", "max", or "sum"
+    Q_parametrization (str) : can be "smax", "max", "sum", or "rawsum"
     Lambda_b (float) : value for the cutoff (in MeV)
     m_pi (float) : value for the pion mass (in MeV)
         default : 138
@@ -41,9 +41,13 @@ def Q_approx(p, Q_parametrization, Lambda_b, m_pi=138,
         return q
 
     elif Q_parametrization == "sum":
-        # Transition from m_pi to p with a simple sum
+        # Transition from m_pi to p with a simple sum and a scaling factor (k_sum) as a function of mpi
         q = (p + m_pi) / (Qsum_to_Qsmoothmax(m_pi) * Lambda_b)
-        # q = (p + m_pi) / Lambda_b
+        return q
+
+    elif Q_parametrization == "rawsum":
+        # Transition from m_pi to p with a simple sum
+        q = (p + m_pi) / Lambda_b
         return q
 
 def Qsum_to_Qsmoothmax(m_pi):

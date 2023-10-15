@@ -373,6 +373,8 @@ def gp_analysis(
     input_space_input=["cos"],
     input_space_deg="deg",
     input_space_tlab="prel",
+    t_lab_train_pts = np.array([]),
+    degrees_train_pts = np.array([]),
     train_test_split_array=[Fullspaceanglessplit1],
     orders_excluded=[],
     orders_names_dict=None,
@@ -445,8 +447,8 @@ def gp_analysis(
 
     Q_param_method_array (str list): methods of parametrizing the dimensionless
         expansion parameter Q for evaluation.
-    Built-in options: "smoothmax", "max", "sum"
-    Default: ["smoothmax"]
+    Built-in options: "smax", "max", "sum", or "rawsum"
+    Default: ["sum"]
 
     p_param_method_array (str list): methods of parametrizing the characteristic
         momentum p in Q(p) for evaluation.
@@ -779,7 +781,7 @@ def gp_analysis(
                             deg_fn,
                             p_approx(
                                 PParamMethod,
-                                E_to_p(1, interaction=nn_interaction),
+                                E_to_p(np.array([1]), interaction=nn_interaction),
                                 degrees,
                             ),
                             r"$\theta$ (deg)",
@@ -796,7 +798,7 @@ def gp_analysis(
                             neg_cos,
                             p_approx(
                                 PParamMethod,
-                                E_to_p(1, interaction=nn_interaction),
+                                E_to_p(np.array([1]), interaction=nn_interaction),
                                 degrees,
                             ),
                             r"$-\mathrm{cos}(\theta)$",
@@ -813,7 +815,7 @@ def gp_analysis(
                             sin_thing,
                             p_approx(
                                 PParamMethod,
-                                E_to_p(1, interaction=nn_interaction),
+                                E_to_p(np.array([1]), interaction=nn_interaction),
                                 degrees,
                             ),
                             r"$\mathrm{sin}(\theta)$",
@@ -830,7 +832,7 @@ def gp_analysis(
                             deg_to_qcm,
                             p_approx(
                                 PParamMethod,
-                                E_to_p(1, interaction=nn_interaction),
+                                E_to_p(np.array([1]), interaction=nn_interaction),
                                 degrees,
                             ),
                             r"$q_{\mathrm{cm}}$ (MeV)",
@@ -847,7 +849,7 @@ def gp_analysis(
                             deg_to_qcm2,
                             p_approx(
                                 PParamMethod,
-                                E_to_p(1, interaction=nn_interaction),
+                                E_to_p(np.array([1]), interaction=nn_interaction),
                                 degrees,
                             ),
                             r"$q_{\mathrm{cm}}^{2}$ (MeV$^{2}$)",
@@ -1012,7 +1014,7 @@ def gp_analysis(
                                                         ticks=[],
                                                         logprior=np.zeros(len(ls_deg_vals)),
                                                         logprior_name="ls_noprior",
-                                                        marg_bool=True)
+                                                        marg_bool=False)
                             LsTlabVariable = RandomVariable(var=ls_tlab_vals,
                                                         user_val=None,
                                                         name='lstlab',
@@ -1021,7 +1023,7 @@ def gp_analysis(
                                                         ticks=[],
                                                         logprior=np.zeros(len(ls_tlab_vals)),
                                                         logprior_name="ls_noprior",
-                                                        marg_bool=True)
+                                                        marg_bool=False)
                             MpieffVariable = RandomVariable(var=mpi_vals,
                                                             user_val=m_pi_eff,
                                                             name='mpieff',
@@ -1247,10 +1249,20 @@ def gp_analysis(
                                     # obs_name_grouped_list = ["AXX"]
                                     # obs_labels_grouped_list = [r'$A_{xx}$']
 
-                                    # just AY
-                                    plot_obs_list = [["AY"]]
-                                    obs_name_grouped_list = ["AY"]
-                                    obs_labels_grouped_list = [r'$A_{y}$']
+                                    # # just AYY
+                                    # plot_obs_list = [["AYY"]]
+                                    # obs_name_grouped_list = ["AYY"]
+                                    # obs_labels_grouped_list = [r'$A_{yy}$']
+
+                                    # # just A
+                                    # plot_obs_list = [["A"]]
+                                    # obs_name_grouped_list = ["A"]
+                                    # obs_labels_grouped_list = [r'$A$']
+
+                                    # # just AY
+                                    # plot_obs_list = [["AY"]]
+                                    # obs_name_grouped_list = ["AY"]
+                                    # obs_labels_grouped_list = [r'$A_{y}$']
 
                                     # # for equalizing SGT and DSG
                                     # plot_obs_list = [["SGT"], ["DSG"]]
@@ -1290,12 +1302,12 @@ def gp_analysis(
                                     # obs_labels_grouped_list = [r'$\displaystyle\frac{d\sigma}{d\Omega}$',
                                     #                            r'$X_{pqik}$']
 
-                                    # # EACHOBS and ALLOBS for energy input spaces
-                                    # plot_obs_list = [["SGT"], ["DSG"], ["D"], ["AXX"], ["AYY"], ["A"], ["AY"],
-                                    #                  ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]]
-                                    # obs_name_grouped_list = ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY", "ALLOBS"]
-                                    # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$',
-                                    #                            r'$D$', r'$A_{xx}$', r'$A_{yy}$', r'$A$', r'$A_{y}$', r'Obs.']
+                                    # EACHOBS and ALLOBS for energy input spaces
+                                    plot_obs_list = [["SGT"], ["DSG"], ["D"], ["AXX"], ["AYY"], ["A"], ["AY"],
+                                                     ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]]
+                                    obs_name_grouped_list = ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY", "ALLOBS"]
+                                    obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$',
+                                                               r'$D$', r'$A_{xx}$', r'$A_{yy}$', r'$A$', r'$A_{y}$', r'Obs.']
 
                                     # # ALLOBS for energy input spaces
                                     # plot_obs_list = [["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]]
@@ -1311,7 +1323,8 @@ def gp_analysis(
                                     #                            r'Obs.']
 
                                     # # # EACHOBS and ALLOBS for angle input spaces
-                                    # plot_obs_list = [["DSG"], ["D"], ["AXX"], ["AYY"], ["A"], ["AY"]]
+                                    # plot_obs_list = [["DSG"],
+                                    #                  ["D"], ["AXX"], ["AYY"], ["A"], ["AY"]]
                                     # obs_name_grouped_list = ["DSG", "D", "AXX", "AYY", "A", "AY"]
                                     # obs_labels_grouped_list = [r'$\displaystyle\frac{d\sigma}{d\Omega}$',
                                     #                            r'$D$', r'$A_{xx}$', r'$A_{yy}$', r'$A$', r'$A_{y}$']
@@ -1387,9 +1400,10 @@ def gp_analysis(
                                         # AXX=AXX,
                                         # AYY=AYY,
                                         t_lab=t_lab,
+                                        t_lab_train_pts=t_lab_train_pts,
                                         # t_lab_pts=np.array([5, 21, 48, 85, 133, 192]),
                                         # t_lab_pts=np.array([5, 21, 48, 85, 133, 192, 261]),
-                                        t_lab_train_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]), # set0 / refactor
+                                        # t_lab_train_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]), # set0 / refactor
                                         # t_lab_pts=np.array([25, 75, 125, 175, 225, 275, 325]), # set1
                                         # t_lab_pts=np.array([1, 10, 28, 55, 90, 133, 185]), # set2
                                         # t_lab_pts=np.array([1, 9, 23, 45, 73, 108, 150]), # set3
@@ -1421,9 +1435,10 @@ def gp_analysis(
                                         # degrees_pts=np.array(
                                         #     [23, 45, 68, 90, 113, 135, 158]
                                         # ),
-                                        degrees_train_pts=np.array(
-                                            [41, 60, 76, 90, 104, 120, 139]
-                                        ), # evencos
+                                        degrees_train_pts=degrees_train_pts,
+                                        # degrees_train_pts=np.array(
+                                        #     [41, 60, 76, 90, 104, 120, 139]
+                                        # ), # evencos
                                         # degrees_pts=np.array(
                                         #     [15, 31, 50, 90, 130, 149, 165]
                                         # ),  # evensin
@@ -1438,8 +1453,8 @@ def gp_analysis(
                                         # slice_type=slice_type,
                                         variables_array=variables_array,
                                         mesh_cart=mesh_cart,
-                                        Lambda_b_true=Lambdab,
-                                        mpi_true=m_pi_eff,
+                                        # Lambda_b_true=Lambdab,
+                                        # mpi_true=m_pi_eff,
 
                                         mom_fn=E_to_p,
                                         mom_fn_kwargs={"interaction" : "np"},
@@ -1464,7 +1479,7 @@ def gp_analysis(
 
                                         FileName = FileName,
 
-                                        whether_use_data=True,
+                                        whether_use_data=False,
                                         whether_save_data=True,
                                         whether_save_plots=save_lambdapost_curvewise_bool,
                                         # plot_all_obs=plot_all_obs,
@@ -1784,7 +1799,7 @@ def gp_analysis(
         print("\n\n************************************")
         print("Available potentials: " + str(scalescheme_current_list))
         print("Available observables: " + str(observable_current_list))
-        print("Available Q parametrizations: ['smax', 'max', 'sum']")
+        print("Available Q parametrizations: ['smax', 'max', 'sum', 'rawsum']")
         print("Available input spaces: " + str(inputspace_current_list))
         print("Available train/test splits: " + str(traintest_current_list))
         print("Available length scales: " + str(lengthscale_current_list))
@@ -1794,14 +1809,26 @@ def gp_analysis(
 gp_analysis(
     nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
-    observable_input=["AY"],
+    observable_input=["DSG"],
     E_input_array=[],
     deg_input_array=[90],
-    Q_param_method_array=["sum"],
-    p_param_method_array=["Qofprel"],
+    Q_param_method_array=["smax"],
+    p_param_method_array=["Qofprel", "Qofpq"],
     input_space_input=["prel"],
-    input_space_deg="deg",
+    input_space_deg="cos",
     input_space_tlab="prel",
+    t_lab_train_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]),  # set0 / refactor
+    # t_lab_pts=np.array([25, 75, 125, 175, 225, 275, 325]), # set1
+    # t_lab_pts=np.array([1, 10, 28, 55, 90, 133, 185]), # set2
+    # t_lab_pts=np.array([1, 9, 23, 45, 73, 108, 150]), # set3
+    # t_lab_pts=np.array([1, 8, 19, 36, 58, 85, 118]),  # set4
+    # t_lab_pts=np.array([1, 11, 31, 61, 100, 150]),  # set5
+    # t_lab_pts=np.array([1, 6, 15, 28, 45, 65, 90, 118, 150]),  # set6
+    # t_lab_train_pts=np.array([36, 58, 85, 118, 155, 198, 246, 300]),  # set7
+    degrees_train_pts=np.array([41, 60, 76, 90, 104, 120, 139]), # evencos
+    # degrees_pts=np.array(
+    #     [15, 31, 50, 90, 130, 149, 165]
+    # ),  # evensin
     train_test_split_array=[Allenergysplit1],
     orders_excluded=[],
     orders_names_dict=None,
@@ -1832,5 +1859,5 @@ gp_analysis(
     save_lambdapost_pointwise_bool=False,
     save_lambdapost_curvewise_bool=True,
     save_plotzilla_bool=False,
-    filename_addendum="_0specscale",
+    filename_addendum="_paper_0",
 )
