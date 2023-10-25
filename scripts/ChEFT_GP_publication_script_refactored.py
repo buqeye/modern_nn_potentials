@@ -249,7 +249,8 @@ Backwardanglessplit1 = TrainTestSplit(
     "backwardangles1",
     5,
     3,
-    xmin_train_factor=0,
+    # xmin_train_factor=0,
+    xmin_train_factor=1 / 5,
     xmax_train_factor=1,
     xmin_test_factor=1 / 5,
     xmax_test_factor=1,
@@ -267,8 +268,10 @@ Middleanglessplit1 = TrainTestSplit(
     "middleangles1",
     5,
     3,
-    xmin_train_factor=0,
-    xmax_train_factor=1,
+    # xmin_train_factor=0,
+    # xmax_train_factor=1,
+    xmin_train_factor=1 / 5,
+    xmax_train_factor=4 / 5,
     xmin_test_factor=1 / 5,
     xmax_test_factor=4 / 5,
 )
@@ -582,6 +585,7 @@ def gp_analysis(
         )
         DBunch = ObservableBunch(
             "D", D, E_input_array, deg_input_array, "D", "dimensionless"
+            # "D", D, E_input_array, deg_input_array, "D", "dimensionful"
         )
         AXXBunch = ObservableBunch(
             "AXX", AXX, E_input_array, deg_input_array, "A_{xx}", "dimensionless"
@@ -967,7 +971,7 @@ def gp_analysis(
                             ][0]
 
                             ls_deg_vals = np.linspace(0.01,
-                                                  0.5 * (VsQuantityPosteriorDeg.input_space(
+                                                  1.0 * (VsQuantityPosteriorDeg.input_space(
                                                       **{"p_input": E_to_p(E_lab, nn_interaction),
                                                          "deg_input": max(degrees),
                                                          "interaction": nn_interaction}) - \
@@ -983,6 +987,7 @@ def gp_analysis(
 
                             # mesh_cart = gm.cartesian(lambda_vals, np.log(ls_vals), mpi_vals)
                             mesh_cart = gm.cartesian(lambda_vals, np.log(ls_deg_vals), np.log(ls_tlab_vals), mpi_vals)
+                            mesh_cart_sgt = np.delete(mesh_cart, 1, 1)
                             # mesh_cart = gm.cartesian(lambda_vals, np.log(ls_tlab_vals), mpi_vals)
                             print("mesh_cart = " + str(mesh_cart))
                             print("SGT's mesh_cart = " + str(np.delete(mesh_cart, 1, 1)))
@@ -1233,11 +1238,13 @@ def gp_analysis(
                                     # plot_obs_list = [["SGT"]]
                                     # obs_name_grouped_list = ["SGT"]
                                     # obs_labels_grouped_list = [r'$\sigma$']
+                                    # mesh_cart_grouped_list = [mesh_cart_sgt]
 
                                     # # just DSG
                                     # plot_obs_list = [["DSG"]]
                                     # obs_name_grouped_list = ["DSG"]
                                     # obs_labels_grouped_list = [r'$\displaystyle\frac{d\sigma}{d\Omega}$']
+                                    # mesh_cart_grouped_list = [mesh_cart]
 
                                     # # just D
                                     # plot_obs_list = [["D"]]
@@ -1302,12 +1309,20 @@ def gp_analysis(
                                     # obs_labels_grouped_list = [r'$\displaystyle\frac{d\sigma}{d\Omega}$',
                                     #                            r'$X_{pqik}$']
 
-                                    # EACHOBS and ALLOBS for energy input spaces
-                                    plot_obs_list = [["SGT"], ["DSG"], ["D"], ["AXX"], ["AYY"], ["A"], ["AY"],
-                                                     ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]]
-                                    obs_name_grouped_list = ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY", "ALLOBS"]
+                                    # EACHOBS for energy input spaces
+                                    plot_obs_list = [["SGT"], ["DSG"], ["D"], ["AXX"], ["AYY"], ["A"], ["AY"]]
+                                    obs_name_grouped_list = ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]
                                     obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$',
-                                                               r'$D$', r'$A_{xx}$', r'$A_{yy}$', r'$A$', r'$A_{y}$', r'Obs.']
+                                                               r'$D$', r'$A_{xx}$', r'$A_{yy}$', r'$A$', r'$A_{y}$']
+                                    mesh_cart_grouped_list = [mesh_cart_sgt, mesh_cart, mesh_cart, mesh_cart, mesh_cart,
+                                                              mesh_cart, mesh_cart]
+
+                                    # # EACHOBS and ALLOBS for energy input spaces
+                                    # plot_obs_list = [["SGT"], ["DSG"], ["D"], ["AXX"], ["AYY"], ["A"], ["AY"],
+                                    #                  ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]]
+                                    # obs_name_grouped_list = ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY", "ALLOBS"]
+                                    # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$',
+                                    #                            r'$D$', r'$A_{xx}$', r'$A_{yy}$', r'$A$', r'$A_{y}$', r'Obs.']
 
                                     # # ALLOBS for energy input spaces
                                     # plot_obs_list = [["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]]
@@ -1392,6 +1407,7 @@ def gp_analysis(
                                         obs_data_grouped_list = obs_grouped_list,
                                         obs_name_grouped_list = obs_name_grouped_list,
                                         obs_labels_grouped_list = obs_labels_grouped_list,
+                                        mesh_cart_grouped_list = mesh_cart_grouped_list,
                                         # SGT=SGT,
                                         # DSG=DSG,
                                         # AY=AY,
@@ -1452,7 +1468,7 @@ def gp_analysis(
                                         LsDeg=LengthScaleDegInput,
                                         # slice_type=slice_type,
                                         variables_array=variables_array,
-                                        mesh_cart=mesh_cart,
+                                        # mesh_cart=mesh_cart,
                                         # Lambda_b_true=Lambdab,
                                         # mpi_true=m_pi_eff,
 
@@ -1479,7 +1495,7 @@ def gp_analysis(
 
                                         FileName = FileName,
 
-                                        whether_use_data=False,
+                                        whether_use_data=True,
                                         whether_save_data=True,
                                         whether_save_plots=save_lambdapost_curvewise_bool,
                                         # plot_all_obs=plot_all_obs,
@@ -1809,13 +1825,13 @@ def gp_analysis(
 gp_analysis(
     nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
-    observable_input=["DSG"],
-    E_input_array=[],
-    deg_input_array=[90],
-    Q_param_method_array=["smax"],
-    p_param_method_array=["Qofprel", "Qofpq"],
-    input_space_input=["prel"],
-    input_space_deg="cos",
+    observable_input=["A"],
+    E_input_array=[50],
+    deg_input_array=[],
+    Q_param_method_array=["sum"],
+    p_param_method_array=["Qofprel"],
+    input_space_input=["deg"],
+    input_space_deg="deg",
     input_space_tlab="prel",
     t_lab_train_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]),  # set0 / refactor
     # t_lab_pts=np.array([25, 75, 125, 175, 225, 275, 325]), # set1
@@ -1829,7 +1845,7 @@ gp_analysis(
     # degrees_pts=np.array(
     #     [15, 31, 50, 90, 130, 149, 165]
     # ),  # evensin
-    train_test_split_array=[Allenergysplit1],
+    train_test_split_array=[Fullspaceanglessplit1],
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
@@ -1837,8 +1853,8 @@ gp_analysis(
     LengthScaleTlabInput=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
     LengthScaleDegInput=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
     fixed_sd=None,
-    m_pi_eff=200,
-    Lambdab=600,
+    m_pi_eff=148,
+    Lambdab=499,
     print_all_classes=False,
     savefile_type="png",
     plot_coeffs_bool=True,

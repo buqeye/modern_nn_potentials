@@ -765,7 +765,7 @@ class GSUMDiagnostics:
 
         # plots the coefficients against the given input space
         if ax is None:
-            fig, ax = plt.subplots(figsize=(3.2, 3.2))
+            fig, ax = plt.subplots(figsize=(3.2, 2.2))
             # fig, ax = plt.subplots(figsize=(2.1, 2.1))
 
         for i, n in enumerate(self.nn_orders_full[self.mask_restricted]):
@@ -794,7 +794,7 @@ class GSUMDiagnostics:
         ax.set_yticklabels(labels=['{:.1f}'.format(-2 * self.underlying_std), '{:.1f}'.format(2 * self.underlying_std)])
         ax.set_yticks([-1 * self.underlying_std, self.underlying_std], minor=True)
         ax.legend(ncol=2, borderpad=0.4,# labelspacing=0.5, columnspacing=1.3,
-                  borderaxespad=0.6, loc = 'upper right',
+                  borderaxespad=0.6, loc = 'best',
                   title = self.title_coeffs).set_zorder(5 * i)
 
         if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
@@ -894,7 +894,7 @@ class GSUMDiagnostics:
 
             if ax is None:
                 # fig, ax = plt.subplots(figsize=(1, 3.2))
-                fig, ax = plt.subplots(figsize=(0.7, 4.2))
+                fig, ax = plt.subplots(figsize=(1.0, 2.2))
 
             self.gr_dgn.md_squared(type='box', trim=False, title=None,
                                    xlabel=r'$\mathrm{D}_{\mathrm{MD}}^2$', ax=ax,
@@ -953,7 +953,7 @@ class GSUMDiagnostics:
             with plt.rc_context({"text.usetex": True}):
                 if ax is None:
                     # fig, ax = plt.subplots(figsize=(3.2, 3.2))
-                    fig, ax = plt.subplots(figsize=(3.2, 3.2))
+                    fig, ax = plt.subplots(figsize=(3.2, 2.2))
 
                 self.gr_dgn.pivoted_cholesky_errors(ax=ax, title=None)
                 ax.set_xticks(np.arange(2, self.n_test_pts + 1, 2))
@@ -4204,6 +4204,7 @@ def plot_posteriors_curvewise(
                           obs_data_grouped_list,
                           obs_name_grouped_list,
                           obs_labels_grouped_list,
+                          mesh_cart_grouped_list,
                           t_lab,
                           t_lab_train_pts,
                           InputSpaceTlab,
@@ -4213,7 +4214,7 @@ def plot_posteriors_curvewise(
                           InputSpaceDeg,
                           LsDeg,
                           variables_array,
-                          mesh_cart,
+                          # mesh_cart,
                           # Lambda_b_true,
                           # mpi_true,
 
@@ -4358,7 +4359,7 @@ def plot_posteriors_curvewise(
     # obs_loglike_plots = []
     like_list = []
 
-    for (obs_grouping, obs_name) in zip(obs_data_grouped_list, obs_name_grouped_list):
+    for (obs_grouping, obs_name, mesh_cart) in zip(obs_data_grouped_list, obs_name_grouped_list, mesh_cart_grouped_list):
         # generates names for files and searches for whether they exist
         for order_counter in range(1, order_num + 1):
             # order = np.max(self.nn_orders) - order_num + order_counter
@@ -4505,8 +4506,8 @@ def plot_posteriors_curvewise(
                             # calculates the posterior using ray
                             # log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_ray,
                             #                             degrees_input_ray, ratio_points_ray)
-                            log_like = calc_loglike_ray(np.delete(mesh_cart, 2, 1),
-                            # log_like = calc_loglike_ray(mesh_cart,
+                            # log_like = calc_loglike_ray(np.delete(mesh_cart, 2, 1),
+                            log_like = calc_loglike_ray(mesh_cart,
                                                         BATCH_SIZE,
                                                         log_likelihood_fn,
                                                         gp_post_ray,
@@ -4669,8 +4670,8 @@ def plot_posteriors_curvewise(
                             #                           np.reshape(p_approx(self.p_param, tlab_mom, np.array([60])), (len(tlab_mom))),
                             #                           tlab_test_pts_input[:, None], (obs_data_test[:order, :]).T, mesh_cart)
                             # print(np.delete(mesh_cart, 1, 1))
-                            log_like = calc_loglike_ray(np.delete(mesh_cart, 1, 1),
-                            # log_like=calc_loglike_ray(mesh_cart,
+                            # log_like = calc_loglike_ray(np.delete(mesh_cart, 1, 1),
+                            log_like=calc_loglike_ray(mesh_cart,
                                                         BATCH_SIZE,
                                                         log_likelihood_fn,
                                                         gp_post_ray,
@@ -4747,13 +4748,6 @@ def plot_posteriors_curvewise(
                         #                                                 "E_lab": t_lab_pts,
                         #                                                 "interaction": self.nn_interaction
                         #                                                 })
-                        degrees_input = InputSpaceDeg.input_space(**{"deg_input": degrees})
-                        # print("degrees_input = " + str(degrees_input))
-                        degrees_train_pts_input = InputSpaceDeg.input_space(**{"deg_input": degrees_train_pts})
-                        # print("degrees_train_pts_input = " + str(degrees_train_pts_input))
-                        # degrees_test_pts_input = InputSpaceDeg.input_space(**{"deg_input": degrees_test_pts})
-                        # print("degrees_test_pts_input = " + str(degrees_test_pts_input))
-                        # degrees_input_ray = ray.put(degrees_input)
 
                         tlab_input = InputSpaceTlab.input_space(**{"E_lab": t_lab,
                                                                     "interaction": nn_interaction})
@@ -4775,8 +4769,47 @@ def plot_posteriors_curvewise(
                         # print("tlab_test_pts_mom = " + str(tlab_test_pts_mom))
                         # tlab_input_ray = ray.put(tlab_input)
 
-                        grid_train = scaling_fn(np.flip(np.array(list(itertools.product(tlab_train_pts_input, degrees_train_pts_input))), axis = 1),
-                                                **scaling_fn_kwargs)
+                        degrees_input = InputSpaceDeg.input_space(**{"deg_input": degrees,
+                                                                     "p_input" : tlab_mom})
+                        # print("degrees_input = " + str(degrees_input))
+                        degrees_train_pts_input = InputSpaceDeg.input_space(**{"deg_input": degrees_train_pts,
+                                                                               "p_input" : tlab_train_pts_mom})
+                        print("degrees_train_pts_input has shape " + str(np.shape(degrees_train_pts_input)))
+                        print("degrees_train_pts_input = " + str(degrees_train_pts_input))
+                        # degrees_test_pts_input = InputSpaceDeg.input_space(**{"deg_input": degrees_test_pts})
+                        # print("degrees_test_pts_input = " + str(degrees_test_pts_input))
+                        # degrees_input_ray = ray.put(degrees_input)
+
+                        if tlab_train_pts_input.ndim == 1 and degrees_train_pts_input.ndim == 1:
+                            grid_train = scaling_fn(np.flip(np.array(list(itertools.product(tlab_train_pts_input, degrees_train_pts_input))), axis = 1),
+                                            **scaling_fn_kwargs)
+                        elif tlab_train_pts_input.ndim == 1 and degrees_train_pts_input.ndim != 1:
+                            grid_train = scaling_fn(np.flip(
+                                    np.array(
+                                        [[np.tile(tlab_train_pts_input, (np.shape(degrees_train_pts_input)[0], 1)).flatten('F')[s], degrees_train_pts_input.flatten('F')[s]] for s in range(degrees_train_pts_input.size)]
+                                    ),
+                                axis=1),
+                                **scaling_fn_kwargs)
+                        elif tlab_train_pts_input.ndim != 1 and degrees_train_pts_input.ndim == 1:
+                            # untested
+                            grid_train = scaling_fn(np.flip(
+                                np.array(
+                                    [[tlab_train_pts_input.flatten('F')[s],
+                                      np.tile(degrees_train_pts_input.flatten('F')[s], (np.shape(tlab_train_pts_input)[1], 1))] for s in range(tlab_train_pts_input.size)]
+                                ),
+                                axis=1),
+                                **scaling_fn_kwargs)
+                        else:
+                            # untested
+                            grid_train = scaling_fn(np.flip(
+                                np.array(
+                                    [[tlab_train_pts_input.flatten('F')[s],
+                                      degrees_train_pts_input.flatten('F')[s]] for s in
+                                     range(tlab_train_pts_input.size)]
+                                ),
+                                axis=1),
+                                **scaling_fn_kwargs)
+                        print("grid_train = " + str(grid_train))
                         # grid_train = np.flip(np.array(list(itertools.product(tlab_train_pts_mom, degrees_train_pts_input))), axis=1)
                         # grid_test = np.flip(np.array(list(itertools.product(tlab_test_pts_input, degrees_test_pts_input))), axis = 1)
 
