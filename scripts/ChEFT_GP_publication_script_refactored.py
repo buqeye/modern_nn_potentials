@@ -81,7 +81,7 @@ setup_rc_params()
 # D_nn_online = nn_online_file.get_node("/" + nn_online_pot + "/D").read()[:, :-1]
 # AXX_nn_online = nn_online_file.get_node("/" + nn_online_pot + "/AXX").read()[:, :-1]
 # AYY_nn_online = nn_online_file.get_node("/" + nn_online_pot + "/AYY").read()[:, :-1]
-
+#
 # # creates a dictionary that links the NN online data for each observable to the
 # # eventual predictions for that observable by a given potential scheme and scale
 # online_data_dict = {
@@ -93,6 +93,8 @@ setup_rc_params()
 #     "AXX": AXX_nn_online,
 #     "AYY": AYY_nn_online,
 # }
+
+online_data_dict = get_nn_online_data()
 
 # for each choice of scale and scheme, sets the total possible orders and nomenclature
 EKM0p8fm = ScaleSchemeBunch(
@@ -585,7 +587,9 @@ def gp_analysis(
         )
         DBunch = ObservableBunch(
             "D", D, E_input_array, deg_input_array, "D", "dimensionless"
-            # "D", D, E_input_array, deg_input_array, "D", "dimensionful"
+        )
+        DBunch_dimensionful = ObservableBunch(
+            "D_dimensionful", D, E_input_array, deg_input_array, "D", "dimensionful"
         )
         AXXBunch = ObservableBunch(
             "AXX", AXX, E_input_array, deg_input_array, "A_{xx}", "dimensionless"
@@ -600,6 +604,7 @@ def gp_analysis(
             AYBunch,
             ABunch,
             DBunch,
+            DBunch_dimensionful,
             AXXBunch,
             AYYBunch,
         ]
@@ -1216,7 +1221,7 @@ def gp_analysis(
                                     MyPlot.plot_truncation_errors(
                                         online_data_dict[Observable.name],
                                         whether_save=save_trunc_bool,
-                                        residual_plot=False,
+                                        residual_plot=True,
                                     )
                                 if plot_lambdapost_pointwise_bool:
                                     MyPlot.plot_lambda_posterior_pointwise(
@@ -1275,6 +1280,14 @@ def gp_analysis(
                                     # plot_obs_list = [["SGT"], ["DSG"]]
                                     # obs_name_grouped_list = ["SGT", "DSG"]
                                     # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$']
+                                    # mesh_cart_grouped_list = [mesh_cart_sgt, mesh_cart]
+
+                                    # # for equalizing SGT and DSG
+                                    # plot_obs_list = [["SGT"], ["DSG"], ["SGT", "DSG"]]
+                                    # obs_name_grouped_list = ["SGT", "DSG", "TWOOBS"]
+                                    # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$', r'2Obs.']
+                                    # # mesh_cart_grouped_list = [mesh_cart, mesh_cart, mesh_cart]
+                                    # mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart], [mesh_cart_sgt, mesh_cart]]
 
                                     # # for SGT, DSG, and D
                                     # plot_obs_list = [["SGT"], ["DSG"], ["D"]]
@@ -1309,20 +1322,24 @@ def gp_analysis(
                                     # obs_labels_grouped_list = [r'$\displaystyle\frac{d\sigma}{d\Omega}$',
                                     #                            r'$X_{pqik}$']
 
-                                    # EACHOBS for energy input spaces
-                                    plot_obs_list = [["SGT"], ["DSG"], ["D"], ["AXX"], ["AYY"], ["A"], ["AY"]]
-                                    obs_name_grouped_list = ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]
-                                    obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$',
-                                                               r'$D$', r'$A_{xx}$', r'$A_{yy}$', r'$A$', r'$A_{y}$']
-                                    mesh_cart_grouped_list = [mesh_cart_sgt, mesh_cart, mesh_cart, mesh_cart, mesh_cart,
-                                                              mesh_cart, mesh_cart]
-
-                                    # # EACHOBS and ALLOBS for energy input spaces
-                                    # plot_obs_list = [["SGT"], ["DSG"], ["D"], ["AXX"], ["AYY"], ["A"], ["AY"],
-                                    #                  ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]]
-                                    # obs_name_grouped_list = ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY", "ALLOBS"]
+                                    # # EACHOBS for energy input spaces
+                                    # plot_obs_list = [["SGT"], ["DSG"], ["D"], ["AXX"], ["AYY"], ["A"], ["AY"]]
+                                    # obs_name_grouped_list = ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]
                                     # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$',
-                                    #                            r'$D$', r'$A_{xx}$', r'$A_{yy}$', r'$A$', r'$A_{y}$', r'Obs.']
+                                    #                            r'$D$', r'$A_{xx}$', r'$A_{yy}$', r'$A$', r'$A_{y}$']
+                                    # mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart], [mesh_cart], [mesh_cart], [mesh_cart],
+                                    #                           [mesh_cart], [mesh_cart]]
+
+                                    # EACHOBS and ALLOBS for energy input spaces
+                                    plot_obs_list = [["SGT"], ["DSG"], ["D"], ["AXX"], ["AYY"], ["A"], ["AY"],
+                                                     ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]]
+                                    obs_name_grouped_list = ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY", "ALLOBS"]
+                                    obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$',
+                                                               r'$D$', r'$A_{xx}$', r'$A_{yy}$', r'$A$', r'$A_{y}$', r'Obs.']
+                                    mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart], [mesh_cart], [mesh_cart],
+                                                              [mesh_cart], [mesh_cart], [mesh_cart],
+                                                              [mesh_cart_sgt, mesh_cart, mesh_cart, mesh_cart,
+                                                              mesh_cart, mesh_cart, mesh_cart]]
 
                                     # # ALLOBS for energy input spaces
                                     # plot_obs_list = [["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]]
@@ -1825,13 +1842,13 @@ def gp_analysis(
 gp_analysis(
     nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
-    observable_input=["A"],
-    E_input_array=[50],
-    deg_input_array=[],
+    observable_input=["D"],
+    E_input_array=[],
+    deg_input_array=[90],
     Q_param_method_array=["sum"],
     p_param_method_array=["Qofprel"],
-    input_space_input=["deg"],
-    input_space_deg="deg",
+    input_space_input=["prel"],
+    input_space_deg="cos",
     input_space_tlab="prel",
     t_lab_train_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]),  # set0 / refactor
     # t_lab_pts=np.array([25, 75, 125, 175, 225, 275, 325]), # set1
@@ -1845,7 +1862,7 @@ gp_analysis(
     # degrees_pts=np.array(
     #     [15, 31, 50, 90, 130, 149, 165]
     # ),  # evensin
-    train_test_split_array=[Fullspaceanglessplit1],
+    train_test_split_array=[Allenergysplit1],
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
@@ -1853,22 +1870,22 @@ gp_analysis(
     LengthScaleTlabInput=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
     LengthScaleDegInput=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
     fixed_sd=None,
-    m_pi_eff=148,
-    Lambdab=499,
+    m_pi_eff=141,
+    Lambdab=480,
     print_all_classes=False,
     savefile_type="png",
     plot_coeffs_bool=True,
-    plot_md_bool=True,
-    plot_pc_bool=True,
-    plot_ci_bool=False,
+    plot_md_bool=False,
+    plot_pc_bool=False,
+    plot_ci_bool=True,
     plot_pdf_bool=False,
-    plot_trunc_bool=False,
+    plot_trunc_bool=True,
     plot_lambdapost_pointwise_bool=False,
     plot_lambdapost_curvewise_bool=True,
     plot_plotzilla_bool=False,
-    save_coeffs_bool=True,
-    save_md_bool=True,
-    save_pc_bool=True,
+    save_coeffs_bool=False,
+    save_md_bool=False,
+    save_pc_bool=False,
     save_ci_bool=False,
     save_pdf_bool=False,
     save_trunc_bool=False,

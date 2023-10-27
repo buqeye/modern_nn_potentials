@@ -2,6 +2,7 @@ import numpy as np
 import decimal
 import gsum as gm
 import urllib
+import tables
 
 def correlation_coefficient(x, y, pdf):
     """
@@ -347,3 +348,5 @@ def get_nn_online_data():
         "AXX": AXX_nn_online,
         "AYY": AYY_nn_online,
     }
+
+    return online_data_dict
