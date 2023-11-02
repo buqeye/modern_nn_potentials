@@ -233,8 +233,8 @@ def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_
     fig (Figure) : figure with plots.
     """
     # Plot each posterior and its summary statistics
-    fig, ax = plt.subplots(1, 1, figsize=(3.4, 3.4))
-    # print("result has shape " + str(np.shape(result)))
+    # fig, ax = plt.subplots(1, 1, figsize=(3.4, 3.4))
+    fig, ax = plt.subplots(1, 1, figsize=(3.4, 10.2))
 
     for i, posterior_raw in enumerate(result):
         # scales the posteriors so they're all the same height
@@ -254,7 +254,10 @@ def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_
             for j, p in enumerate([0.68, 0.95]):
                 bounds[j] = gm.hpd_pdf(pdf=posterior_raw, alpha=p, x=variable.var)
 
+            # print("posterior_raw = " + str(posterior_raw))
+            # print("variable.var = " + str(variable.var))
             median = gm.median_pdf(pdf=posterior_raw, x=variable.var)
+            print("median = " + str(median))
 
             draw_summary_statistics(*bounds, median, ax=ax, height=-i)
         except:

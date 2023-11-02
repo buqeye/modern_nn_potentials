@@ -567,7 +567,7 @@ def gp_analysis(
                                 b for b in vsquantity_array_tlab if b.name == input_space_tlab
                             ][0]
 
-                            mpi_vals = np.linspace(50, 300, 59, dtype=np.dtype('f4'))
+                            mpi_vals = np.linspace(50, 300, 29, dtype=np.dtype('f4'))
                             # mpi_vals = 138 * np.array([0.9999, 1.0001])
                             ls_deg_vals = np.linspace(0.01,
                                                   1.0 * (VsQuantityPosteriorDeg.input_space(
@@ -578,9 +578,10 @@ def gp_analysis(
                                                            **{"p_input": E_to_p(E_lab, nn_interaction),
                                                               "deg_input": min(degrees),
                                                               "interaction": nn_interaction})),
-                                                  62)
-                            ls_tlab_vals = np.linspace(1, 150, 60, dtype=np.dtype('f4'))
-                            lambda_vals = np.linspace(300, 900, 61, dtype=np.dtype('f4'))
+                                                  32)
+                            ls_tlab_vals = np.linspace(1, 150, 30, dtype=np.dtype('f4'))
+                            # lambda_vals = np.linspace(300, 900, 31, dtype=np.dtype('f4'))
+                            lambda_vals = np.linspace(300, 1200, 500, dtype=np.dtype('f4'))
                             # lambda_vals = 600 * np.array([0.9999, 1.0001])
 
                             mesh_cart = gm.cartesian(lambda_vals, np.log(ls_deg_vals), np.log(ls_tlab_vals), mpi_vals)
@@ -793,20 +794,20 @@ def gp_analysis(
                                         whether_save=save_trunc_bool,
                                         residual_plot=True,
                                     )
-                                if plot_lambdapost_pointwise_bool:
-                                    MyPlot.plot_lambda_posterior_pointwise(
-                                        SGT=SGT,
-                                        DSG=DSG,
-                                        AY=AY,
-                                        A=A,
-                                        D=D,
-                                        AXX=AXX,
-                                        AYY=AYY,
-                                        t_lab=t_lab,
-                                        degrees=degrees,
-                                        whether_save=save_lambdapost_pointwise_bool,
-                                    )
-                                if plot_lambdapost_curvewise_bool:
+                                # if plot_lambdapost_pointwise_bool:
+                                #     MyPlot.plot_lambda_posterior_pointwise(
+                                #         SGT=SGT,
+                                #         DSG=DSG,
+                                #         AY=AY,
+                                #         A=A,
+                                #         D=D,
+                                #         AXX=AXX,
+                                #         AYY=AYY,
+                                #         t_lab=t_lab,
+                                #         degrees=degrees,
+                                #         whether_save=save_lambdapost_pointwise_bool,
+                                #     )
+                                if plot_lambdapost_curvewise_bool or plot_lambdapost_pointwise_bool:
                                     obs_dict = {"SGT": SGTBunch, "DSG": DSGBunch, "D": DBunch, "AXX": AXXBunch, "AYY": AYYBunch, "A": ABunch, "AY": AYBunch}
 
                                     # # just SGT
@@ -935,7 +936,7 @@ def gp_analysis(
                                         [obs_dict[obs_name] for obs_name in obs_sublist] for
                                         obs_sublist in plot_obs_list]
 
-                                    orders = 1
+                                    # orders = 1
 
                                     LengthScaleTlabInput.make_guess(
                                         VsQuantityPosteriorTlab.input_space(
@@ -956,97 +957,190 @@ def gp_analysis(
                                         )
                                     )
 
-                                    plot_posteriors_curvewise(
-                                        # order stuff
-                                        light_colors = Orders.lightcolors_array,
-                                        nn_orders_array = Orders.orders_restricted,
-                                        nn_orders_full_array = Orders.orders_full,
-                                        excluded = Orders.excluded,
-                                        orders_labels_dict = {6: r'N$^{4}$LO$^{+}$', 5: r'N$^{4}$LO',
-                                                               4: r'N$^{3}$LO', 3: r'N$^{2}$LO',
-                                                               2: r'NLO'},
-                                        orders_names_dict={6: 'N4LO+', 5: 'N4LO',
-                                                            4: 'N3LO', 3: 'N2LO',
-                                                            2: 'NLO'},
-                                        # strings
-                                        p_param = PParamMethod,
-                                        Q_param = QParamMethod,
-                                        nn_interaction = nn_interaction,
-                                        # hyperparameters
-                                        center = center,
-                                        disp = disp,
-                                        df = df,
-                                        std_est = std_scale,
-                                        # filename stuff
-                                        obs_data_grouped_list = obs_grouped_list,
-                                        obs_name_grouped_list = obs_name_grouped_list,
-                                        obs_labels_grouped_list = obs_labels_grouped_list,
-                                        mesh_cart_grouped_list = mesh_cart_grouped_list,
-                                        t_lab=t_lab,
-                                        t_lab_train_pts=t_lab_train_pts,
-                                        # t_lab_pts=np.array([5, 21, 48, 85, 133, 192]),
-                                        # t_lab_pts=np.array([5, 21, 48, 85, 133, 192, 261]),
-                                        # t_lab_train_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]), # set0 / refactor
-                                        # t_lab_pts=np.array([25, 75, 125, 175, 225, 275, 325]), # set1
-                                        # t_lab_pts=np.array([1, 10, 28, 55, 90, 133, 185]), # set2
-                                        # t_lab_pts=np.array([1, 9, 23, 45, 73, 108, 150]), # set3
-                                        # t_lab_pts=np.array([1, 8, 19, 36, 58, 85, 118]),  # set4
-                                        # t_lab_pts=np.array([1, 11, 31, 61, 100, 150]),  # set5
-                                        # t_lab_pts=np.array([1, 6, 15, 28, 45, 65, 90, 118, 150]),  # set6
-                                        # t_lab_train_pts=np.array([36, 58, 85, 118, 155, 198, 246, 300]),  # set7
-                                        # t_lab_pts=np.array([1, 12, 33, 65]),
-                                        # t_lab_pts=np.array([108, 161, 225, 300]),
-                                        # t_lab_pts=np.array([1, 5, 12, 21]),
-                                        # t_lab_pts=np.array([33, 48, 65, 85]),
-                                        # t_lab_pts=np.array([108, 133, 161, 192]),
-                                        # t_lab_pts=np.array([42, 65, 94, 128, 167, 211, 261]),
+                                    if plot_lambdapost_curvewise_bool:
+                                        plot_posteriors_curvewise(
+                                            # order stuff
+                                            light_colors = Orders.lightcolors_array,
+                                            nn_orders_array = Orders.orders_restricted,
+                                            nn_orders_full_array = Orders.orders_full,
+                                            excluded = Orders.excluded,
+                                            orders_labels_dict = {6: r'N$^{4}$LO$^{+}$', 5: r'N$^{4}$LO',
+                                                                   4: r'N$^{3}$LO', 3: r'N$^{2}$LO',
+                                                                   2: r'NLO'},
+                                            orders_names_dict={6: 'N4LO+', 5: 'N4LO',
+                                                                4: 'N3LO', 3: 'N2LO',
+                                                                2: 'NLO'},
+                                            # strings
+                                            p_param = PParamMethod,
+                                            Q_param = QParamMethod,
+                                            nn_interaction = nn_interaction,
+                                            # hyperparameters
+                                            center = center,
+                                            disp = disp,
+                                            df = df,
+                                            std_est = std_scale,
+                                            # filename stuff
+                                            obs_data_grouped_list = obs_grouped_list,
+                                            obs_name_grouped_list = obs_name_grouped_list,
+                                            obs_labels_grouped_list = obs_labels_grouped_list,
+                                            mesh_cart_grouped_list = mesh_cart_grouped_list,
+                                            t_lab=t_lab,
+                                            t_lab_train_pts=t_lab_train_pts,
+                                            # t_lab_pts=np.array([5, 21, 48, 85, 133, 192]),
+                                            # t_lab_pts=np.array([5, 21, 48, 85, 133, 192, 261]),
+                                            # t_lab_train_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]), # set0 / refactor
+                                            # t_lab_pts=np.array([25, 75, 125, 175, 225, 275, 325]), # set1
+                                            # t_lab_pts=np.array([1, 10, 28, 55, 90, 133, 185]), # set2
+                                            # t_lab_pts=np.array([1, 9, 23, 45, 73, 108, 150]), # set3
+                                            # t_lab_pts=np.array([1, 8, 19, 36, 58, 85, 118]),  # set4
+                                            # t_lab_pts=np.array([1, 11, 31, 61, 100, 150]),  # set5
+                                            # t_lab_pts=np.array([1, 6, 15, 28, 45, 65, 90, 118, 150]),  # set6
+                                            # t_lab_train_pts=np.array([36, 58, 85, 118, 155, 198, 246, 300]),  # set7
+                                            # t_lab_pts=np.array([1, 12, 33, 65]),
+                                            # t_lab_pts=np.array([108, 161, 225, 300]),
+                                            # t_lab_pts=np.array([1, 5, 12, 21]),
+                                            # t_lab_pts=np.array([33, 48, 65, 85]),
+                                            # t_lab_pts=np.array([108, 133, 161, 192]),
+                                            # t_lab_pts=np.array([42, 65, 94, 128, 167, 211, 261]),
 
-                                        # t_lab_pts=np.array([50, 100, 150, 200, 250, 300]),
-                                        # t_lab_pts=np.array([1, 5, 12, 21, 33, 48]),
-                                        # t_lab_pts=np.array([1, 10, 25, 48]),                                        # t_lab_pts=np.array([1, 10, 25]),
-                                        # t_lab_pts=np.array([65, 85, 108, 133, 161, 192]),
-                                        # t_lab_pts=np.array([65, 100, 143, 192]),
-                                        # t_lab_pts=np.array([100, 143, 192]),
-                                        # t_lab_train_pts=np.array([4, 20, 47, 81, 129, 188, 249]),
-                                        # t_lab_test_pts=np.array([4, 20, 47, 81, 129, 188, 249]),
-                                        InputSpaceTlab=VsQuantityPosteriorTlab,
-                                        LsTlab=LengthScaleTlabInput,
-                                        degrees=degrees,
-                                        degrees_train_pts=degrees_train_pts,
-                                        InputSpaceDeg=VsQuantityPosteriorDeg,
-                                        LsDeg=LengthScaleDegInput,
-                                        variables_array=variables_array,
+                                            # t_lab_pts=np.array([50, 100, 150, 200, 250, 300]),
+                                            # t_lab_pts=np.array([1, 5, 12, 21, 33, 48]),
+                                            # t_lab_pts=np.array([1, 10, 25, 48]),                                        # t_lab_pts=np.array([1, 10, 25]),
+                                            # t_lab_pts=np.array([65, 85, 108, 133, 161, 192]),
+                                            # t_lab_pts=np.array([65, 100, 143, 192]),
+                                            # t_lab_pts=np.array([100, 143, 192]),
+                                            # t_lab_train_pts=np.array([4, 20, 47, 81, 129, 188, 249]),
+                                            # t_lab_test_pts=np.array([4, 20, 47, 81, 129, 188, 249]),
+                                            InputSpaceTlab=VsQuantityPosteriorTlab,
+                                            LsTlab=LengthScaleTlabInput,
+                                            degrees=degrees,
+                                            degrees_train_pts=degrees_train_pts,
+                                            InputSpaceDeg=VsQuantityPosteriorDeg,
+                                            LsDeg=LengthScaleDegInput,
+                                            variables_array=variables_array,
 
-                                        mom_fn=E_to_p,
-                                        mom_fn_kwargs={"interaction" : "np"},
+                                            mom_fn=E_to_p,
+                                            mom_fn_kwargs={"interaction" : "np"},
 
-                                        scaling_fn=scaling_fn,
-                                        scaling_fn_kwargs={},
+                                            scaling_fn=scaling_fn,
+                                            scaling_fn_kwargs={},
 
-                                        ratio_fn=ratio_fn_posterior,
-                                        ratio_fn_kwargs={
-                                            "p_param": PParamMethod,
-                                            "Q_param": QParamMethod,
-                                            "mpi_var": m_pi_eff,
-                                            "lambda_var": Lambdab
-                                        },
-                                        log_likelihood_fn=log_likelihood,
-                                        log_likelihood_fn_kwargs={
-                                            "p_param": PParamMethod,
-                                            "Q_param": QParamMethod
-                                        },
+                                            ratio_fn=ratio_fn_posterior,
+                                            ratio_fn_kwargs={
+                                                "p_param": PParamMethod,
+                                                "Q_param": QParamMethod,
+                                                "mpi_var": m_pi_eff,
+                                                "lambda_var": Lambdab
+                                            },
+                                            log_likelihood_fn=log_likelihood,
+                                            log_likelihood_fn_kwargs={
+                                                "p_param": PParamMethod,
+                                                "Q_param": QParamMethod
+                                            },
 
-                                        orders=orders,
+                                            orders=1,
 
-                                        FileName = FileName,
+                                            FileName = FileName,
 
-                                        whether_use_data=True,
-                                        whether_save_data=True,
-                                        whether_save_plots=save_lambdapost_curvewise_bool,
-                                        whether_save_opt=False,
-                                    )
-                                if plot_plotzilla_bool:
-                                    MyPlot.plotzilla(whether_save=save_plotzilla_bool)
+                                            whether_use_data=True,
+                                            whether_save_data=True,
+                                            whether_save_plots=save_lambdapost_curvewise_bool,
+                                            whether_save_opt=False,
+                                        )
+                                    elif plot_lambdapost_pointwise_bool:
+                                        plot_posteriors_pointwise(
+                                            # order stuff
+                                            light_colors=Orders.lightcolors_array,
+                                            nn_orders_array=Orders.orders_restricted,
+                                            nn_orders_full_array=Orders.orders_full,
+                                            excluded=Orders.excluded,
+                                            orders_labels_dict={6: r'N$^{4}$LO$^{+}$', 5: r'N$^{4}$LO',
+                                                                4: r'N$^{3}$LO', 3: r'N$^{2}$LO',
+                                                                2: r'NLO'},
+                                            orders_names_dict={6: 'N4LO+', 5: 'N4LO',
+                                                               4: 'N3LO', 3: 'N2LO',
+                                                               2: 'NLO'},
+                                            # strings
+                                            p_param=PParamMethod,
+                                            Q_param=QParamMethod,
+                                            nn_interaction=nn_interaction,
+                                            # hyperparameters
+                                            # center=center,
+                                            # disp=disp,
+                                            # df=df,
+                                            # std_est=std_scale,
+                                            # filename stuff
+                                            obs_data_grouped_list=obs_grouped_list,
+                                            obs_name_grouped_list=obs_name_grouped_list,
+                                            obs_labels_grouped_list=obs_labels_grouped_list,
+                                            # mesh_cart_grouped_list=mesh_cart_grouped_list,
+                                            t_lab=t_lab,
+                                            t_lab_train_pts=t_lab_train_pts,
+                                            # t_lab_pts=np.array([5, 21, 48, 85, 133, 192]),
+                                            # t_lab_pts=np.array([5, 21, 48, 85, 133, 192, 261]),
+                                            # t_lab_train_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]), # set0 / refactor
+                                            # t_lab_pts=np.array([25, 75, 125, 175, 225, 275, 325]), # set1
+                                            # t_lab_pts=np.array([1, 10, 28, 55, 90, 133, 185]), # set2
+                                            # t_lab_pts=np.array([1, 9, 23, 45, 73, 108, 150]), # set3
+                                            # t_lab_pts=np.array([1, 8, 19, 36, 58, 85, 118]),  # set4
+                                            # t_lab_pts=np.array([1, 11, 31, 61, 100, 150]),  # set5
+                                            # t_lab_pts=np.array([1, 6, 15, 28, 45, 65, 90, 118, 150]),  # set6
+                                            # t_lab_train_pts=np.array([36, 58, 85, 118, 155, 198, 246, 300]),  # set7
+                                            # t_lab_pts=np.array([1, 12, 33, 65]),
+                                            # t_lab_pts=np.array([108, 161, 225, 300]),
+                                            # t_lab_pts=np.array([1, 5, 12, 21]),
+                                            # t_lab_pts=np.array([33, 48, 65, 85]),
+                                            # t_lab_pts=np.array([108, 133, 161, 192]),
+                                            # t_lab_pts=np.array([42, 65, 94, 128, 167, 211, 261]),
+
+                                            # t_lab_pts=np.array([50, 100, 150, 200, 250, 300]),
+                                            # t_lab_pts=np.array([1, 5, 12, 21, 33, 48]),
+                                            # t_lab_pts=np.array([1, 10, 25, 48]),                                        # t_lab_pts=np.array([1, 10, 25]),
+                                            # t_lab_pts=np.array([65, 85, 108, 133, 161, 192]),
+                                            # t_lab_pts=np.array([65, 100, 143, 192]),
+                                            # t_lab_pts=np.array([100, 143, 192]),
+                                            # t_lab_train_pts=np.array([4, 20, 47, 81, 129, 188, 249]),
+                                            # t_lab_test_pts=np.array([4, 20, 47, 81, 129, 188, 249]),
+                                            InputSpaceTlab=VsQuantityPosteriorTlab,
+                                            # LsTlab=LengthScaleTlabInput,
+                                            degrees=degrees,
+                                            degrees_train_pts=degrees_train_pts,
+                                            InputSpaceDeg=VsQuantityPosteriorDeg,
+                                            # LsDeg=LengthScaleDegInput,
+                                            variables_array=np.array([LambdabVariable]),
+
+                                            mpi_eff = 138,
+
+                                            mom_fn=E_to_p,
+                                            mom_fn_kwargs={"interaction": "np"},
+
+                                            # scaling_fn=scaling_fn,
+                                            # scaling_fn_kwargs={},
+
+                                            ratio_fn=ratio_fn_posterior,
+                                            ratio_fn_kwargs={
+                                                "p_param": PParamMethod,
+                                                "Q_param": QParamMethod,
+                                                "mpi_var": m_pi_eff,
+                                                "lambda_var": Lambdab
+                                            },
+                                            # log_likelihood_fn=log_likelihood,
+                                            # log_likelihood_fn_kwargs={
+                                            #     "p_param": PParamMethod,
+                                            #     "Q_param": QParamMethod
+                                            # },
+
+                                            orders=3,
+
+                                            FileName=FileName,
+
+                                            whether_use_data=False,
+                                            whether_save_data=False,
+                                            whether_save_plots=save_lambdapost_curvewise_bool,
+                                            # whether_save_opt=False,
+                                        )
+                            if plot_plotzilla_bool:
+                                MyPlot.plotzilla(whether_save=save_plotzilla_bool)
 
     # except:
     #     print("Error encountered in running loop.")
@@ -1084,13 +1178,13 @@ def gp_analysis(
 
 gp_analysis(
     nn_interaction="np",
-    scale_scheme_bunch_array=[EKM0p9fm],
-    observable_input=["SGT"],
+    scale_scheme_bunch_array=[RKE500MeV],
+    observable_input=["DSG"],
     E_input_array=[],
-    deg_input_array=[],
-    Q_param_method_array=["smax"],
+    deg_input_array=[90],
+    Q_param_method_array=["sum"],
     p_param_method_array=["Qofprel"],
-    input_space_input=["Elab"],
+    input_space_input=["prel"],
     input_space_deg="cos",
     input_space_tlab="prel",
     t_lab_train_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]),  # set0 / refactor
@@ -1101,19 +1195,21 @@ gp_analysis(
     # t_lab_pts=np.array([1, 11, 31, 61, 100, 150]),  # set5
     # t_lab_pts=np.array([1, 6, 15, 28, 45, 65, 90, 118, 150]),  # set6
     # t_lab_train_pts=np.array([36, 58, 85, 118, 155, 198, 246, 300]),  # set7
+    # t_lab_train_pts=np.array([20, 40, 60, 80, 100, 120, 140, 160, 180, 200, 220, 240, 260, 280, 300, 320, 340]),  # 1704
     degrees_train_pts=np.array([41, 60, 76, 90, 104, 120, 139]), # evencos
     # degrees_pts=np.array(
     #     [15, 31, 50, 90, 130, 149, 165]
     # ),  # evensin
-    train_test_split_array=[Nolowenergysplit],
+    # degrees_train_pts=np.array([40, 60, 80, 100, 120, 140]), # 1704
+    train_test_split_array=[Allenergysplit1],
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
     LengthScaleTlabInput=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
     LengthScaleDegInput=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
     fixed_sd=None,
-    m_pi_eff=138,
-    Lambdab=600,
+    m_pi_eff=141,
+    Lambdab=480,
     print_all_classes=False,
     savefile_type="png",
     plot_coeffs_bool=True,
@@ -1122,7 +1218,7 @@ gp_analysis(
     plot_ci_bool=False,
     plot_pdf_bool=False,
     plot_trunc_bool=False,
-    plot_lambdapost_pointwise_bool=False,
+    plot_lambdapost_pointwise_bool=True,
     plot_lambdapost_curvewise_bool=False,
     plot_plotzilla_bool=False,
     save_coeffs_bool=True,
@@ -1131,8 +1227,8 @@ gp_analysis(
     save_ci_bool=False,
     save_pdf_bool=False,
     save_trunc_bool=False,
-    save_lambdapost_pointwise_bool=False,
-    save_lambdapost_curvewise_bool=True,
+    save_lambdapost_pointwise_bool=True,
+    save_lambdapost_curvewise_bool=False,
     save_plotzilla_bool=False,
-    filename_addendum="_1904",
+    filename_addendum="_ptwise_0",
 )

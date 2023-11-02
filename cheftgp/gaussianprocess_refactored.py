@@ -175,21 +175,12 @@ class OrderInfo:
             default: None
         """
         self.orders_full = np.array(orders_array)
-        # print(self.orders_full)
         self.excluded = np.array(excluded)
-        # print(self.excluded)
-
         self.mask_restricted = ~np.isin(self.orders_full, self.excluded)
-        # print(self.mask_restricted)
         self.orders_restricted = self.orders_full[self.mask_restricted]
-        # print(self.orders_restricted)
-
         self.mask_eval = self.mask_restricted[1:]
-        # print(self.mask_eval)
-
         self.colors_array = list(np.array(colors_array)[self.mask_eval])
         self.lightcolors_array = list(np.array(lightcolors_array)[self.mask_eval])
-
         self.orders_names_dict = orders_names_dict
         self.orders_labels_dict = orders_labels_dict
 
@@ -328,7 +319,6 @@ class TrainTestSplit:
             orders
         """
         self.x = x
-        # print(self.x)
         self.y = y
 
         # calculates the actual value for each offset, xmin, and xmax
@@ -353,15 +343,15 @@ class TrainTestSplit:
 
         # creates the x and y training and testing points
         self.x_train, self.x_test, self.y_train, self.y_test = \
-            versatile_train_test_split(self.interp_obj, \
-                                       self.n_train, n_test_inter=self.n_test_inter, \
-                                       isclose_factor=self.isclose_factor, \
-                                       offset_train_min=self.offset_train_min, \
-                                       offset_train_max=self.offset_train_max, \
-                                       xmin_train=self.xmin_train, xmax_train=self.xmax_train, \
-                                       offset_test_min=self.offset_test_min, \
-                                       offset_test_max=self.offset_test_max, \
-                                       xmin_test=self.xmin_test, xmax_test=self.xmax_test, \
+            versatile_train_test_split(self.interp_obj,
+                                       self.n_train, n_test_inter=self.n_test_inter,
+                                       isclose_factor=self.isclose_factor,
+                                       offset_train_min=self.offset_train_min,
+                                       offset_train_max=self.offset_train_max,
+                                       xmin_train=self.xmin_train, xmax_train=self.xmax_train,
+                                       offset_test_min=self.offset_test_min,
+                                       offset_test_max=self.offset_test_max,
+                                       xmin_test=self.xmin_test, xmax_test=self.xmax_test,
                                        train_at_ends=self.train_at_ends, test_at_ends=self.test_at_ends)
 
         return self.x_train, self.x_test, self.y_train, self.y_test
@@ -499,7 +489,6 @@ class GSUMDiagnostics:
         # angle or energy mesh
         self.x_quantity_name = x_quantity[0]
         self.x_quantity_array = x_quantity[1]
-        # print(self.x_quantity_array)
         self.x_quantity_units = x_quantity[2]
 
         # information on the input space
@@ -542,20 +531,6 @@ class GSUMDiagnostics:
         # information on the orders at which the potential is evaluated
 
         self.orderinfo = orderinfo
-        # self.nn_orders_full = self.orderinfo.orders_full
-        # # self.nn_orders = self.orderinfo.orders_full
-        # self.nn_orders_mask = self.orderinfo.mask_full
-        # print(self.nn_orders_mask)
-        # # print(self.nn_orders_mask)
-        # self.colors = self.orderinfo.colors_array
-        # self.light_colors = self.orderinfo.lightcolors_array
-        # self.orders_restricted = self.orderinfo.orders_restricted
-        # # print(self.orders_restricted)
-        # self.mask_restricted = self.orderinfo.mask_restricted
-        # # print(self.mask_restricted)
-        # # self.raw_data_mask = np.array([*[True], *(self.nn_orders_mask[1:])[self.mask_restricted]])
-        # # self.raw_data_mask = np.array([*[True], *(self.mask_restricted)])
-
         self.nn_orders_full = self.orderinfo.orders_full
         self.excluded = self.orderinfo.excluded
         self.colors = self.orderinfo.colors_array
@@ -610,13 +585,6 @@ class GSUMDiagnostics:
                 self.ref_train = np.ones(len(self.x_train)) * 1
                 self.ref_test = np.ones(len(self.x_test)) * 1
 
-                # self.ref = self.data[:, -1]
-                # print("self.ref = " + str(self.ref))
-                #
-                # self.interp_f_ref = interp1d(self.x, self.ref)
-                # self.ref_train = self.interp_f_ref(self.x_train)
-                # self.ref_test = self.interp_f_ref(self.x_test)
-
             elif self.ref_type == "dimensionful":
                 self.ref = self.data[:, -1]
 
@@ -658,27 +626,8 @@ class GSUMDiagnostics:
                 self.ref_train = self.interp_f_ref(self.x_train)
                 self.ref_test = self.interp_f_ref(self.x_test)
 
-                # self.ref = np.ones(len(self.x)) * 1
-                # self.ref_train = np.ones(len(self.x_train)) * 1
-                # self.ref_test = np.ones(len(self.x_test)) * 1
-
         # uses interpolation to find the proper reference scales
         self.interp_f_ref = interp1d(self.x, self.ref)
-
-        # # Extract the coefficients and define kernel
-        # self.coeffs = gm.coefficients(self.data, ratio = self.ratio,
-        #                     ref = self.ref, orders = self.nn_orders_full)[:, self.nn_orders_mask]
-
-        # # uses interpolation to find the proper ratios for training and testing
-        # self.interp_f_ratio = interp1d(self.x, self.ratio * np.ones(len(self.x)))
-        # self.ratio_train = self.interp_f_ratio(self.x_train)
-        # self.coeffs_train = gm.coefficients(self.y_train, ratio = self.ratio_train,
-        #                                   ref = self.ref_train,
-        #                                   orders = self.nn_orders_full)[:, self.nn_orders_mask]
-        # self.ratio_test = self.interp_f_ratio(self.x_test)
-        # self.coeffs_test = gm.coefficients(self.y_test, ratio = self.ratio_test,
-        #                                   ref = self.ref_test,
-        #                                   orders = self.nn_orders_full)[:, self.nn_orders_mask]
 
         # Extract the coefficients and define kernel
         self.coeffs = gm.coefficients(self.data, ratio=self.ratio,
@@ -706,30 +655,15 @@ class GSUMDiagnostics:
             self.kernel = RBF(length_scale=self.ls, \
                               length_scale_bounds=(self.ls_lower, self.ls_upper)) + \
                           WhiteKernel(1e-10, noise_level_bounds='fixed')
-        # self.kernel = RBF(length_scale=self.ls,
-        #                   length_scale_bounds=(self.ls_lower, self.ls_upper)) + \
-        #               WhiteKernel(1e-4, noise_level_bounds='fixed')
-        # print(self.kernel)
 
         # Define the GP
         self.gp = gm.ConjugateGaussianProcess(
             self.kernel, center=self.center, disp=self.disp, df=self.df,
             scale=self.std_est, n_restarts_optimizer=50, random_state=self.seed,
             sd=self.sd)
-        # self.gp = gm.ConjugateStudentProcess(
-        #     self.kernel, center=self.center, disp=self.disp, df=self.df,
-        #     scale=self.std_est, n_restarts_optimizer=50, random_state=self.seed,
-        #     sd=self.sd)
 
         # restricts coeffs and colors to only those orders desired for
         # evaluating statistical diagnostics
-        # self.nn_orders = self.orders_restricted
-        # self.colors = list(np.array(self.colors)[self.mask_restricted])
-        # self.light_colors = list(np.array(self.light_colors)[self.mask_restricted])
-        # self.coeffs = (self.coeffs.T[self.mask_restricted]).T
-        # self.coeffs_train = (self.coeffs_train.T[self.mask_restricted]).T
-        # self.coeffs_test = (self.coeffs_test.T[self.mask_restricted]).T
-
         self.nn_orders = self.orders_restricted
         self.coeffs = (self.coeffs.T[self.mask_restricted]).T
         self.coeffs_train = (self.coeffs_train.T[self.mask_restricted]).T
@@ -754,8 +688,6 @@ class GSUMDiagnostics:
         self.ls_true = np.exp(self.gp.kernel_.theta)
         # X_constraint = [self.x[i] for i in self.constraint[0]]
         # mask_constraint = np.reshape(~ np.isin(self.X_train, X_constraint), len(self.X_train))
-        # print(mask_constraint.shape)
-        # print("mask_constraint = " + str(mask_constraint))
         # self.pred, self.std = self.gp.predict(self.X,
         #                                 Xc = self.X_train[mask_constraint],
         #                                 y = self.coeffs_train[mask_constraint, :],
@@ -767,7 +699,6 @@ class GSUMDiagnostics:
         # plots the coefficients against the given input space
         if ax is None:
             fig, ax = plt.subplots(figsize=(3.2, 2.2))
-            # fig, ax = plt.subplots(figsize=(2.1, 2.1))
 
         for i, n in enumerate(self.nn_orders_full[self.mask_restricted]):
             ax.fill_between(self.x, self.pred[:, i] + 2 * self.std,
@@ -798,6 +729,7 @@ class GSUMDiagnostics:
                   borderaxespad=0.6, loc = 'best',
                   title = self.title_coeffs).set_zorder(5 * i)
 
+        # takes constraint into account, if applicable
         if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
             dX = np.array([[self.x[i]] for i in self.constraint[0]])
             # std_interp = np.sqrt(np.diag(
@@ -848,6 +780,7 @@ class GSUMDiagnostics:
                 -1.2 * self.underlying_std, r'$\sigma_{\mathrm{fit}}$', fontsize=14,
                 horizontalalignment='center', verticalalignment='bottom', zorder=5 * i)
 
+        # saves figure
         if 'fig' in locals() and whether_save:
             fig.tight_layout()
 
@@ -876,6 +809,7 @@ class GSUMDiagnostics:
             # calculates and plots the squared Mahalanobis distance
             self.gp.kernel_
 
+            # takes into account a constraint, if applicable
             if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
                 dX = np.array([[self.x[i]] for i in self.constraint[0]])
                 self.mean, self.cov = self.gp.predict(self.X_test,
@@ -894,16 +828,15 @@ class GSUMDiagnostics:
                                                  black=softblack)
 
             if ax is None:
-                # fig, ax = plt.subplots(figsize=(1, 3.2))
                 fig, ax = plt.subplots(figsize=(1.0, 2.2))
 
             self.gr_dgn.md_squared(type='box', trim=False, title=None,
                                    xlabel=r'$\mathrm{D}_{\mathrm{MD}}^2$', ax=ax,
                                    **{"size": 10})
             offset_xlabel(ax)
-            # ax.set_ylim(0, 100)
             plt.show()
 
+            # saves figure
             if 'fig' in locals() and whether_save:
                 fig.tight_layout();
 
@@ -934,6 +867,7 @@ class GSUMDiagnostics:
             # calculates and plots the pivoted Cholesky decomposition
             self.gp.kernel_
 
+            # takes into account constraints, if applicable
             if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
                 dX = np.array([[self.x[i]] for i in self.constraint[0]])
                 self.mean, self.cov = self.gp.predict(self.X_test,
@@ -953,7 +887,6 @@ class GSUMDiagnostics:
 
             with plt.rc_context({"text.usetex": True}):
                 if ax is None:
-                    # fig, ax = plt.subplots(figsize=(3.2, 3.2))
                     fig, ax = plt.subplots(figsize=(3.2, 2.2))
 
                 self.gr_dgn.pivoted_cholesky_errors(ax=ax, title=None)
@@ -961,10 +894,10 @@ class GSUMDiagnostics:
                 ax.set_xticks(np.arange(1, self.n_test_pts + 1, 2), minor=True)
                 ax.text(0.05, 0.95, r'$\mathrm{D}_{\mathrm{PC}}$', bbox=text_bbox,
                         transform=ax.transAxes, va='top', ha='left')
-                # ax.set_ylim(-6, 6)
 
                 plt.show()
 
+                # saves figure
                 if 'fig' in locals() and whether_save:
                     fig.tight_layout()
 
@@ -1110,8 +1043,6 @@ class GSUMDiagnostics:
         ----------
         online_data : array
             Summed order-by-order predictions for an observable.
-        constraint : array of arrays, optional
-            The constraints for the fit procedure. The default is None.
         residual_plot : bool, optional
             Whether to plot the truncation error as residuals or as full sums.
         whether_save : bool, optional
@@ -1280,20 +1211,16 @@ class GSUMDiagnostics:
 
         # calculates the covariance matrix and mean
         self.cov_wp = self.gp_trunc.cov(self.X_test, start=0, end=np.inf)
-        # self.cov_wp = self.gp_trunc.cov(self.X_test, start=0, end=0)
-        # print("self.cov_wp = " + str(self.cov_wp))
         self.mean_wp = self.gp_trunc.mean(self.X_test)
 
         # norms the residuals by factors of the ratio
         self.norm_residuals_wp = data_true_interp(self.X_test) - data_interp(self.X_test)
-        # print("self.norm_residuals_wp = " + str(self.norm_residuals_wp))
         denom = (np.tile(self.ratio_test,
                          (len(self.nn_orders_full[self.mask_restricted]), 1)).T) ** (
                             self.nn_orders_full[self.mask_restricted] + 1) * (np.sqrt(
             1 - np.tile(self.ratio_test,
                         (len(self.nn_orders_full[self.mask_restricted]), 1)) ** 2)).T
         self.norm_residuals_wp = self.norm_residuals_wp / (denom.T)[:, :, None]
-        # print("self.norm_residuals_wp.T = " + str(self.norm_residuals_wp.T))
         self.gr_dgn_wp = gm.GraphicalDiagnostic(self.norm_residuals_wp.T,
                                                 mean=self.mean_wp, cov=self.cov_wp,
                                                 colors=self.colors, gray=gray, black=softblack)
@@ -1318,6 +1245,7 @@ class GSUMDiagnostics:
 
         plt.show()
 
+        # saves the figure
         if 'fig' in locals() and whether_save:
             fig.tight_layout()
 
@@ -1349,6 +1277,7 @@ class GSUMDiagnostics:
             # calculates and plots credible intervals ("weather plots")
             self.gp.kernel_
 
+            # takes account of constraints, if applicable
             if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
                 dX = np.array([[self.x[i]] for i in self.constraint[0]])
                 self.mean, self.cov = self.gp.predict(self.X_test,
@@ -1381,6 +1310,7 @@ class GSUMDiagnostics:
 
             plt.show()
 
+            # saves figure
             if 'fig' in locals() and whether_save:
                 fig.tight_layout()
 
@@ -1622,21 +1552,8 @@ def interp_f_ratio_posterior(x_map, x_interp, p, Q_param, mpi_var, lambda_var):
     Q_param (str) : type of Q parametrization.
         Can be "smoothmax", "max", or "sum".
     mpi_var (float) : value of the (effective) pion mass (in MeV) for calculating the ratio.
-    mpi_var (float) : value of the breakdown scale (in MeV) for calculating the ratio.
+    lambda_var (float) : value of the breakdown scale (in MeV) for calculating the ratio.
     """
-    # X = np.ravel(x_map)
-    # print(np.shape(X))
-    # print(X)
-    # print("x_map has shape " + str(np.shape(x_map)))
-    # print("x_map = " + str(x_map))
-    # print(np.shape(x_interp))
-    # print(np.shape(p))
-    # print(np.shape(Q_approx(p, Q_param, Lambda_b=lambda_var, m_pi=mpi_var)))
-    # print("x_map has shape " + str(np.shape(x_map)))
-    # print(x_interp)
-    # print(Q_approx(p, Q_param, Lambda_b=lambda_var, m_pi=mpi_var))
-    # print(Q_approx(p, Q_param, Lambda_b=lambda_var, m_pi=mpi_var)
-    #                  * np.ones(np.shape(x_interp)))
     return interpn(x_interp, Q_approx(p, Q_param, Lambda_b=lambda_var, m_pi=mpi_var), x_map)
 
 def ratio_fn_posterior(X, p_grid_train, p_param, p_shape, Q_param, mpi_var, lambda_var):
@@ -1645,23 +1562,23 @@ def ratio_fn_posterior(X, p_grid_train, p_param, p_shape, Q_param, mpi_var, lamb
 
     Parameters
     ----------
-    x_map (array) : array of points onto which to map.
-    x_interp (array) : array of points from which to map.
-    p (array) : momentum/momenta for calculating the ratio (dimensionless expansion parameter).
+    X (array) : array of input-space values. These are never called but must be passed here anyway due to GSUM.
+    p_grid_train : array of momenta for evaluating ratio
+    p_param (str) : type of p parametrization.
+        Can be "Qofprel", "Qofqcm", or "Qofpq"
+    p_shape (tuple) : shape for momentum before calculating ratio.
     Q_param (str) : type of Q parametrization.
         Can be "smoothmax", "max", or "sum".
     mpi_var (float) : value of the (effective) pion mass (in MeV) for calculating the ratio.
-    mpi_var (float) : value of the breakdown scale (in MeV) for calculating the ratio.
+    lambda_var (float) : value of the breakdown scale (in MeV) for calculating the ratio.
     """
     p = np.array([])
     for pt in p_grid_train:
-        # print("pt = " + str(pt))
-        # p = np.append(p, p_approx(p_name=p_param, degrees=np.array([pt[0]]), prel=np.array([pt[1]])))
         try:
             p = np.append(p, p_approx(p_name = p_param, degrees = np.array([pt[0]]), prel = np.array([pt[1]])))
         except:
             p = np.append(p, p_approx(p_name=p_param, degrees=np.array([0]), prel=np.array([pt[0]])))
-    # print("p = " + str(p))
+
     return Q_approx(p = np.reshape(p, p_shape), Q_parametrization=Q_param, Lambda_b = lambda_var, m_pi = mpi_var)
 
 
@@ -1724,9 +1641,6 @@ def calc_loglike_ray(mesh_cart,
                      batch_size,
                      log_likelihood,
                      gp_post,
-                     # p_param,
-                     # p_shape,
-                     # Q_param,
                      log_likelihood_fn_kwargs,
                      ):
     """
@@ -1738,8 +1652,7 @@ def calc_loglike_ray(mesh_cart,
     batch_size (int) : batch size for Ray.
     log_likelihood (Ray) : Ray object with function for calculating the log-likelihood.
     gp_post (TruncationGP) : fitted Gaussian process object.
-    input_space (array) : input space.
-    testing_pts (array) : subset of the input space where evaluation of the log-likelihood will occur.
+    log_likelihood_fn_kwargs (dict) : keyword arguments for log_likelihood.
 
     Returns
     ----------
@@ -1759,7 +1672,6 @@ def calc_loglike_ray(mesh_cart,
                                                   log_likelihood_fn_kwargs,
                                                   ))
     log_like = list(itertools.chain(*ray.get(log_like_ids)))
-    # obs_loglike = np.reshape(log_like, tuple(len(random_var.var) for random_var in variables_array))
 
     return log_like
 def add_logpriors(variables_array, obs_loglike):
@@ -1776,41 +1688,16 @@ def add_logpriors(variables_array, obs_loglike):
     obs_loglike (array) : log-likelihood after the log-priors have been added to it.
     """
     for i, logprior in enumerate([variable.logprior for variable in variables_array]):
-        # obs_loglike += np.transpose(np.tile(logprior,
-        #                                     (
-        #                                         np.shape(obs_loglike)[(i + 1) % len(variables_array)],
-        #                                         np.shape(obs_loglike)[(i + 2) % len(variables_array)],
-        #                                         1
-        #                                     )
-        #                                     ),
-        #                             np.roll(np.arange(0, len(variables_array), dtype=int), i + 1))
-        # print("shape of interest = " + str((
-        #                                         np.shape(obs_loglike)[(i + 1) % len(variables_array)],
-        #                                         np.shape(obs_loglike)[(i + 2) % len(variables_array)],
-        #                                         np.shape(obs_loglike)[(i + 3) % len(variables_array)],
-        #                                         1
-        #                                     )))
         logprior_shape_tuple = (1,)
         for lst in range(len(variables_array) - 1, 0, -1):
-            # print("lst = " + str(lst))
             logprior_shape_tuple = (np.shape(obs_loglike)[(i + lst) % len(variables_array)],) + \
                                    logprior_shape_tuple
-        print("logprior_shape_tuple = " + str(logprior_shape_tuple))
-        # obs_loglike += np.transpose(np.tile(logprior,
-        #                                     (
-        #                                         np.shape(obs_loglike)[(i + 1) % len(variables_array)],
-        #                                         np.shape(obs_loglike)[(i + 2) % len(variables_array)],
-        #                                         np.shape(obs_loglike)[(i + 3) % len(variables_array)],
-        #                                         1
-        #                                     )
-        #                                     ),
-        #                             np.roll(np.arange(0, len(variables_array), dtype=int), i + 1))
         obs_loglike += np.transpose(np.tile(logprior, logprior_shape_tuple),
                                     np.roll(np.arange(0, len(variables_array), dtype=int), i + 1))
 
     return obs_loglike
 
-def marginalize_likelihoods(variables_array, like_list, order_num):
+def marginalize_likelihoods(variables_array, like_list):
     """
     Marginalizes likelihoods into all possible 1- and 2-d posteriors.
 
@@ -1827,17 +1714,13 @@ def marginalize_likelihoods(variables_array, like_list, order_num):
     """
     marg_post_list = []
     joint_post_list = []
-    print("like_list has shape " + str(np.shape(like_list)))
 
     for like_idx, like in enumerate(like_list):
         # creates the normalized fully marginalized posteriors
         for v, var in enumerate(variables_array):
             var_idx_array = np.arange(0, np.shape(variables_array)[0], 1, dtype=int)
-            print("var_idx_array = " + str(var_idx_array))
             var_idx_array = var_idx_array[var_idx_array != v]
-            print("var_idx_array = " + str(var_idx_array))
             var_idx_array = np.flip(var_idx_array)
-            print("var_idx_array = " + str(var_idx_array))
 
             marg_post = np.copy(like)
 
@@ -1845,37 +1728,15 @@ def marginalize_likelihoods(variables_array, like_list, order_num):
                 marg_post = np.trapz(marg_post, x=variables_array[idx].var, axis=idx)
 
             marg_post /= np.trapz(marg_post, x=variables_array[v].var, axis=0)
-            print("This marg_post has shape " + str(np.shape(marg_post)))
 
             marg_post_list.append(list(marg_post))
 
-        # creates the normalized joint posteriors
-        # comb_array = np.array(np.meshgrid(np.arange(0, np.shape(variables_array)[0], 1, dtype=int),
-        #                                   np.arange(0, np.shape(variables_array)[0], 1, dtype=int))).T.reshape(-1,
-        #                                                                                                        2)
-        # comb_array = np.delete(comb_array, [comb[0] >= comb[1] for comb in comb_array], axis=0)
-        # p = np.argsort(comb_array[:, 1])
-        # comb_array = np.flip(comb_array[p], axis=0)
-        # print("comb_array = " + str(comb_array))
-        # print(np.flip(np.roll(np.arange(0, np.shape(variables_array)[0], 1, dtype=int), 1)))
-        # # print(np.shape(like))
         comb_array = []
         for ca in range(1, np.shape(variables_array)[0]):
             for ca_less in range(0, ca):
                 comb_array.append([ca, ca_less])
-        # comb_array = np.array(comb_array)
         comb_array = np.flip(np.array(comb_array), axis=1)
-        print("comb_array = " + str(comb_array))
-        # print(np.flip(np.roll(np.arange(0, np.shape(variables_array)[0], 1, dtype=int), 1)))
-        print(np.flip(np.array([np.arange(0, np.shape(variables_array)[0], 1, dtype=int)[
-                                    ~np.isin(np.arange(0, np.shape(variables_array)[0], 1, dtype=int), c)] for c in
-                                comb_array]), axis=1))
 
-        # for v in np.flip(np.roll(np.arange(0, np.shape(variables_array)[0], 1, dtype=int), 1)):
-        # for v_idx, v in zip(np.flip(np.roll(np.arange(0, np.shape(variables_array)[0] * (np.shape(variables_array)[0] - 1) // 2, 1, dtype=int), 1)),
-        #                 np.flip(np.roll(np.flip(np.array([np.arange(0, np.shape(variables_array)[0], 1, dtype=int)[
-        #                 ~np.isin(np.arange(0, np.shape(variables_array)[0], 1, dtype=int), c)] for
-        #                 c in comb_array]), axis=1), 1, axis=0), axis=0)):
         for (v_norm, v_marg) in zip(comb_array,
                                     np.flip(np.array([np.arange(0, np.shape(variables_array)[0], 1, dtype=int)[
                                                           ~np.isin(
@@ -1883,111 +1744,44 @@ def marginalize_likelihoods(variables_array, like_list, order_num):
                                                               c)] for c in
                                                       comb_array]), axis=1)
                                     ):
-            print("v_norm = " + str(v_norm))
-            print("v_marg = " + str(v_marg))
-            print("like has shape " + str(np.shape(like)))
+
             if like.ndim > 2:
                 joint_post = np.trapz(like, x=variables_array[v_marg[0]].var, axis=v_marg[0])
-                print("After first marginalization, joint_post has shape " + str(np.shape(joint_post)))
-                # print(comb_array[v_idx, 0])
-                # print(comb_array[v_idx, 1])
+
                 if like.ndim > 3:
                     for vmarg in v_marg[1:]:
                         joint_post = np.trapz(joint_post, x=variables_array[vmarg].var, axis=vmarg)
-                print("After full marginalization, joint_post has shape " + str(np.shape(joint_post)))
                 joint_post /= np.trapz(np.trapz(joint_post,
                                                 x=variables_array[v_norm[1]].var, axis=1),
                                        x=variables_array[v_norm[0]].var, axis=0
                                        )
             else:
                 joint_post = like
-            print("joint_post has shape " + str(np.shape(joint_post)))
-            # print(comb_array[v, 0])
-            # print(comb_array[v, 1])
-            # joint_post = like / np.trapz(np.trapz(like,
-            #                                 x=variables_array[comb_array[v, 1]].var, axis=1),
-            #                        x=variables_array[comb_array[v, 0]].var, axis=0
-            #                        )
-            # joint_post /= np.trapz(np.trapz(joint_post,
-            #                                 x=variables_array[comb_array[v, 1]].var, axis=1),
-            #                        x=variables_array[comb_array[v, 0]].var, axis=0
-            #                        )
-            # print("ax_idx range = " + str(np.flip(range(len(variables_array) - 1))))
-            # for ax_idx in np.flip(range(len(variables_array) - 1)):
-            #     joint_post /= np.trapz(joint_post, x=variables_array[comb_array[v, ax_idx]].var, axis=ax_idx)
-            print(np.shape(joint_post))
-            # print("This joint_post has shape " + str(np.shape(joint_post)))
-            joint_post_list.append(joint_post)
-        # print("like has shape " + str(np.shape(like)))
-        # print("maximum of like = " + str(np.amax(like)))
-        # # print("like = " + str(like))
-        # joint_post_list.append(like / np.trapz(np.trapz(like,
-        #         x=variables_array[1].var, axis=1),
-        #         x=variables_array[0].var, axis=0
-        #         ))
-        print("joint_post_list has shape " + str(np.shape(joint_post_list)))
-        # print("joint_post_list has maximum " + str(np.amax(np.array(joint_post_list))))
-        # print("joint_post_list = " + str(joint_post_list))
 
-    # print(np.shape(marg_post_list))
-    # print(np.shape(joint_post_list))
-    # print(np.shape(marg_post_list))
+            joint_post_list.append(joint_post)
+
     marg_post_array = np.reshape(marg_post_list, (len(variables_array), np.shape(like_list)[0]), order='F')
-    # print(np.shape(marg_post_array))
-    # marg_post_array = np.array(marg_post_list)
-    # joint_post_array = np.reshape(joint_post_list,
-    #                               (len(variables_array) * (len(variables_array) - 1) // 2, np.shape(like_list)[0]), order='F')
+
     joint_post_array = np.array(joint_post_list)
-    # print("joint_post_array has maximum " + str(np.amax(joint_post_array)))
 
     return marg_post_array, joint_post_array
 
-# @ray.remote
-# def log_likelihood(gp_fitted,
-#                    # x_interp,
-#                    # p,
-#                    mesh_points,
-#                    p_param,
-#                    p_shape,
-#                    Q_param
-#                    ):
-#     # print("np.array(x_interp).ndim = " + str(np.array(x_interp).ndim))
-#     # return [gp_fitted.log_marginal_likelihood([pt[1 + n] for n in range(x_interp.ndim)],
-#     # print([n for n in range(np.array(x_interp).ndim)])
-#     # print("np.array(p).ndim = " + str(np.array(p).ndim))
-#     # print([n for n in range(np.array(p).ndim)])
-#     # print("mesh_points has shape " + str(np.shape(mesh_points)))
-#     return [gp_fitted.log_marginal_likelihood([pt[1 + n] for n in range(len(pt) - 2)],
-#                                               # X = np.array(list(itertools.product(x_interp))),
-#                                               # X=x_test,
-#                                               # y=y_test,
-#                                               **{
-#                                                  "p_param": p_param,
-#                                                  "p_shape": p_shape,
-#                                                  "Q_param": Q_param,
-#                                                  "mpi_var": pt[-1],
-#                                                  "lambda_var": pt[0]}) for pt in mesh_points]
-
 @ray.remote
 def log_likelihood(gp_fitted,
-                   # x_interp,
-                   # p,
                    mesh_points,
-                   #                    p_param,
-                   #                    p_shape,
-                   #                    Q_param
                    log_likelihood_fn_kwargs
                    ):
+    """
+    Calculates the log-likelihood for a set of inputs.
+
+    Parameters
+    ----------
+    gp_fitted (TruncationGP) : fitted Gaussian process object.
+    mesh_points (float array) : array of tuples of random variables at which to evaluate the log-likelihood.
+        Must be in the order (lambda_var, all length scales, mpi_var).
+    log_likelihood_fn_kwargs (dict) : keyword arguments for log_likelihood.
+    """
     return [gp_fitted.log_marginal_likelihood([pt[1 + n] for n in range(len(pt) - 2)],
-                                              # X = np.array(list(itertools.product(x_interp))),
-                                              # X=x_test,
-                                              # y=y_test,
-                                              #                                               **{
-                                              #                                                  "p_param": p_param,
-                                              #                                                  "p_shape": p_shape,
-                                              #                                                  "Q_param": Q_param,
-                                              #                                                  "mpi_var": pt[-1],
-                                              #                                                  "lambda_var": pt[0]}
                                               **{**log_likelihood_fn_kwargs,
                                                  **{"mpi_var": pt[-1],
                                                     "lambda_var": pt[0]}}
@@ -3589,7 +3383,7 @@ def plot_posteriors_curvewise(
     # print(np.shape(like_list))
 
     if whether_plot_posteriors or whether_plot_corner:
-        marg_post_array, joint_post_array = marginalize_likelihoods(variables_array[marg_bool_array], like_list, order_num)
+        marg_post_array, joint_post_array = marginalize_likelihoods(variables_array[marg_bool_array], like_list)
     # marg_post_list = []
     # joint_post_list = []
     #
@@ -3911,6 +3705,301 @@ def plot_posteriors_curvewise(
 
         # except:
         #     print("Error in plotting the curvewise posterior PDF.")
+
+def plot_posteriors_pointwise(
+        light_colors,
+        nn_orders_array,
+        nn_orders_full_array,
+        excluded,
+        orders_labels_dict,
+        orders_names_dict,
+
+        p_param,
+        Q_param,
+        nn_interaction,
+
+        # center,
+        # disp,
+        # df,
+        # std_est,
+
+        obs_data_grouped_list,
+        obs_name_grouped_list,
+        obs_labels_grouped_list,
+        # mesh_cart_grouped_list,
+        t_lab,
+        t_lab_train_pts,
+        InputSpaceTlab,
+        # LsTlab,
+        degrees,
+        degrees_train_pts,
+        InputSpaceDeg,
+        # LsDeg,
+        variables_array,
+        # mesh_cart,
+        # Lambda_b_true,
+        # mpi_true,
+        mpi_eff,
+
+        mom_fn,
+        mom_fn_kwargs,
+
+        # scaling_fn,
+        # scaling_fn_kwargs,
+
+        ratio_fn,
+        ratio_fn_kwargs,
+
+        # log_likelihood_fn,
+        # log_likelihood_fn_kwargs,
+
+        # slice_type,
+        orders=2,
+        FileName=None,
+        ax=None,
+        whether_plot_posteriors=True,
+        # whether_plot_corner=True,
+        whether_use_data=True,
+        whether_save_data=True,
+        whether_save_plots=True,
+        # whether_save_opt=False,
+):
+
+    # sets the number of orders and the corresponding colors
+    order_num = int(orders)
+    Lb_colors = light_colors[-1 * order_num:]
+
+    marg_post_list = []
+
+    for (obs_grouping, obs_name) in zip(obs_data_grouped_list, obs_name_grouped_list):
+        # generates names for files and searches for whether they exist
+        for order_counter in range(1, order_num + 1):
+            order = np.max(nn_orders_array) - order_num + order_counter
+
+            # scale invariant: df = 0
+            PointwiseModel = gm.TruncationPointwise(df=0, excluded=excluded)
+
+            try:
+                if not whether_use_data:
+                    raise ValueError("You elected not to use saved data.")
+                else:
+                    # if they exist, they are read in, reshaped, and appended to like_list
+                    print(make_likelihood_filename(FileName,
+                                                   "data",
+                                                   obs_name,
+                                                   orders_names_dict[order],
+                                                   [variable.logprior_name for variable in variables_array],
+                                                   variables_array,
+                                                   ))
+                    marg_post_list.append(np.reshape(
+                        np.loadtxt(make_likelihood_filename(FileName,
+                                                            "data",
+                                                            obs_name,
+                                                            orders_names_dict[order],
+                                                            [variable.logprior_name for variable in
+                                                             variables_array],
+                                                            variables_array,
+                                                            )),
+                        tuple([len(random_var.var) for random_var in variables_array]),
+                    ))
+
+            except:
+                # orders_nho_ray = nn_orders_array[:order]
+
+                obs_post_sum = np.ones(
+                    tuple(len(random_var.var) for random_var in variables_array))
+
+                for obs_object in obs_grouping:
+                    # for obs_object in obs_grouping:
+                    obs_data_full = obs_object.data
+                    yref_type = obs_object.ref_type
+
+                    if len(np.shape(obs_data_full)) == 2:
+                        if np.shape(obs_data_full)[1] == len(degrees):
+
+                            # converts the points in t_lab_pts to the current input space
+                            # need new value for t_lab_mom_pt
+                            degrees_input = InputSpaceDeg.input_space(**{"deg_input": degrees})
+                            degrees_train_pts_input = InputSpaceDeg.input_space(**{"deg_input": degrees_train_pts})
+
+                            # sieves the data
+                            # obs_data = np.reshape(
+                            #     obs_data_full,
+                            #     (len(nn_orders_full_array), -1))
+                            obs_data_train = np.reshape(
+                                obs_data_full[:, np.isin(degrees, degrees_train_pts)],
+                                (len(nn_orders_full_array), -1))
+
+                            if yref_type == "dimensionful":
+                                yref = obs_data_train[-1]
+                            elif yref_type == "dimensionless":
+                                yref = np.ones((len(degrees_train_pts)))
+
+                            # creates and fits the TruncationGP object
+                            pointwise_result = compute_posterior_intervals(
+                                PointwiseModel, obs_data_train, ratios_dsg_Lb, ref=yref,
+                                orders=nn_orders_full_array,
+                                max_idx=order,
+                                logprior=variables_array[0].logprior, Lb=variables_array[0].var)
+
+                            obs_post_sum *= pointwise_result
+
+                        elif np.shape(obs_data_full)[1] == len(t_lab):
+                            # # converts the points in t_lab_pts to the current input space
+                            tlab_input = InputSpaceTlab.input_space(**{"E_lab": t_lab,
+                                                                       "interaction": nn_interaction})
+                            tlab_train_pts_input = InputSpaceTlab.input_space(**{"E_lab": t_lab_train_pts,
+                                                                                 "interaction": nn_interaction})
+
+                            tlab_mom = mom_fn(t_lab, **mom_fn_kwargs)
+                            tlab_train_pts_mom = mom_fn(t_lab_train_pts, **mom_fn_kwargs)
+
+                            # sieves the data
+                            # obs_data = np.reshape(
+                            #     obs_data_full,
+                            #     (len(nn_orders_full_array), -1))
+                            obs_data_train = np.reshape(
+                                obs_data_full[:, np.isin(t_lab, t_lab_train_pts)],
+                                (len(nn_orders_full_array), -1))
+
+                            if yref_type == "dimensionful":
+                                yref = obs_data_train[-1]
+                            elif yref_type == "dimensionless":
+                                yref = np.ones((len(t_lab_train_pts)))
+
+                            ratio_train = [Q_approx(tlab_train_pts_mom, Q_param, Lb, m_pi= mpi_eff)
+                                           for Lb in variables_array[0].var]
+
+                            print("ratio_train has shape " + str(np.shape(ratio_train)))
+                            print("ratio_train has type " + str(type(ratio_train)))
+
+                            # creates and fits the TruncationGP object
+                            pointwise_result, bounds, median = compute_posterior_intervals(
+                                PointwiseModel, obs_data_train, ratio_train, ref=yref,
+                                orders=nn_orders_full_array,
+                                max_idx=order - 1,
+                                logprior=variables_array[0].logprior,
+                                Lb=variables_array[0].var)
+
+                            obs_post_sum *= pointwise_result
+
+                    else:
+                        tlab_input = InputSpaceTlab.input_space(**{"E_lab": t_lab,
+                                                                   "interaction": nn_interaction})
+                        tlab_train_pts_input = InputSpaceTlab.input_space(**{"E_lab": t_lab_train_pts,
+                                                                             "interaction": nn_interaction})
+                        tlab_mom = mom_fn(t_lab, **mom_fn_kwargs)
+                        tlab_train_pts_mom = mom_fn(t_lab_train_pts, **mom_fn_kwargs)
+
+                        degrees_input = InputSpaceDeg.input_space(**{"deg_input": degrees,
+                                                                     "p_input": tlab_mom})
+                        degrees_train_pts_input = InputSpaceDeg.input_space(**{"deg_input": degrees_train_pts,
+                                                                               "p_input": tlab_train_pts_mom})
+
+                        # if tlab_train_pts_input.ndim == 1 and degrees_train_pts_input.ndim == 1:
+                        #     grid_train = np.flip(
+                        #         np.array(list(itertools.product(tlab_train_pts_input, degrees_train_pts_input))),
+                        #         axis=1)
+                        # elif tlab_train_pts_input.ndim == 1 and degrees_train_pts_input.ndim != 1:
+                        #     grid_train = np.flip(
+                        #         np.array(
+                        #             [[np.tile(tlab_train_pts_input,
+                        #                       (np.shape(degrees_train_pts_input)[0], 1)).flatten('F')[s],
+                        #               degrees_train_pts_input.flatten('F')[s]] for s in
+                        #              range(degrees_train_pts_input.size)]
+                        #         ),
+                        #         axis=1)
+                        # elif tlab_train_pts_input.ndim != 1 and degrees_train_pts_input.ndim == 1:
+                        #     # untested
+                        #     grid_train = np.flip(
+                        #         np.array(
+                        #             [[tlab_train_pts_input.flatten('F')[s],
+                        #               np.tile(degrees_train_pts_input.flatten('F')[s],
+                        #                       (np.shape(tlab_train_pts_input)[1], 1))] for s in
+                        #              range(tlab_train_pts_input.size)]
+                        #         ),
+                        #         axis=1)
+                        # else:
+                        #     # untested
+                        #     grid_train = np.flip(
+                        #         np.array(
+                        #             [[tlab_train_pts_input.flatten('F')[s],
+                        #               degrees_train_pts_input.flatten('F')[s]] for s in
+                        #              range(tlab_train_pts_input.size)]
+                        #         ),
+                        #         axis=1)
+
+                        # obs_data = np.reshape(
+                        #     obs_data_full,
+                        #     (len(nn_orders_full_array), -1))
+                        obs_data_train = np.reshape(
+                            obs_data_full[:, np.isin(t_lab, t_lab_train_pts)][
+                                ..., np.isin(degrees, degrees_train_pts)],
+                            (len(nn_orders_full_array), -1))
+
+                        if yref_type == "dimensionful":
+                            yref = obs_data_train[-1]
+                        elif yref_type == "dimensionless":
+                            yref = np.ones((len(degrees_train_pts) * len(t_lab_train_pts)))
+
+                        ratio_train = [Q_approx(
+                            np.reshape(p_approx(p_param, tlab_train_pts_mom, degrees_train_pts), (len(degrees_train_pts) * len(t_lab_train_pts))),
+                            Q_param, Lb, m_pi= mpi_eff) for Lb in variables_array[0].var]
+                        print("ratio_train has shape " + str(np.shape(ratio_train)))
+                        print("ratio_train has type " + str(type(ratio_train)))
+                        # print("ratio_train = " + str(ratio_train))
+
+                        # creates and fits the TruncationGP object
+                        pointwise_result, bounds, median = compute_posterior_intervals(
+                            PointwiseModel, obs_data_train, ratio_train, ref=yref,
+                            orders=nn_orders_full_array,
+                            max_idx=order - 1,
+                            logprior=variables_array[0].logprior, Lb=variables_array[0].var)
+
+                        obs_post_sum *= pointwise_result
+
+                # obs_like = np.exp(obs_loglike_sum - np.max(obs_loglike_sum))
+
+                # if whether_save_data:
+                #     np.savetxt(make_likelihood_filename(FileName,
+                #                                         "data",
+                #                                         obs_name,
+                #                                         orders_names_dict[order],
+                #                                         [variable.logprior_name for variable in variables_array],
+                #                                         variables_array,
+                #                                         ),
+                #                np.reshape(obs_like, (np.prod(
+                #                    [len(random_var.var) for random_var in variables_array]))))
+
+                # like_list.append(obs_like)
+
+                # appends the normalized posterior
+                marg_post_list.append(obs_post_sum / np.trapz(obs_post_sum, variables_array[0].var))
+
+    print("Before reshaping, marg_post_list has shape " + str(np.shape(marg_post_list)))
+    marg_post_list = np.reshape(
+        np.reshape(marg_post_list, (np.shape(marg_post_list)[0] // orders, orders) + np.shape(marg_post_list)[1:],
+                   order='C'),
+        np.shape(marg_post_list))
+    print("After reshaping, marg_post_list has shape " + str(np.shape(marg_post_list)))
+
+    marg_post_list = marg_post_list[None, :]
+
+    if whether_plot_posteriors:
+        for (variable, result) in zip(variables_array, marg_post_list):
+            fig = plot_marg_posteriors(variable, result, obs_labels_grouped_list, Lb_colors, order_num,
+                                       nn_orders_array, orders_labels_dict, FileName, whether_save_plots,
+                                       obs_name_grouped_list)
+
+        print(marg_post_list[0, -1, :])
+        indices_opt = np.where(marg_post_list[0, -1, :] == np.amax(marg_post_list[0, -1, :]))
+        print("indices_opt = " + str(indices_opt))
+        opt_vals_list = []
+        for idx, var in zip(indices_opt, [variable.var for variable in variables_array]):
+            opt_vals_list.append((var[idx])[0])
+
+        print("opt_vals_list = " + str(opt_vals_list))
+    return opt_vals_list
 
 def scaling_fn(pts_array):
     try:
