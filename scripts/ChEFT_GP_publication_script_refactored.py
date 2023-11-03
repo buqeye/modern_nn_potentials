@@ -13,7 +13,7 @@ from cheftgp.traintestsplits import *
 setup_rc_params()
 
 # gets observables data from NN Online ("true" values for those observables)
-# online_data_dict = get_nn_online_data()
+online_data_dict = get_nn_online_data()
 
 def gp_analysis(
     nn_interaction="np",
