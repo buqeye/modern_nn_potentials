@@ -13,7 +13,7 @@ from cheftgp.traintestsplits import *
 setup_rc_params()
 
 # gets observables data from NN Online ("true" values for those observables)
-online_data_dict = get_nn_online_data()
+# online_data_dict = get_nn_online_data()
 
 def gp_analysis(
     nn_interaction="np",
@@ -1025,7 +1025,7 @@ def gp_analysis(
                                             scaling_fn=scaling_fn,
                                             scaling_fn_kwargs={},
 
-                                            ratio_fn=ratio_fn_posterior,
+                                            ratio_fn=ratio_fn_curvewise,
                                             ratio_fn_kwargs={
                                                 "p_param": PParamMethod,
                                                 "Q_param": QParamMethod,
@@ -1063,17 +1063,10 @@ def gp_analysis(
                                             # strings
                                             p_param=PParamMethod,
                                             Q_param=QParamMethod,
-                                            nn_interaction=nn_interaction,
-                                            # hyperparameters
-                                            # center=center,
-                                            # disp=disp,
-                                            # df=df,
-                                            # std_est=std_scale,
                                             # filename stuff
                                             obs_data_grouped_list=obs_grouped_list,
                                             obs_name_grouped_list=obs_name_grouped_list,
                                             obs_labels_grouped_list=obs_labels_grouped_list,
-                                            # mesh_cart_grouped_list=mesh_cart_grouped_list,
                                             t_lab=t_lab,
                                             t_lab_train_pts=t_lab_train_pts,
                                             # t_lab_pts=np.array([5, 21, 48, 85, 133, 192]),
@@ -1102,42 +1095,32 @@ def gp_analysis(
                                             # t_lab_train_pts=np.array([4, 20, 47, 81, 129, 188, 249]),
                                             # t_lab_test_pts=np.array([4, 20, 47, 81, 129, 188, 249]),
                                             InputSpaceTlab=VsQuantityPosteriorTlab,
-                                            # LsTlab=LengthScaleTlabInput,
                                             degrees=degrees,
                                             degrees_train_pts=degrees_train_pts,
                                             InputSpaceDeg=VsQuantityPosteriorDeg,
-                                            # LsDeg=LengthScaleDegInput,
                                             variables_array=np.array([LambdabVariable]),
 
-                                            mpi_eff = 138,
+                                            mom_fn_tlab=E_to_p,
+                                            mom_fn_tlab_kwargs={"interaction": "np"},
 
-                                            mom_fn=E_to_p,
-                                            mom_fn_kwargs={"interaction": "np"},
+                                            mom_fn_degrees=mom_fn_degrees,
+                                            mom_fn_degrees_kwargs={},
 
-                                            # scaling_fn=scaling_fn,
-                                            # scaling_fn_kwargs={},
+                                            p_fn=p_approx,
+                                            p_fn_kwargs={"p_name" : PParamMethod,
+                                                           },
 
-                                            ratio_fn=ratio_fn_posterior,
+                                            ratio_fn=Q_approx,
                                             ratio_fn_kwargs={
-                                                "p_param": PParamMethod,
-                                                "Q_param": QParamMethod,
-                                                "mpi_var": m_pi_eff,
-                                                "lambda_var": Lambdab
+                                                "Q_parametrization": QParamMethod,
+                                                "m_pi": m_pi_eff,
                                             },
-                                            # log_likelihood_fn=log_likelihood,
-                                            # log_likelihood_fn_kwargs={
-                                            #     "p_param": PParamMethod,
-                                            #     "Q_param": QParamMethod
-                                            # },
 
                                             orders=3,
 
                                             FileName=FileName,
 
-                                            whether_use_data=False,
-                                            whether_save_data=False,
-                                            whether_save_plots=save_lambdapost_curvewise_bool,
-                                            # whether_save_opt=False,
+                                            whether_save_plots=save_lambdapost_pointwise_bool,
                                         )
                             if plot_plotzilla_bool:
                                 MyPlot.plotzilla(whether_save=save_plotzilla_bool)
@@ -1208,7 +1191,7 @@ gp_analysis(
     LengthScaleTlabInput=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
     LengthScaleDegInput=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
     fixed_sd=None,
-    m_pi_eff=141,
+    m_pi_eff=138,
     Lambdab=480,
     print_all_classes=False,
     savefile_type="png",
@@ -1230,5 +1213,5 @@ gp_analysis(
     save_lambdapost_pointwise_bool=True,
     save_lambdapost_curvewise_bool=False,
     save_plotzilla_bool=False,
-    filename_addendum="_ptwise_0",
+    filename_addendum="_0",
 )

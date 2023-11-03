@@ -1556,7 +1556,7 @@ def interp_f_ratio_posterior(x_map, x_interp, p, Q_param, mpi_var, lambda_var):
     """
     return interpn(x_interp, Q_approx(p, Q_param, Lambda_b=lambda_var, m_pi=mpi_var), x_map)
 
-def ratio_fn_posterior(X, p_grid_train, p_param, p_shape, Q_param, mpi_var, lambda_var):
+def ratio_fn_curvewise(X, p_grid_train, p_param, p_shape, Q_param, mpi_var, lambda_var):
     """
     Function for interpolating between the input space and the ratio across that input space.
 
@@ -1580,7 +1580,6 @@ def ratio_fn_posterior(X, p_grid_train, p_param, p_shape, Q_param, mpi_var, lamb
             p = np.append(p, p_approx(p_name=p_param, degrees=np.array([0]), prel=np.array([pt[0]])))
 
     return Q_approx(p = np.reshape(p, p_shape), Q_parametrization=Q_param, Lambda_b = lambda_var, m_pi = mpi_var)
-
 
 def make_likelihood_filename(FileNameObj,
         folder,
@@ -3716,53 +3715,35 @@ def plot_posteriors_pointwise(
 
         p_param,
         Q_param,
-        nn_interaction,
-
-        # center,
-        # disp,
-        # df,
-        # std_est,
 
         obs_data_grouped_list,
         obs_name_grouped_list,
         obs_labels_grouped_list,
-        # mesh_cart_grouped_list,
         t_lab,
         t_lab_train_pts,
         InputSpaceTlab,
-        # LsTlab,
         degrees,
         degrees_train_pts,
         InputSpaceDeg,
-        # LsDeg,
         variables_array,
-        # mesh_cart,
-        # Lambda_b_true,
-        # mpi_true,
-        mpi_eff,
 
-        mom_fn,
-        mom_fn_kwargs,
+        mom_fn_tlab,
+        mom_fn_tlab_kwargs,
 
-        # scaling_fn,
-        # scaling_fn_kwargs,
+        mom_fn_degrees,
+        mom_fn_degrees_kwargs,
+
+        p_fn,
+        p_fn_kwargs,
 
         ratio_fn,
         ratio_fn_kwargs,
 
-        # log_likelihood_fn,
-        # log_likelihood_fn_kwargs,
-
-        # slice_type,
         orders=2,
         FileName=None,
         ax=None,
         whether_plot_posteriors=True,
-        # whether_plot_corner=True,
-        whether_use_data=True,
-        whether_save_data=True,
         whether_save_plots=True,
-        # whether_save_opt=False,
 ):
 
     # sets the number of orders and the corresponding colors
@@ -3779,221 +3760,149 @@ def plot_posteriors_pointwise(
             # scale invariant: df = 0
             PointwiseModel = gm.TruncationPointwise(df=0, excluded=excluded)
 
-            try:
-                if not whether_use_data:
-                    raise ValueError("You elected not to use saved data.")
-                else:
-                    # if they exist, they are read in, reshaped, and appended to like_list
-                    print(make_likelihood_filename(FileName,
-                                                   "data",
-                                                   obs_name,
-                                                   orders_names_dict[order],
-                                                   [variable.logprior_name for variable in variables_array],
-                                                   variables_array,
-                                                   ))
-                    marg_post_list.append(np.reshape(
-                        np.loadtxt(make_likelihood_filename(FileName,
-                                                            "data",
-                                                            obs_name,
-                                                            orders_names_dict[order],
-                                                            [variable.logprior_name for variable in
-                                                             variables_array],
-                                                            variables_array,
-                                                            )),
-                        tuple([len(random_var.var) for random_var in variables_array]),
-                    ))
+            obs_post_sum = np.ones(
+                tuple(len(random_var.var) for random_var in variables_array))
 
-            except:
-                # orders_nho_ray = nn_orders_array[:order]
+            for obs_object in obs_grouping:
+                obs_data_full = obs_object.data
+                yref_type = obs_object.ref_type
 
-                obs_post_sum = np.ones(
-                    tuple(len(random_var.var) for random_var in variables_array))
+                if len(np.shape(obs_data_full)) == 2:
+                    if np.shape(obs_data_full)[1] == len(degrees):
+                        # converts the points in tlab_train_pts_mom and degrees_train_pts to momentum
+                        tlab_train_pts_mom = mom_fn_tlab(**{**mom_fn_tlab_kwargs, **{"E_lab" : np.array([0])}})
+                        degrees_train_pts_mom = mom_fn_degrees(**{**mom_fn_degrees_kwargs, **{"degrees": degrees_train_pts}})
 
-                for obs_object in obs_grouping:
-                    # for obs_object in obs_grouping:
-                    obs_data_full = obs_object.data
-                    yref_type = obs_object.ref_type
-
-                    if len(np.shape(obs_data_full)) == 2:
-                        if np.shape(obs_data_full)[1] == len(degrees):
-
-                            # converts the points in t_lab_pts to the current input space
-                            # need new value for t_lab_mom_pt
-                            degrees_input = InputSpaceDeg.input_space(**{"deg_input": degrees})
-                            degrees_train_pts_input = InputSpaceDeg.input_space(**{"deg_input": degrees_train_pts})
-
-                            # sieves the data
-                            # obs_data = np.reshape(
-                            #     obs_data_full,
-                            #     (len(nn_orders_full_array), -1))
-                            obs_data_train = np.reshape(
-                                obs_data_full[:, np.isin(degrees, degrees_train_pts)],
-                                (len(nn_orders_full_array), -1))
-
-                            if yref_type == "dimensionful":
-                                yref = obs_data_train[-1]
-                            elif yref_type == "dimensionless":
-                                yref = np.ones((len(degrees_train_pts)))
-
-                            # creates and fits the TruncationGP object
-                            pointwise_result = compute_posterior_intervals(
-                                PointwiseModel, obs_data_train, ratios_dsg_Lb, ref=yref,
-                                orders=nn_orders_full_array,
-                                max_idx=order,
-                                logprior=variables_array[0].logprior, Lb=variables_array[0].var)
-
-                            obs_post_sum *= pointwise_result
-
-                        elif np.shape(obs_data_full)[1] == len(t_lab):
-                            # # converts the points in t_lab_pts to the current input space
-                            tlab_input = InputSpaceTlab.input_space(**{"E_lab": t_lab,
-                                                                       "interaction": nn_interaction})
-                            tlab_train_pts_input = InputSpaceTlab.input_space(**{"E_lab": t_lab_train_pts,
-                                                                                 "interaction": nn_interaction})
-
-                            tlab_mom = mom_fn(t_lab, **mom_fn_kwargs)
-                            tlab_train_pts_mom = mom_fn(t_lab_train_pts, **mom_fn_kwargs)
-
-                            # sieves the data
-                            # obs_data = np.reshape(
-                            #     obs_data_full,
-                            #     (len(nn_orders_full_array), -1))
-                            obs_data_train = np.reshape(
-                                obs_data_full[:, np.isin(t_lab, t_lab_train_pts)],
-                                (len(nn_orders_full_array), -1))
-
-                            if yref_type == "dimensionful":
-                                yref = obs_data_train[-1]
-                            elif yref_type == "dimensionless":
-                                yref = np.ones((len(t_lab_train_pts)))
-
-                            ratio_train = [Q_approx(tlab_train_pts_mom, Q_param, Lb, m_pi= mpi_eff)
-                                           for Lb in variables_array[0].var]
-
-                            print("ratio_train has shape " + str(np.shape(ratio_train)))
-                            print("ratio_train has type " + str(type(ratio_train)))
-
-                            # creates and fits the TruncationGP object
-                            pointwise_result, bounds, median = compute_posterior_intervals(
-                                PointwiseModel, obs_data_train, ratio_train, ref=yref,
-                                orders=nn_orders_full_array,
-                                max_idx=order - 1,
-                                logprior=variables_array[0].logprior,
-                                Lb=variables_array[0].var)
-
-                            obs_post_sum *= pointwise_result
-
-                    else:
-                        tlab_input = InputSpaceTlab.input_space(**{"E_lab": t_lab,
-                                                                   "interaction": nn_interaction})
-                        tlab_train_pts_input = InputSpaceTlab.input_space(**{"E_lab": t_lab_train_pts,
-                                                                             "interaction": nn_interaction})
-                        tlab_mom = mom_fn(t_lab, **mom_fn_kwargs)
-                        tlab_train_pts_mom = mom_fn(t_lab_train_pts, **mom_fn_kwargs)
-
-                        degrees_input = InputSpaceDeg.input_space(**{"deg_input": degrees,
-                                                                     "p_input": tlab_mom})
-                        degrees_train_pts_input = InputSpaceDeg.input_space(**{"deg_input": degrees_train_pts,
-                                                                               "p_input": tlab_train_pts_mom})
-
-                        # if tlab_train_pts_input.ndim == 1 and degrees_train_pts_input.ndim == 1:
-                        #     grid_train = np.flip(
-                        #         np.array(list(itertools.product(tlab_train_pts_input, degrees_train_pts_input))),
-                        #         axis=1)
-                        # elif tlab_train_pts_input.ndim == 1 and degrees_train_pts_input.ndim != 1:
-                        #     grid_train = np.flip(
-                        #         np.array(
-                        #             [[np.tile(tlab_train_pts_input,
-                        #                       (np.shape(degrees_train_pts_input)[0], 1)).flatten('F')[s],
-                        #               degrees_train_pts_input.flatten('F')[s]] for s in
-                        #              range(degrees_train_pts_input.size)]
-                        #         ),
-                        #         axis=1)
-                        # elif tlab_train_pts_input.ndim != 1 and degrees_train_pts_input.ndim == 1:
-                        #     # untested
-                        #     grid_train = np.flip(
-                        #         np.array(
-                        #             [[tlab_train_pts_input.flatten('F')[s],
-                        #               np.tile(degrees_train_pts_input.flatten('F')[s],
-                        #                       (np.shape(tlab_train_pts_input)[1], 1))] for s in
-                        #              range(tlab_train_pts_input.size)]
-                        #         ),
-                        #         axis=1)
-                        # else:
-                        #     # untested
-                        #     grid_train = np.flip(
-                        #         np.array(
-                        #             [[tlab_train_pts_input.flatten('F')[s],
-                        #               degrees_train_pts_input.flatten('F')[s]] for s in
-                        #              range(tlab_train_pts_input.size)]
-                        #         ),
-                        #         axis=1)
-
-                        # obs_data = np.reshape(
-                        #     obs_data_full,
-                        #     (len(nn_orders_full_array), -1))
+                        # sieves the data
                         obs_data_train = np.reshape(
-                            obs_data_full[:, np.isin(t_lab, t_lab_train_pts)][
-                                ..., np.isin(degrees, degrees_train_pts)],
+                            obs_data_full[:, np.isin(degrees, degrees_train_pts)],
                             (len(nn_orders_full_array), -1))
 
+                        # sets yref
                         if yref_type == "dimensionful":
                             yref = obs_data_train[-1]
                         elif yref_type == "dimensionless":
-                            yref = np.ones((len(degrees_train_pts) * len(t_lab_train_pts)))
+                            yref = np.ones((len(degrees_train_pts)))
 
-                        ratio_train = [Q_approx(
-                            np.reshape(p_approx(p_param, tlab_train_pts_mom, degrees_train_pts), (len(degrees_train_pts) * len(t_lab_train_pts))),
-                            Q_param, Lb, m_pi= mpi_eff) for Lb in variables_array[0].var]
-                        print("ratio_train has shape " + str(np.shape(ratio_train)))
-                        print("ratio_train has type " + str(type(ratio_train)))
-                        # print("ratio_train = " + str(ratio_train))
+                        # calculates ratio for every training point and every value of Lambda_b
+                        ratio_train = [ratio_fn(**{**ratio_fn_kwargs,
+                                                   **{"p": np.reshape(p_fn(**{**p_fn_kwargs, **{
+                                                      "prel" : tlab_train_pts_mom,
+                                                      "degrees" : degrees_train_pts_mom
+                                                   }}), len(degrees_train_pts)), "Lambda_b": Lb}})
+                                       for Lb in variables_array[0].var]
 
-                        # creates and fits the TruncationGP object
-                        pointwise_result, bounds, median = compute_posterior_intervals(
+                        # fits the TruncationPointwise object
+                        pointwise_result, _, _ = compute_posterior_intervals(
                             PointwiseModel, obs_data_train, ratio_train, ref=yref,
                             orders=nn_orders_full_array,
                             max_idx=order - 1,
-                            logprior=variables_array[0].logprior, Lb=variables_array[0].var)
+                            logprior=variables_array[0].logprior,
+                            Lb=variables_array[0].var)
 
                         obs_post_sum *= pointwise_result
 
-                # obs_like = np.exp(obs_loglike_sum - np.max(obs_loglike_sum))
+                    elif np.shape(obs_data_full)[1] == len(t_lab):
+                        # converts the points in tlab_train_pts_mom and degrees_train_pts to momentum
+                        tlab_train_pts_mom = mom_fn_tlab(**{**mom_fn_tlab_kwargs, **{"E_lab": t_lab_train_pts}})
+                        degrees_train_pts_mom = mom_fn_degrees(
+                            **{**mom_fn_degrees_kwargs, **{"degrees": np.array([0])}})
 
-                # if whether_save_data:
-                #     np.savetxt(make_likelihood_filename(FileName,
-                #                                         "data",
-                #                                         obs_name,
-                #                                         orders_names_dict[order],
-                #                                         [variable.logprior_name for variable in variables_array],
-                #                                         variables_array,
-                #                                         ),
-                #                np.reshape(obs_like, (np.prod(
-                #                    [len(random_var.var) for random_var in variables_array]))))
+                        # sieves the data
+                        obs_data_train = np.reshape(
+                            obs_data_full[:, np.isin(t_lab, t_lab_train_pts)],
+                            (len(nn_orders_full_array), -1))
 
-                # like_list.append(obs_like)
+                        # sets yref
+                        if yref_type == "dimensionful":
+                            yref = obs_data_train[-1]
+                        elif yref_type == "dimensionless":
+                            yref = np.ones((len(t_lab_train_pts)))
 
-                # appends the normalized posterior
-                marg_post_list.append(obs_post_sum / np.trapz(obs_post_sum, variables_array[0].var))
+                        # calculates ratio for every training point and every value of Lambda_b
+                        ratio_train = [ratio_fn(**{**ratio_fn_kwargs,
+                                                   **{"p": np.reshape(p_fn(**{**p_fn_kwargs, **{
+                                                       "prel": tlab_train_pts_mom,
+                                                       "degrees": degrees_train_pts_mom
+                                                   }}), len(t_lab_train_pts)), "Lambda_b": Lb}})
+                                       for Lb in variables_array[0].var]
 
-    print("Before reshaping, marg_post_list has shape " + str(np.shape(marg_post_list)))
+                        # fits the TruncationPointwise object
+                        pointwise_result, _, _ = compute_posterior_intervals(
+                            PointwiseModel, obs_data_train, ratio_train, ref=yref,
+                            orders=nn_orders_full_array,
+                            max_idx=order - 1,
+                            logprior=variables_array[0].logprior,
+                            Lb=variables_array[0].var)
+
+                        obs_post_sum *= pointwise_result
+
+                else:
+                    # converts the points in tlab_train_pts_mom and degrees_train_pts to momentum
+                    tlab_train_pts_mom = mom_fn_tlab(**{**mom_fn_tlab_kwargs, **{"E_lab": t_lab_train_pts}})
+                    degrees_train_pts_mom = mom_fn_degrees(
+                        **{**mom_fn_degrees_kwargs, **{"degrees": degrees_train_pts}})
+
+                    # sieves data
+                    obs_data_train = np.reshape(
+                        obs_data_full[:, np.isin(t_lab, t_lab_train_pts)][
+                            ..., np.isin(degrees, degrees_train_pts)],
+                        (len(nn_orders_full_array), -1))
+
+                    # sets yref
+                    if yref_type == "dimensionful":
+                        yref = obs_data_train[-1]
+                    elif yref_type == "dimensionless":
+                        yref = np.ones((len(degrees_train_pts) * len(t_lab_train_pts)))
+
+                    # calculates ratio for every training point and every value of Lambda_b
+                    ratio_train = [ratio_fn(**{**ratio_fn_kwargs,
+                                               **{"p": np.reshape(p_fn(**{**p_fn_kwargs, **{
+                                                   "prel": tlab_train_pts_mom,
+                                                   "degrees": degrees_train_pts_mom
+                                               }}), (len(degrees_train_pts) * len(t_lab_train_pts))), "Lambda_b": Lb}})
+                                   for Lb in variables_array[0].var]
+
+
+                    # fits the TruncationPointwise object
+                    pointwise_result, _, _ = compute_posterior_intervals(
+                        PointwiseModel, obs_data_train, ratio_train, ref=yref,
+                        orders=nn_orders_full_array,
+                        max_idx=order - 1,
+                        logprior=variables_array[0].logprior, Lb=variables_array[0].var)
+
+                    obs_post_sum *= pointwise_result
+
+            # appends the normalized posterior
+            marg_post_list.append(obs_post_sum / np.trapz(obs_post_sum, variables_array[0].var))
+
     marg_post_list = np.reshape(
         np.reshape(marg_post_list, (np.shape(marg_post_list)[0] // orders, orders) + np.shape(marg_post_list)[1:],
                    order='C'),
         np.shape(marg_post_list))
-    print("After reshaping, marg_post_list has shape " + str(np.shape(marg_post_list)))
 
+    # adds an extra dimension to comport with structure of existing code
     marg_post_list = marg_post_list[None, :]
 
     if whether_plot_posteriors:
         for (variable, result) in zip(variables_array, marg_post_list):
+            # generates plots of posteriors for multiple observables and orders
             fig = plot_marg_posteriors(variable, result, obs_labels_grouped_list, Lb_colors, order_num,
                                        nn_orders_array, orders_labels_dict, FileName, whether_save_plots,
                                        obs_name_grouped_list)
 
-        print(marg_post_list[0, -1, :])
+            # saves
+            obs_name_corner_concat = ''.join(obs_name_grouped_list)
+            if whether_save_plots:
+                fig.savefig(('figures/' + FileName.scheme + '_' + FileName.scale + '/' +
+                             variable.name + '_posterior_pdf_pointwise' + '_' + obs_name_corner_concat +
+                             '_' + FileName.scheme + '_' +
+                             FileName.scale + '_Q' + FileName.Q_param + '_' + FileName.p_param + '_' +
+                             InputSpaceTlab.name + '_' + InputSpaceDeg.name +
+                             FileName.filename_addendum).replace('_0MeVlab_', '_'))
+
+        # finds and prints the MAP value for Lambda_b
         indices_opt = np.where(marg_post_list[0, -1, :] == np.amax(marg_post_list[0, -1, :]))
-        print("indices_opt = " + str(indices_opt))
         opt_vals_list = []
         for idx, var in zip(indices_opt, [variable.var for variable in variables_array]):
             opt_vals_list.append((var[idx])[0])

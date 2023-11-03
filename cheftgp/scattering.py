@@ -22,3 +22,6 @@ def E_to_p(E_lab, interaction, **kwargs):
         ((m1 + m2)**2 + 2 * m2 * E_lab)
         )
     return p_rel
+
+def mom_fn_degrees(degrees):
+    return degrees

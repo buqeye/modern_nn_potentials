@@ -214,7 +214,8 @@ def draw_summary_statistics(bounds68, bounds95, median, height=0, ax=None):
     ax.plot(bounds95, [height, height], c='gray', lw=2, solid_capstyle='round')
     ax.plot([median], [height], c='white', marker='o', zorder=10, markersize=3)
 
-def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_orders, orders_labels_dict, GP, whether_save_plots, obs_name_corner):
+def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_orders, orders_labels_dict, GP,
+                         whether_save_plots, obs_name_corner):
     """
     Plots the fully marginalized posteriors.
 
@@ -234,7 +235,7 @@ def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_
     """
     # Plot each posterior and its summary statistics
     # fig, ax = plt.subplots(1, 1, figsize=(3.4, 3.4))
-    fig, ax = plt.subplots(1, 1, figsize=(3.4, 10.2))
+    fig, ax = plt.subplots(1, 1, figsize=(3.4, 3.4 * order_num))
 
     for i, posterior_raw in enumerate(result):
         # scales the posteriors so they're all the same height
@@ -291,13 +292,13 @@ def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_
 
     fig.tight_layout()
 
-    obs_name_corner_concat = ''.join(obs_name_corner)
-    if whether_save_plots:
-        fig.savefig(('figures/' + GP.scheme + '_' + GP.scale + '/' +
-                 variable.name + '_posterior_pdf_curvewise' + '_' + obs_name_corner_concat +
-                 '_' + GP.scheme + '_' +
-                 GP.scale + '_Q' + GP.Q_param + '_' + GP.p_param + '_' + GP.vs_what +
-                 GP.filename_addendum).replace('_0MeVlab_', '_'))
+    # obs_name_corner_concat = ''.join(obs_name_corner)
+    # if whether_save_plots:
+    #     fig.savefig(('figures/' + GP.scheme + '_' + GP.scale + '/' +
+    #              variable.name + '_posterior_pdf_curvewise' + '_' + obs_name_corner_concat +
+    #              '_' + GP.scheme + '_' +
+    #              GP.scale + '_Q' + GP.Q_param + '_' + GP.p_param + '_' + GP.vs_what +
+    #              GP.filename_addendum).replace('_0MeVlab_', '_'))
 
     return fig
 
