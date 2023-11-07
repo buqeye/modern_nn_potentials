@@ -1,6 +1,8 @@
 from cheftgp.gaussianprocess_refactored import TrainTestSplit
 
 # creates the training and testing masks for observables plotted against angle
+
+# Fullspaceanglessplit... objects spread training and testing points evenly across the whole input space
 Fullspaceanglessplit = TrainTestSplit(
     "allangles", 6, 3, xmin_train_factor=0, xmax_train_factor=1
 )
@@ -10,6 +12,8 @@ Fullspaceanglessplit1 = TrainTestSplit(
 Fullspaceanglessplit2 = TrainTestSplit(
     "allangles2", 4, 4, xmin_train_factor=0, xmax_train_factor=1
 )
+# Forwardanglessplit... objects spread training and testing points evenly across the whole input space except omitted
+# at backwardmost angles
 Forwardanglessplit = TrainTestSplit(
     "forwardangles", 6, 3, xmin_train_factor=0, xmax_train_factor=5 / 6
 )
@@ -31,6 +35,8 @@ Forwardanglessplit2 = TrainTestSplit(
     xmin_test_factor=0,
     xmax_test_factor=5 / 6,
 )
+# Backwardanglessplit... objects spread training and testing points evenly across the whole input space except omitted
+# at forwardmost angles
 Backwardanglessplit = TrainTestSplit(
     "backwardangles", 6, 3, xmin_train_factor=1 / 6, xmax_train_factor=1
 )
@@ -53,6 +59,8 @@ Backwardanglessplit2 = TrainTestSplit(
     xmin_test_factor=1 / 6,
     xmax_test_factor=1,
 )
+# Middleanglessplit... objects spread training and testing points evenly across the whole input space except omitted
+# at backwardmost and forwardmost angles
 Middleanglessplit1 = TrainTestSplit(
     "middleangles1",
     5,
@@ -73,7 +81,7 @@ Middleanglessplit2 = TrainTestSplit(
     xmin_test_factor=1/6,
     xmax_test_factor=5/6,
 )
-# Split1704 = TrainTestSplit("1704", 1, )
+
 traintestsplit_vsangle_array = [
     Fullspaceanglessplit,
     Forwardanglessplit,
@@ -87,6 +95,8 @@ traintestsplit_vsangle_array = [
 ]
 
 # creates the training and testing masks for observables plotted against energy
+# Nolowenergysplit... objects spread training and testing points evenly across the whole input space except omitted
+# at low energy/momentum
 Nolowenergysplit = TrainTestSplit(
     "nolowenergy",
     3,
@@ -107,6 +117,7 @@ Nolowenergysplit1 = TrainTestSplit(
     offset_test_min_factor=50 / 350,
     xmin_test_factor=50 / 350,
 )
+# Yeslowenergysplit... and Allenergysplit... objects spread training and testing points evenly across the whole input space
 Yeslowenergysplit = TrainTestSplit(
     "yeslowenergy",
     4,

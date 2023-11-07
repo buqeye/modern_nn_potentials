@@ -2,11 +2,11 @@ import numpy as np
 from .constants import *
 def E_to_p(E_lab, interaction, **kwargs):
     """
-    Returns p in MeV.
+    Returns p (in MeV).
 
     Parameters
     ----------
-    energy (float) : lab energy (in MeV).
+    E_lab (float) : lab energy (in MeV).
     interaction (str) : abbreviation for the interaction.
         options: "pp", "nn", "np"
     """
@@ -24,4 +24,11 @@ def E_to_p(E_lab, interaction, **kwargs):
     return p_rel
 
 def mom_fn_degrees(degrees):
+    """
+    Returns momentum (in MeV) given degrees.
+
+    Parameters
+    ----------
+    degrees (any) : scattering angle measure (in degrees)
+    """
     return degrees
