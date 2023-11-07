@@ -30,10 +30,6 @@ def Q_approx(p, Q_parametrization, Lambda_b, m_pi=138,
 
     elif Q_parametrization == "max":
         # Transition from m_pi to p with a maximum function
-        # try:
-        #     q = [max(P, m_pi) / Lambda_b for P in p]
-        # except:
-        #     q = max(p, m_pi) / Lambda_b
         try:
             q = max(p, m_pi) / Lambda_b
         except:
@@ -51,10 +47,14 @@ def Q_approx(p, Q_parametrization, Lambda_b, m_pi=138,
         return q
 
 def Qsum_to_Qsmoothmax(m_pi):
-    # function that converts the denominator of the dimensionless expansion parameter
-    # from the Qsmoothmax to the Qsum prescription, based on a rough empirical formula,
-    # in terms of the value of m_pi in the numerator
-    # return m_pi / 320 + 1
+    """
+    Converts the denominator of the dimensionless expansion parameter from the Qsmax to the Qsum prescription, based on
+    a rough (linear) empirical formula, in terms of the value of m_pi in the numerator.
+
+    Parameters
+    ----------
+    m_pi (float or array) : pion mass value(s) (in MeV).
+    """
     return (m_pi + 750) / 600
 def p_approx(p_name, prel, degrees):
     """
@@ -63,35 +63,39 @@ def p_approx(p_name, prel, degrees):
     Parameters
     ----------
     p_name (str): name for the parametrization of the momentum
-    prel (float): relative momentum for the interaction (in MeV)
+    prel (float or array): relative momentum for the interaction (in MeV)
     degrees (float array): degrees
     """
-
     if p_name == "Qofprel":
-        # try:
-        #     return np.array(prel * np.ones(len(degrees)))
-        # except:
-        #     return np.array(prel)
         return np.tile(np.array(prel), (len(degrees), 1))
 
     elif p_name == "Qofqcm":
-        # return np.array(deg_to_qcm(prel, degrees))
         return np.array([np.array(deg_to_qcm(prel, d)) for d in degrees])
 
     elif p_name == "Qofpq":
-        # return np.array([softmax_mom(prel, q)
-        #                  for q in deg_to_qcm(prel, degrees)])
         return np.array([[softmax_mom(p, deg_to_qcm(p, d))
                          for p in prel] for d in degrees])
 
 
 def deg_fn(deg_input, **kwargs):
-    # converts degrees to degrees
+    """
+    Converts degrees to degrees.
+
+    Parameters
+    ----------
+    deg_input (float or array) : angle measure value(s) (in degrees).
+    """
     return deg_input
 
 
 def neg_cos(deg_input, **kwargs):
-    # converts degrees to -cos(degrees)
+    """
+    Converts degrees to the negative of the cosine.
+
+    Parameters
+    ----------
+    deg_input (float or array) : angle measure value(s) (in degrees).
+    """
     return -1 * np.cos(np.radians(deg_input))
 
 
@@ -101,8 +105,8 @@ def deg_to_qcm(p_input, deg_input, **kwargs):
 
     Parameters
     ----------
-    p_input (float) : relative momentum given in MeV.
-    deg_input (float) : angle measure given in degrees
+    p_input (float array) : relative momentum given in MeV.
+    deg_input (float array) : angle measure given in degrees
     """
     try:
         return np.array(
@@ -127,16 +131,24 @@ def deg_to_qcm2(p_input, deg_input, **kwargs):
 
 
 def Elab_fn(E_lab, **kwargs):
-    # converts lab energy to lab energy
+    """
+    Converts lab energy to lab energy.
+
+    Parameters
+    ----------
+    E_lab (float or array) : lab energy value(s) (in MeV).
+    """
     return E_lab
 
 
 def sin_thing(deg_input, **kwargs):
-    # converts degrees to an abortive sine-based input space
-    # if hasattr(deg_input, '__iter__'):
-    #     return np.array([np.sin(np.radians(d)) if d <= 90 else 2 - np.sin(np.radians(d)) for d in deg_input])
-    # else:
-    #     return np.sin(np.radians(deg_input)) if deg_input <= 90 else 2 - np.sin(np.radians(deg_input))
+    """
+    Converts degrees to a rather jury-rigged functon of the inverse of hyperbolic tangent.
+
+    Parameters
+    ----------
+    deg_input (float or array) : angle measure value(s) (in degrees).
+    """
     return 0.6 * (1.6 + np.arctanh(np.radians(deg_input - 90) / 1.7))
 
 
@@ -156,7 +168,7 @@ def softmax_mom(p, q, n=5):
 
 def Lb_logprior(Lambda_b):
     """
-    Uniform log-prior for the breakdown scale.
+    Uniform log-prior for the breakdown scale (in MeV).
     Similar to Melendez et al., Eq. (31)
     """
     return np.where((300 <= Lambda_b) & (Lambda_b <= 1500), 0, -np.inf)
@@ -164,7 +176,7 @@ def Lb_logprior(Lambda_b):
 
 def mpieff_logprior(m_pi):
     """
-    Uniform log-prior for the effective pion mass.
+    Uniform log-prior for the effective pion mass (in MeV).
     Similar to Melendez et al., Eq. (31)
     """
     # return np.where((50 <= m_pi) & (m_pi <= 300), np.log(1. / m_pi), -np.inf)

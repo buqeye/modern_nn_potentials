@@ -567,7 +567,7 @@ def gp_analysis(
                                 b for b in vsquantity_array_tlab if b.name == input_space_tlab
                             ][0]
 
-                            mpi_vals = np.linspace(50, 300, 29, dtype=np.dtype('f4'))
+                            mpi_vals = np.linspace(50, 300, 30, dtype=np.dtype('f4'))
                             # mpi_vals = 138 * np.array([0.9999, 1.0001])
                             ls_deg_vals = np.linspace(0.01,
                                                   1.0 * (VsQuantityPosteriorDeg.input_space(
@@ -578,10 +578,10 @@ def gp_analysis(
                                                            **{"p_input": E_to_p(E_lab, nn_interaction),
                                                               "deg_input": min(degrees),
                                                               "interaction": nn_interaction})),
-                                                  32)
+                                                  30)
                             ls_tlab_vals = np.linspace(1, 150, 30, dtype=np.dtype('f4'))
-                            # lambda_vals = np.linspace(300, 900, 31, dtype=np.dtype('f4'))
-                            lambda_vals = np.linspace(300, 1200, 500, dtype=np.dtype('f4'))
+                            lambda_vals = np.linspace(300, 900, 30, dtype=np.dtype('f4'))
+                            # lambda_vals = np.linspace(300, 1200, 500, dtype=np.dtype('f4'))
                             # lambda_vals = 600 * np.array([0.9999, 1.0001])
 
                             mesh_cart = gm.cartesian(lambda_vals, np.log(ls_deg_vals), np.log(ls_tlab_vals), mpi_vals)
@@ -794,19 +794,7 @@ def gp_analysis(
                                         whether_save=save_trunc_bool,
                                         residual_plot=True,
                                     )
-                                # if plot_lambdapost_pointwise_bool:
-                                #     MyPlot.plot_lambda_posterior_pointwise(
-                                #         SGT=SGT,
-                                #         DSG=DSG,
-                                #         AY=AY,
-                                #         A=A,
-                                #         D=D,
-                                #         AXX=AXX,
-                                #         AYY=AYY,
-                                #         t_lab=t_lab,
-                                #         degrees=degrees,
-                                #         whether_save=save_lambdapost_pointwise_bool,
-                                #     )
+
                                 if plot_lambdapost_curvewise_bool or plot_lambdapost_pointwise_bool:
                                     obs_dict = {"SGT": SGTBunch, "DSG": DSGBunch, "D": DBunch, "AXX": AXXBunch, "AYY": AYYBunch, "A": ABunch, "AY": AYBunch}
 
@@ -1038,7 +1026,7 @@ def gp_analysis(
                                                 "Q_param": QParamMethod
                                             },
 
-                                            orders=1,
+                                            orders=2,
 
                                             FileName = FileName,
 
@@ -1162,13 +1150,13 @@ def gp_analysis(
 gp_analysis(
     nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
-    observable_input=["DSG"],
-    E_input_array=[],
-    deg_input_array=[90],
+    observable_input=["D"],
+    E_input_array=[200],
+    deg_input_array=[],
     Q_param_method_array=["sum"],
     p_param_method_array=["Qofprel"],
-    input_space_input=["prel"],
-    input_space_deg="cos",
+    input_space_input=["deg"],
+    input_space_deg="deg",
     input_space_tlab="prel",
     t_lab_train_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]),  # set0 / refactor
     # t_lab_pts=np.array([25, 75, 125, 175, 225, 275, 325]), # set1
@@ -1184,34 +1172,34 @@ gp_analysis(
     #     [15, 31, 50, 90, 130, 149, 165]
     # ),  # evensin
     # degrees_train_pts=np.array([40, 60, 80, 100, 120, 140]), # 1704
-    train_test_split_array=[Allenergysplit1],
+    train_test_split_array=[Fullspaceanglessplit1],
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
     LengthScaleTlabInput=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
     LengthScaleDegInput=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
     fixed_sd=None,
-    m_pi_eff=138,
+    m_pi_eff=141,
     Lambdab=480,
     print_all_classes=False,
     savefile_type="png",
     plot_coeffs_bool=True,
-    plot_md_bool=True,
-    plot_pc_bool=True,
-    plot_ci_bool=False,
+    plot_md_bool=False,
+    plot_pc_bool=False,
+    plot_ci_bool=True,
     plot_pdf_bool=False,
     plot_trunc_bool=False,
-    plot_lambdapost_pointwise_bool=True,
+    plot_lambdapost_pointwise_bool=False,
     plot_lambdapost_curvewise_bool=False,
     plot_plotzilla_bool=False,
     save_coeffs_bool=True,
     save_md_bool=True,
     save_pc_bool=True,
-    save_ci_bool=False,
+    save_ci_bool=True,
     save_pdf_bool=False,
     save_trunc_bool=False,
-    save_lambdapost_pointwise_bool=True,
+    save_lambdapost_pointwise_bool=False,
     save_lambdapost_curvewise_bool=False,
     save_plotzilla_bool=False,
-    filename_addendum="_0",
+    filename_addendum="_test",
 )

@@ -460,28 +460,29 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
                 # print("levels = " + str([np.amax(joint) * level for level in \
                 #                                           ([np.exp(-0.5 * r ** 2) for r in
                 #                                             np.arange(9, 0, -0.5)] + [0.999])]))
-                try:
-                    ax_joint_array[joint_idx].contour(variables_array[comb_array[joint_idx, 0]].var,
-                                                      variables_array[comb_array[joint_idx, 1]].var,
-                    # ax_joint_array[joint_idx].contour(
-                    #                                   np.roll(variables_array, 2)[comb_array[joint_idx, 1]].var,
-                    #                                   np.roll(variables_array, 2)[comb_array[joint_idx, 0]].var,
-                                                      joint,
-                                                      levels=[np.amax(joint) * level for level in \
-                                                              ([np.exp(-0.5 * r ** 2) for r in
-                                                                np.arange(9, 0, -0.5)] + [0.999])],
-                                                      cmap=cmap_name)
-                except:
-                    ax_joint_array[joint_idx].contour(variables_array[comb_array[joint_idx, 0]].var,
+                # try:
+                ax_joint_array[joint_idx].contour(variables_array[comb_array[joint_idx, 0]].var,
                                                   variables_array[comb_array[joint_idx, 1]].var,
-                                                  # ax_joint_array[joint_idx].contour(
-                                                  #                                   np.roll(variables_array, 2)[comb_array[joint_idx, 1]].var,
-                                                  #                                   np.roll(variables_array, 2)[comb_array[joint_idx, 0]].var,
+                # ax_joint_array[joint_idx].contour(
+                #                                   np.roll(variables_array, 2)[comb_array[joint_idx, 1]].var,
+                #                                   np.roll(variables_array, 2)[comb_array[joint_idx, 0]].var,
                                                   joint.T,
                                                   levels=[np.amax(joint) * level for level in \
                                                           ([np.exp(-0.5 * r ** 2) for r in
                                                             np.arange(9, 0, -0.5)] + [0.999])],
                                                   cmap=cmap_name)
+
+                # except:
+                #     ax_joint_array[joint_idx].contour(variables_array[comb_array[joint_idx, 0]].var,
+                #                                       variables_array[comb_array[joint_idx, 1]].var,
+                #                                   # ax_joint_array[joint_idx].contour(
+                #                                   #                                   np.roll(variables_array, 2)[comb_array[joint_idx, 1]].var,
+                #                                   #                                   np.roll(variables_array, 2)[comb_array[joint_idx, 0]].var,
+                #                                   joint.T,
+                #                                   levels=[np.amax(joint) * level for level in \
+                #                                           ([np.exp(-0.5 * r ** 2) for r in
+                #                                             np.arange(9, 0, -0.5)] + [0.999])],
+                #                                   cmap=cmap_name)
                 try:
                     corr_coeff = correlation_coefficient(
                         variables_array[comb_array[joint_idx, 0]].var,

@@ -694,7 +694,6 @@ class GSUMDiagnostics:
         #                                 return_std = True)
         self.pred, self.std = self.gp.predict(self.X, return_std=True)
         self.underlying_std = np.sqrt(self.gp.cov_factor_)
-        print("underlying_std = " + str(self.underlying_std))
 
         # plots the coefficients against the given input space
         if ax is None:
@@ -707,7 +706,7 @@ class GSUMDiagnostics:
                             lw=edgewidth, alpha=1, zorder=5 * i - 4)
             ax.plot(self.x, self.pred[:, i], color=self.colors[i], ls='--', zorder=5 * i - 3)
             ax.plot(self.x, self.coeffs[:, i], color=self.colors[i], zorder=5 * i - 2)
-            ax.plot(self.x_train, self.coeffs_train[:, i], color=self.colors[i], \
+            ax.plot(self.x_train, self.coeffs_train[:, i], color=self.colors[i],
                     ls='', marker='o', label=r'$c_{}$'.format(n), zorder=5 * i - 1)
 
         # Format
@@ -956,7 +955,7 @@ class GSUMDiagnostics:
                                            excluded=[0],
                                            ratio_kws={"lambda_var": self.Lambda_b})
 
-            # print("y_train has dimensions " + str(self.y_train.shape))
+            # takes account for the constraint, if applicable
             if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
                 self.gp_post.fit(self.X_train,
                                  self.y_train,
@@ -1066,199 +1065,200 @@ class GSUMDiagnostics:
             X = np.ravel(x_)
             return self.interp_f_ratio(X) * self.Lambda_b / lambda_var
 
-        # try:
-        self.gp_trunc = gm.TruncationGP(self.kernel,
-                                        ref=lambda_interp_f_ref,
-                                        ratio=lambda_interp_f_ratio,
-                                        center=self.center,
-                                        disp=self.disp,
-                                        df=self.df,
-                                        scale=self.std_est,
-                                        excluded=self.excluded,
-                                        ratio_kws={"lambda_var": self.Lambda_b})
+        try:
+            # creates the TruncationGP object
+            self.gp_trunc = gm.TruncationGP(self.kernel,
+                                            ref=lambda_interp_f_ref,
+                                            ratio=lambda_interp_f_ratio,
+                                            center=self.center,
+                                            disp=self.disp,
+                                            df=self.df,
+                                            scale=self.std_est,
+                                            excluded=self.excluded,
+                                            ratio_kws={"lambda_var": self.Lambda_b})
 
-        # fits the GP with or without a constraint
-        # print("constraint is " + str(self.constraint))
-        if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
-            # print("We got this far.")
-            self.gp_trunc.fit(self.X_train, self.y_train,
-                              orders=self.nn_orders_full,
-                              # orders_eval=self.nn_orders,
-                              dX=np.array([[self.x[i]] for i in self.constraint[0]]),
-                              dy=[j for j in self.constraint[1]])
-        else:
-            self.gp_trunc.fit(self.X_train, self.y_train,
-                              orders=self.nn_orders_full,
-                              # orders_eval=self.nn_orders
-                              )
+            # fits the GP with or without a constraint
+            if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
+                # print("We got this far.")
+                self.gp_trunc.fit(self.X_train, self.y_train,
+                                  orders=self.nn_orders_full,
+                                  # orders_eval=self.nn_orders,
+                                  dX=np.array([[self.x[i]] for i in self.constraint[0]]),
+                                  dy=[j for j in self.constraint[1]])
+            else:
+                self.gp_trunc.fit(self.X_train, self.y_train,
+                                  orders=self.nn_orders_full,
+                                  # orders_eval=self.nn_orders
+                                  )
 
-        # creates fig with two columns of axes
-        fig, axes = plt.subplots(
-            int(np.ceil(len(self.nn_orders_full[self.mask_restricted]) / 2)),
-            2, sharex=False, sharey=False, figsize=(6, 7))
-        # deletes extraneous axes to suit number of evaluated orders
-        if 2 * np.ceil(len(self.nn_orders_full[self.mask_restricted]) / 2) > len(
-                self.nn_orders_full[self.mask_restricted]):
-            fig.delaxes(axes[int(np.ceil(
-                len(self.nn_orders_full[self.mask_restricted]) / 2)) - 1, 1])
+            # creates fig with two columns of axes
+            fig, axes = plt.subplots(
+                int(np.ceil(len(self.nn_orders_full[self.mask_restricted]) / 2)),
+                2, sharex=False, sharey=False, figsize=(6, 7))
+            # deletes extraneous axes to suit number of evaluated orders
+            if 2 * np.ceil(len(self.nn_orders_full[self.mask_restricted]) / 2) > len(
+                    self.nn_orders_full[self.mask_restricted]):
+                fig.delaxes(axes[int(np.ceil(
+                    len(self.nn_orders_full[self.mask_restricted]) / 2)) - 1, 1])
 
-        for i, n in enumerate(self.nn_orders_full[self.mask_restricted]):
-            # calculates the standard deviation of the truncation error
-            _, self.std_trunc = self.gp_trunc.predict(self.X, order=n,
-                                                      return_std=True, kind='trunc')
+            for i, n in enumerate(self.nn_orders_full[self.mask_restricted]):
+                # calculates the standard deviation of the truncation error
+                _, self.std_trunc = self.gp_trunc.predict(self.X, order=n,
+                                                          return_std=True, kind='trunc')
 
-            # gets the "true" order-by-order data from online
-            if self.fixed_quantity_name == "energy":
-                data_true = self.online_data[self.fixed_quantity_value, :]
-            elif self.fixed_quantity_name == "angle":
-                if self.fixed_quantity_value == 0:
-                    data_true = self.online_data
-                else:
-                    data_true = self.online_data[:, self.fixed_quantity_value]
+                # gets the "true" order-by-order data from online
+                if self.fixed_quantity_name == "energy":
+                    data_true = self.online_data[self.fixed_quantity_value, :]
+                elif self.fixed_quantity_name == "angle":
+                    if self.fixed_quantity_value == 0:
+                        data_true = self.online_data
+                    else:
+                        data_true = self.online_data[:, self.fixed_quantity_value]
 
-            for j in range(i, len(self.nn_orders_full[self.mask_restricted])):
-                ax = axes.ravel()[j]
+                for j in range(i, len(self.nn_orders_full[self.mask_restricted])):
+                    ax = axes.ravel()[j]
 
-                # number of standard deviations around the dotted line to plot
-                std_coverage = 1
+                    # number of standard deviations around the dotted line to plot
+                    # Why does this correspond to 67% confidence intervals?
+                    std_coverage = 0.5
+
+                    if residual_plot:
+                        # calculates and plots the residuals
+                        residual = data_true - (self.data[:, self.mask_restricted])[:, i]
+                        ax.plot(self.x, residual, zorder=i - 4, c=self.colors[i])
+                        ax.fill_between(self.x,
+                                        residual + std_coverage * self.std_trunc,
+                                        residual - std_coverage * self.std_trunc,
+                                        zorder=i - 5,
+                                        facecolor=self.light_colors[i],
+                                        edgecolor=self.colors[i],
+                                        lw=edgewidth)
+                        ax.set_ylim(np.min(np.concatenate(
+                            (residual + std_coverage * self.std_trunc, residual - std_coverage * self.std_trunc))),
+                                    np.max(np.concatenate((residual + std_coverage * self.std_trunc,
+                                                           residual - std_coverage * self.std_trunc))))
+
+                    else:
+                        # calculates and plots the true data
+                        ax.plot(self.x,
+                                (self.data[:, self.mask_restricted])[:, i],
+                                zorder=i - 5, c=self.colors[i])
+                        ax.fill_between(self.x,
+                                        (self.data[:, self.mask_restricted])[:,
+                                        i] + std_coverage * self.std_trunc,
+                                        (self.data[:, self.mask_restricted])[:,
+                                        i] - std_coverage * self.std_trunc,
+                                        zorder=i - 5,
+                                        facecolor=self.light_colors[i],
+                                        edgecolor=self.colors[i],
+                                        lw=edgewidth)
+                        ax.set_ylim(np.min(np.concatenate(((self.data[:, self.mask_restricted])[:,
+                                                           i] + std_coverage * self.std_trunc, (self.data[:, self.mask_restricted])[
+                                                                                               :,
+                                                                                               i] - std_coverage * self.std_trunc))),
+                                    np.max(np.concatenate(((self.data[:, self.mask_restricted])[:,
+                                                           i] + std_coverage * self.std_trunc, (self.data[:, self.mask_restricted])[
+                                                                                               :,
+                                                                                               i] - std_coverage * self.std_trunc))))
+
+                    # # plots the testing points as vertical lines
+                    # for line in self.x_test: ax.axvline(line, 0, 1, c = gray)
+
+                ax = axes.ravel()[i]
 
                 if residual_plot:
-                    # calculates and plots the residuals
-                    residual = data_true - (self.data[:, self.mask_restricted])[:, i]
-                    ax.plot(self.x, residual, zorder=i - 5, c=self.colors[i])
-                    ax.fill_between(self.x,
-                                    residual + std_coverage * self.std_trunc,
-                                    residual - std_coverage * self.std_trunc,
-                                    zorder=i - 5,
-                                    facecolor=self.light_colors[i],
-                                    edgecolor=self.colors[i],
-                                    lw=edgewidth)
-                    ax.set_ylim(np.min(np.concatenate(
-                        (residual + std_coverage * self.std_trunc, residual - std_coverage * self.std_trunc))),
-                                np.max(np.concatenate((residual + std_coverage * self.std_trunc,
-                                                       residual - std_coverage * self.std_trunc))))
-
+                    # plots a line at y = 0
+                    ax.plot(self.x, np.zeros(len(self.x)), color=softblack, lw=1, ls='--')
                 else:
-                    # calculates and plots the true data
-                    ax.plot(self.x,
-                            (self.data[:, self.mask_restricted])[:, i],
-                            zorder=i - 5, c=self.colors[i])
-                    ax.fill_between(self.x,
-                                    (self.data[:, self.mask_restricted])[:,
-                                    i] + std_coverage * self.std_trunc,
-                                    (self.data[:, self.mask_restricted])[:,
-                                    i] - std_coverage * self.std_trunc,
-                                    zorder=i - 5,
-                                    facecolor=self.light_colors[i],
-                                    edgecolor=self.colors[i],
-                                    lw=edgewidth)
-                    ax.set_ylim(np.min(np.concatenate(((self.data[:, self.mask_restricted])[:,
-                                                       i] + std_coverage * self.std_trunc, (self.data[:, self.mask_restricted])[
-                                                                                           :,
-                                                                                           i] - std_coverage * self.std_trunc))),
-                                np.max(np.concatenate(((self.data[:, self.mask_restricted])[:,
-                                                       i] + std_coverage * self.std_trunc, (self.data[:, self.mask_restricted])[
-                                                                                           :,
-                                                                                           i] - std_coverage * self.std_trunc))))
+                    # plots the true data
+                    ax.plot(self.x, data_true, color=softblack, lw=1, ls='--')
 
-                # # plots the testing points as vertical lines
-                # for line in self.x_test: ax.axvline(line, 0, 1, c = gray)
+                # formats x-axis labels and tick marks
+                ax.set_xlabel(self.caption_coeffs)
+                ax.set_xticks([int(min(self.x) + (max(self.x) - min(self.x)) / 3),
+                               int(min(self.x) + (max(self.x) - min(self.x)) / 3 * 2)])
+                ax.set_xticks([tick for tick in self.x_test], minor=True)
+            plt.show()
 
-            ax = axes.ravel()[i]
+            # saves
+            if 'fig' in locals() and whether_save:
+                fig.suptitle(r'$\mathrm{' + self.observable_name + '\,(' + str(self.fixed_quantity_value) + '\,' + str(
+                    self.fixed_quantity_units) + ')\,' + \
+                             '\,for\,' + self.scheme + '\,' + self.scale + '}' + '\,(Q_{\mathrm{' + self.Q_param + \
+                             '}},\,\mathrm{' + self.p_param + '},\,\mathrm{' + self.vs_what + '})$', size=20)
+                fig.tight_layout()
 
-            if residual_plot:
-                # plots a line at y = 0
-                ax.plot(self.x, np.zeros(len(self.x)), color=softblack, lw=1, ls='--')
-            else:
-                # plots the true data
-                ax.plot(self.x, data_true, color=softblack, lw=1, ls='--')
+                if self.constraint is None:
+                    fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' + self.observable_name + '_' +
+                                 str(self.fixed_quantity_value) + str(self.fixed_quantity_units) +
+                                 '_' + 'full_pred_truncation' + '_' + self.scheme + '_' +
+                                 self.scale + '_Q' + self.Q_param + '_' + self.vs_what +
+                                 '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' +
+                                 self.train_pts_loc + '_' + self.p_param +
+                                 self.filename_addendum).replace('_0MeVlab_', '_'))
+                else:
+                    fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' + self.observable_name + '_' +
+                                 str(self.fixed_quantity_value) + str(self.fixed_quantity_units) +
+                                 '_' + 'full_pred_truncation_constrained' + '_' + self.scheme + '_' +
+                                 self.scale + '_Q' + self.Q_param + '_' + self.vs_what +
+                                 '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' +
+                                 self.train_pts_loc + '_' + self.p_param +
+                                 self.filename_addendum).replace('_0MeVlab_', '_'))
 
-            # formats x-axis labels and tick marks
-            ax.set_xlabel(self.caption_coeffs)
-            ax.set_xticks([int(min(self.x) + (max(self.x) - min(self.x)) / 3),
-                           int(min(self.x) + (max(self.x) - min(self.x)) / 3 * 2)])
-            ax.set_xticks([tick for tick in self.x_test], minor=True)
-        plt.show()
+            # creates interpolation function for the true and theory data
+            data_interp = interp1d(self.x, self.data[:, self.mask_restricted].T)
+            data_true_interp = interp1d(self.x, data_true)
 
-        # saves
-        if 'fig' in locals() and whether_save:
-            fig.suptitle(r'$\mathrm{' + self.observable_name + '\,(' + str(self.fixed_quantity_value) + '\,' + str(
-                self.fixed_quantity_units) + ')\,' + \
-                         '\,for\,' + self.scheme + '\,' + self.scale + '}' + '\,(Q_{\mathrm{' + self.Q_param + \
-                         '}},\,\mathrm{' + self.p_param + '},\,\mathrm{' + self.vs_what + '})$', size=20)
-            fig.tight_layout()
+            # calculates the covariance matrix and mean
+            self.cov_wp = self.gp_trunc.cov(self.X_test, start=0, end=np.inf)
+            self.mean_wp = self.gp_trunc.mean(self.X_test)
 
-            if self.constraint is None:
+            # norms the residuals by factors of the ratio
+            self.norm_residuals_wp = data_true_interp(self.X_test) - data_interp(self.X_test)
+            denom = (np.tile(self.ratio_test,
+                             (len(self.nn_orders_full[self.mask_restricted]), 1)).T) ** (
+                                self.nn_orders_full[self.mask_restricted] + 1) * (np.sqrt(
+                1 - np.tile(self.ratio_test,
+                            (len(self.nn_orders_full[self.mask_restricted]), 1)) ** 2)).T
+            self.norm_residuals_wp = self.norm_residuals_wp / (denom.T)[:, :, None]
+            self.gr_dgn_wp = gm.GraphicalDiagnostic(self.norm_residuals_wp.T,
+                                                    mean=self.mean_wp, cov=self.cov_wp,
+                                                    colors=self.colors, gray=gray, black=softblack)
+
+            fig, ax = plt.subplots(figsize=(3.4, 3.2))
+
+            # creates the empirical coverage plot
+            self.gr_dgn_wp.credible_interval(
+                np.linspace(1e-5, 1, 100), band_perc=[0.68, 0.95], ax=ax,
+                title="Empirical coverage (PWA93)\n" +
+                      r'$\mathrm{' + self.observable_name + '\,(' + str(self.fixed_quantity_value) + '\,' + str(
+                    self.fixed_quantity_units) + ')\,' + \
+                      '\,for\,' + self.scheme + '\,' + self.scale + '}' + '\,(Q_{\mathrm{' + self.Q_param + \
+                      '}},\,\mathrm{' + self.p_param + '},\,\mathrm{' + self.vs_what + '})$',
+                xlabel=r'Credible Interval ($100\alpha\%$)',
+                ylabel=r'Empirical Coverage ($\%$)\,(N = ' + str(len(self.X_test)) + r')')
+
+            ax.set_xticks([0, 0.2, 0.4, 0.6, 0.8, 1])
+            ax.set_xticklabels([0, 20, 40, 60, 80, 100])
+            ax.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1])
+            ax.set_yticklabels([0, 20, 40, 60, 80, 100])
+
+            plt.show()
+
+            # saves the figure
+            if 'fig' in locals() and whether_save:
+                fig.tight_layout()
+
                 fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' + self.observable_name + '_' +
                              str(self.fixed_quantity_value) + str(self.fixed_quantity_units) +
-                             '_' + 'full_pred_truncation' + '_' + self.scheme + '_' +
+                             '_' + 'truncation_error_empirical_coverage' + '_' + self.scheme + '_' +
                              self.scale + '_Q' + self.Q_param + '_' + self.vs_what +
                              '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' +
                              self.train_pts_loc + '_' + self.p_param +
                              self.filename_addendum).replace('_0MeVlab_', '_'))
-            else:
-                fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' + self.observable_name + '_' +
-                             str(self.fixed_quantity_value) + str(self.fixed_quantity_units) +
-                             '_' + 'full_pred_truncation_constrained' + '_' + self.scheme + '_' +
-                             self.scale + '_Q' + self.Q_param + '_' + self.vs_what +
-                             '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' +
-                             self.train_pts_loc + '_' + self.p_param +
-                             self.filename_addendum).replace('_0MeVlab_', '_'))
 
-        # creates interpolation function for the true and theory data
-        data_interp = interp1d(self.x, self.data[:, self.mask_restricted].T)
-        data_true_interp = interp1d(self.x, data_true)
-
-        # calculates the covariance matrix and mean
-        self.cov_wp = self.gp_trunc.cov(self.X_test, start=0, end=np.inf)
-        self.mean_wp = self.gp_trunc.mean(self.X_test)
-
-        # norms the residuals by factors of the ratio
-        self.norm_residuals_wp = data_true_interp(self.X_test) - data_interp(self.X_test)
-        denom = (np.tile(self.ratio_test,
-                         (len(self.nn_orders_full[self.mask_restricted]), 1)).T) ** (
-                            self.nn_orders_full[self.mask_restricted] + 1) * (np.sqrt(
-            1 - np.tile(self.ratio_test,
-                        (len(self.nn_orders_full[self.mask_restricted]), 1)) ** 2)).T
-        self.norm_residuals_wp = self.norm_residuals_wp / (denom.T)[:, :, None]
-        self.gr_dgn_wp = gm.GraphicalDiagnostic(self.norm_residuals_wp.T,
-                                                mean=self.mean_wp, cov=self.cov_wp,
-                                                colors=self.colors, gray=gray, black=softblack)
-
-        fig, ax = plt.subplots(figsize=(3.4, 3.2))
-
-        # creates the empirical coverage plot
-        self.gr_dgn_wp.credible_interval(
-            np.linspace(1e-5, 1, 100), band_perc=[0.68, 0.95], ax=ax,
-            title="Empirical coverage (PWA93)\n" +
-                  r'$\mathrm{' + self.observable_name + '\,(' + str(self.fixed_quantity_value) + '\,' + str(
-                self.fixed_quantity_units) + ')\,' + \
-                  '\,for\,' + self.scheme + '\,' + self.scale + '}' + '\,(Q_{\mathrm{' + self.Q_param + \
-                  '}},\,\mathrm{' + self.p_param + '},\,\mathrm{' + self.vs_what + '})$',
-            xlabel=r'Credible Interval ($100\alpha\%$)',
-            ylabel=r'Empirical Coverage ($\%$)\,(N = ' + str(len(self.X_test)) + r')')
-
-        ax.set_xticks([0, 0.2, 0.4, 0.6, 0.8, 1])
-        ax.set_xticklabels([0, 20, 40, 60, 80, 100])
-        ax.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1])
-        ax.set_yticklabels([0, 20, 40, 60, 80, 100])
-
-        plt.show()
-
-        # saves the figure
-        if 'fig' in locals() and whether_save:
-            fig.tight_layout()
-
-            fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' + self.observable_name + '_' +
-                         str(self.fixed_quantity_value) + str(self.fixed_quantity_units) + \
-                         '_' + 'truncation_error_empirical_coverage' + '_' + self.scheme + '_' + \
-                         self.scale + '_Q' + self.Q_param + '_' + self.vs_what + \
-                         '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' + \
-                         self.train_pts_loc + '_' + self.p_param +
-                         self.filename_addendum).replace('_0MeVlab_', '_'))
-
-        # except:
-        #     print("Error plotting the truncation errors.")
+        except:
+            print("Error plotting the truncation errors.")
 
     def plot_credible_intervals(self, ax=None, whether_save=True):
         """
@@ -1288,6 +1288,7 @@ class GSUMDiagnostics:
             else:
                 self.mean = self.gp.mean(self.X_test)
                 self.cov = self.gp.cov(self.X_test)
+
             self.gr_dgn = gm.GraphicalDiagnostic(self.coeffs_test,
                                                  self.mean,
                                                  self.cov,
@@ -1299,8 +1300,8 @@ class GSUMDiagnostics:
                 fig, ax = plt.subplots(figsize=(3.2, 2.2))
 
             self.gr_dgn.credible_interval(
-                np.linspace(1e-5, 1, 100), band_perc=[0.68, 0.95], ax=ax, title=None, \
-                xlabel=r'Credible Interval ($100\alpha\%$)', \
+                np.linspace(1e-5, 1, 100), band_perc=[0.68, 0.95], ax=ax, title=None,
+                xlabel=r'Credible Interval ($100\alpha\%$)',
                 ylabel=r'Empirical Coverage ($\%$)\,(N = ' + str(len(self.X_test)) + r')')
 
             ax.set_xticks([0, 0.2, 0.4, 0.6, 0.8, 1])
@@ -1315,169 +1316,15 @@ class GSUMDiagnostics:
                 fig.tight_layout()
 
                 fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' + self.observable_name + '_' +
-                             str(self.fixed_quantity_value) + str(self.fixed_quantity_units) + \
-                             '_' + 'truncation_error_credible_intervals' + '_' + self.scheme + '_' + \
-                             self.scale + '_Q' + self.Q_param + '_' + self.vs_what + \
-                             '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' + \
+                             str(self.fixed_quantity_value) + str(self.fixed_quantity_units) +
+                             '_' + 'truncation_error_credible_intervals' + '_' + self.scheme + '_' +
+                             self.scale + '_Q' + self.Q_param + '_' + self.vs_what +
+                             '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' +
                              self.train_pts_loc + '_' + self.p_param +
                              self.filename_addendum).replace('_0MeVlab_', '_'))
 
         except:
             print("Error in plotting the credible intervals.")
-
-    def plot_lambda_posterior_pointwise(self, SGT, DSG, AY, A, D, AXX, AYY, t_lab, degrees,
-                                        ax=None, whether_save=True):
-        def lambda_interp_f_ref(x_):
-            X = np.ravel(x_)
-            return self.interp_f_ref(X)
-
-        def lambda_interp_f_ratio(x_, lambda_var):
-            X = np.ravel(x_)
-            return self.interp_f_ratio(X) * self.Lambda_b / lambda_var
-
-        # try:
-        # t_lab_Lb = np.array([100, 250])
-        t_lab_Lb = np.array([50, 100, 150, 200, 250, 300])
-        # degrees_Lb = np.array([30, 60, 90, 120, 150])
-        degrees_Lb = np.array([26, 51, 77, 103, 129, 154])
-        # t_lab_Lb = np.array([96, 143, 200, 300])
-        # degrees_Lb = np.array([60, 120])
-        X_Lb = gm.cartesian(t_lab_Lb, degrees_Lb)
-        # print(X_Lb)
-        Lb_colors = self.light_colors[-2:]
-        # print(self.light_colors)
-        # print(Lb_colors)
-        Lambda_b_array = np.arange(1, 1501, 1)
-
-        # scale invariant: df = 0
-        Lb_model = gm.TruncationPointwise(df=0, excluded=[0])
-
-        ratios_sgt_Lb = [Q_approx(E_to_p(t_lab_Lb, "np"), self.Q_param, Lb, interaction='np') for Lb in Lambda_b_array]
-        ratios_dsg_Lb = [Q_approx(E_to_p(X_Lb[:, 0], "np"), self.Q_param, Lb, interaction='np') for Lb in
-                         Lambda_b_array]
-        # print("sgt ratios has shape " + str(np.shape(ratios_sgt_Lb)))
-        # print(np.shape(ratios_dsg_Lb))
-        # print(X_Lb[:, 0])
-        logprior = Lb_logprior(Lambda_b_array)
-
-        # print(self.nn_orders_mask)
-        # print(self.mask_restricted)
-        # print(self.raw_data_mask)
-        # print(self.nn_orders)
-        # print(self.nn_orders_full)
-        # print(self.nn_orders_full[self.nn_orders_mask])
-        # print((self.nn_orders_full[self.nn_orders_mask])[self.mask_restricted])
-
-        # Mask unused SGT data, and compute results
-        # print(SGT.shape)
-        # print(SGT[self.nn_orders_mask, :].shape)
-        # print((SGT[self.nn_orders_mask, :])[self.mask_restricted, :].shape)
-        sgt_Lb = (SGT[self.raw_data_mask, :])[:, np.isin(t_lab, t_lab_Lb)]
-        sgt_Lb_nho_result = compute_posterior_intervals(
-            Lb_model, sgt_Lb, ratios_sgt_Lb, ref=sgt_Lb[0],
-            orders=self.nn_orders,
-            max_idx=max(self.nn_orders) - 2,
-            logprior=logprior, Lb=Lambda_b_array)
-        sgt_Lb_ho_result = compute_posterior_intervals(
-            Lb_model, sgt_Lb, ratios_sgt_Lb, ref=sgt_Lb[0],
-            orders=self.nn_orders,
-            max_idx=max(self.nn_orders) - 1,
-            logprior=logprior, Lb=Lambda_b_array)
-
-        # Mask unused DSG data, and compute results
-        dsg_Lb = np.reshape(
-            (DSG[self.raw_data_mask, :])[:, np.isin(t_lab, t_lab_Lb)][..., np.isin(degrees, degrees_Lb)],
-            (len(self.nn_orders), -1))
-        # print("dsg_Lb = " + str(dsg_Lb))
-        dsg_Lb_nho_result = compute_posterior_intervals(
-            Lb_model, dsg_Lb, ratios_dsg_Lb, ref=dsg_Lb[0],
-            orders=self.nn_orders,
-            max_idx=max(self.nn_orders) - 2,
-            logprior=logprior, Lb=Lambda_b_array)
-        dsg_Lb_ho_result = compute_posterior_intervals(
-            Lb_model, dsg_Lb, ratios_dsg_Lb, ref=dsg_Lb[0],
-            orders=self.nn_orders,
-            max_idx=max(self.nn_orders) - 1,
-            logprior=logprior, Lb=Lambda_b_array)
-
-        # Concatenate all spin observable data into one long vector, and compute results
-        spins_Lb = np.concatenate([
-            np.reshape((spin[self.raw_data_mask, :])[:, np.isin(t_lab, t_lab_Lb)][..., np.isin(degrees, degrees_Lb)],
-                       (len(self.nn_orders), -1))
-            for spin in [AY, D, A, AXX, AYY]],
-            axis=1)
-        ratios_spins_Lb = np.concatenate([ratios_dsg_Lb for i in [AY, D, A, AXX, AYY]], axis=1)
-        spins_Lb_nho_result = compute_posterior_intervals(
-            Lb_model, spins_Lb, ratios_spins_Lb, ref=1,
-            orders=self.nn_orders,
-            max_idx=max(self.nn_orders) - 2,
-            logprior=logprior, Lb=Lambda_b_array)
-        spins_Lb_ho_result = compute_posterior_intervals(
-            Lb_model, spins_Lb, ratios_spins_Lb, ref=1,
-            orders=self.nn_orders,
-            max_idx=max(self.nn_orders) - 1,
-            logprior=logprior, Lb=Lambda_b_array)
-
-        # Gather the above results
-        results = [
-            sgt_Lb_nho_result, sgt_Lb_ho_result,
-            dsg_Lb_nho_result, dsg_Lb_ho_result,
-            spins_Lb_nho_result, spins_Lb_ho_result
-        ]
-        # results = [dsg_Lb_n4lo_result]
-
-        # Plot each posterior and its summary statistics
-        fig, ax = plt.subplots(1, 1, figsize=(3.4, 3.4))
-        for i, (posterior, bounds, median) in enumerate(results):
-            posterior = posterior / (1.2 * np.max(posterior))  # Scale so they're all the same height
-            # Make the lines taper off
-            Lb_vals = Lambda_b_array[posterior > 1e-2]
-            posterior = posterior[posterior > 1e-2]
-            # Plot and fill posterior, and add summary statistics
-
-            ax.plot(Lb_vals, posterior - i, c='gray')
-
-            # if i == 0: pdf_label = self.orders_dict[(np.sort(self.nn_orders))[-2]]
-            # elif i == 1: pdf_label = self.orders_dict[max(self.nn_orders)]
-            # else: pdf_label = '_nolegend_'
-
-            ax.fill_between(Lb_vals, -i, posterior - i, facecolor=Lb_colors[i % 2])
-            draw_summary_statistics(*bounds, median, ax=ax, height=-i)
-
-        # Plot formatting
-        ax.set_yticks([-0, -2, -4])
-        ax.set_yticks([-1.1, -3.1], minor=True)
-        ax.set_yticklabels([r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$', r'$X_{pqik}$'])
-        ax.tick_params(axis='both', which='both', direction='in')
-        ax.tick_params(which='major', length=0)
-        ax.tick_params(which='minor', length=7, right=True)
-        ax.set_xlim(0, 1200)
-        ax.set_xticks([0, 300, 600, 900, 1200])
-        ax.set_xlabel(r'$\Lambda_b$ (MeV)')
-        ax.legend(title=r'$\mathrm{pr}(\Lambda_{b} \, | \, \vec{\mathbf{y}}_{k}, \mathbf{f})$',
-                  handles=[Patch(facecolor=Lb_colors[0],
-                                 edgecolor='gray',
-                                 linewidth=1,
-                                 label=self.orders_dict[(np.sort(self.nn_orders))[-2]]),
-                           Patch(facecolor=Lb_colors[1],
-                                 edgecolor='gray',
-                                 linewidth=1,
-                                 label=self.orders_dict[max(self.nn_orders)])])
-        ax.grid(axis='x')
-        ax.set_axisbelow(True)
-
-        if 'fig' in locals() and whether_save:
-            fig.tight_layout()
-
-            fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' +
-                         'Lambdab_posterior_pdf_pointwise' + '_' + self.scheme + '_' +
-                         self.scale + '_Q' + self.Q_param + '_' + self.vs_what +
-                         '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' +
-                         self.train_pts_loc + '_' + self.p_param +
-                         self.filename_addendum).replace('_0MeVlab_', '_'))
-
-        # except:
-        #     print("Error in plotting the pointwise posterior PDF.")
 
     def plotzilla(self, whether_save=True):
 
@@ -1643,7 +1490,7 @@ def calc_loglike_ray(mesh_cart,
                      log_likelihood_fn_kwargs,
                      ):
     """
-    Calculates the log-likelihood for a set of inputs.
+    Calculates the log-likelihood for a set of inputs using a curvewise method.
 
     Parameters
     ----------
@@ -1759,7 +1606,10 @@ def marginalize_likelihoods(variables_array, like_list):
 
             joint_post_list.append(joint_post)
 
-    marg_post_array = np.reshape(marg_post_list, (len(variables_array), np.shape(like_list)[0]), order='F')
+    print("marg_post_list has shape " + str(np.shape(marg_post_list)))
+    print("like_list has shape " + str(np.shape(like_list)))
+    marg_post_array = np.reshape(marg_post_list, (len(variables_array), np.shape(like_list)[0]) + np.shape(marg_post_list)[1:], order='F')
+    print("marg_post_array has shape " + str(np.shape(marg_post_array)))
 
     joint_post_array = np.array(joint_post_list)
 
@@ -1788,7 +1638,6 @@ def log_likelihood(gp_fitted,
                                               ) for pt in mesh_points]
 
 def plot_posteriors_curvewise(
-
                           light_colors,
                           nn_orders_array,
                           nn_orders_full_array,
@@ -1796,8 +1645,6 @@ def plot_posteriors_curvewise(
                           orders_labels_dict,
                           orders_names_dict,
 
-                          p_param,
-                          Q_param,
                           nn_interaction,
 
                           center,
@@ -1818,9 +1665,6 @@ def plot_posteriors_curvewise(
                           InputSpaceDeg,
                           LsDeg,
                           variables_array,
-                          # mesh_cart,
-                          # Lambda_b_true,
-                          # mpi_true,
 
                           mom_fn,
                           mom_fn_kwargs,
@@ -1834,162 +1678,107 @@ def plot_posteriors_curvewise(
                           log_likelihood_fn,
                           log_likelihood_fn_kwargs,
 
-                          # slice_type,
                           orders=2,
                           FileName = None,
-                          ax=None,
                           whether_plot_posteriors=True,
                           whether_plot_corner=True,
                           whether_use_data=True,
                           whether_save_data=True,
                           whether_save_plots=True,
-                          whether_save_opt=False,):
+                          ):
+    """
+    Calculates the log-likelihood for a set of inputs.
+
+    Parameters
+    ----------
+    light_colors (array) : array of MatPlotLib colors for filling.
+    nn_orders_array (int array) : array of orders for plotting data.
+    nn_orders_full_array (int array) : array of orders corresponding to all possible orders of data.
+    excluded (int list) : list of orders excluded from nn_orders_full_array, along with 0.
+    orders_labels_dict (dict) : dictionary for linking order numbers and markdown strings for plotting.
+    orders_names_dict (dict) : dictionary for linking order numbers and strings for file-naming.
+
+    nn_interaction (str) : interaction for observables using in calculating E_to_p.
+        Should be "np", "nn", or "pp".
+
+    center (float) : initial guess for the mean of the distribution.
+    disp (int) : initial guess for the standard deviation.
+    df (int) : number of degrees of freedom.
+    std_est (float) : estimate for the standard deviation.
+
+    obs_data_grouped_list (array list) : list of arrays of observable data grouped together as decided by user.
+    obs_name_grouped_list (str list) : list of strings for observables for file-naming as decided by user.
+    obs_labels_grouped_list (str list) : list of markdown strings for observables for file-naming as decided by user.
+    mesh_cart_grouped_list (array list) : list of arrays of Cartesian meshes for evaluating log-likelihood, grouped
+        together as decided by user.
+    t_lab (array) : array of lab-energy points for evaluation.
+    t_lab_train_pts (array) : list of lab-energy training points for evaluation.
+    InputSpaceTlab (InputSpaceBunch) : object encoding information about lab-energy input space
+    LsTlab (LengthScale) : object encoding information about guess and bounds for lab-energy length scale.
+    degrees (array) : array of scattering-angle points for evaluation.
+    degrees_train_pts (array) : list of scattering-angle training points for evaluation.
+    InputSpaceDeg : object encoding information about scattering-angle input space
+    LsDeg (LengthScale) : object encoding information about guess and bounds for scattering-angle length scale.
+    variables_array (RandomVariable array) : list of RandomVariable objects for each random variable.
+        Must be in the order (Lambda_b, scattering-angle length scale, lab-energy length scale, mpi_eff).
+
+    mom_fn (function) : function for converting from lab energy to relative momentum.
+    mom_fn_kwargs (dict) : keyword arguments for mom_fn.
+
+    scaling_fn (function) : function for scaling input space.
+    scaling_fn_kwargs (dict) : keyword arguments for scaling_fn.
+
+    ratio_fn (function) : function for evaluating the ratio (dimensionless expansion parameter, or Q).
+    ratio_fn_kwargs (dict) : keyword arguments for ratio_fn.
+
+    log_likelihood_fn (function) : function for evaluating the log-likelihood.
+    log_likelihood_fn_kwargs (dict) : keyword arguments for log_likelihood_fn.
+
+    orders (int) : number of orders to include in the calculations, starting from and including the highest allowed
+        order and counting down.
+        Default : 2
+    FileName (FileNaming) : object encoding information for naming files.
+        Default : None
+
+    whether_plot_posteriors (bool) : whether to plot posteriors.
+        Default : True
+    whether_plot_corner : whether to plot corner plot.
+        Default : True
+    whether_use_data : whether to use already saved data for plotting.
+        Default : True
+    whether_save_data : whether to save data.
+        Default : True
+    whether_save_plots : whether to save plots.
+        Default : True
+    """
 
     # sets the number of orders and the corresponding colors
     order_num = int(orders)
-    # Lb_colors = self.light_colors[-1 * order_num:]
     Lb_colors = light_colors[-1 * order_num:]
-
-    # if combine_all_obs:
-    #     obs_name_corner = "ALLOBS"
-    #     posterior_label = [r'Obs.']
-    # elif self.observable_name == "SGT":
-    #     obs_name_corner = "SGT"
-    #     posterior_label = [r'$\sigma$']
-    # elif self.observable_name == "DSG":
-    #     obs_name_corner = "DSG"
-    #     posterior_label = [r'$\displaystyle\frac{d\sigma}{d\Omega}$']
-    # elif self.observable_name == "A" or self.observable_name == "AY" or \
-    #         self.observable_name == "D" or self.observable_name == "AYY" or \
-    #         self.observable_name == "AXX":
-    #     obs_name_corner = "spins"
-    #     posterior_label = [r'$X_{pqik}$']
-    # if plot_all_obs:
-    #     posterior_label = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$', r'$X_{pqik}$']
 
     # creates boolean array for treatment of the length scale (and any other variables) on an observable-by-
     # observable basis instead of a cross-observable basis
     marg_bool_array = np.array([v.marg_bool for v in variables_array])
 
-    # # sets the meshes for the random variable arrays
-    # mpi_vals = np.linspace(50, 425, 49, dtype=np.dtype('f4'))
-    # if self.observable_name == "SGT":
-    #     ls_vals = self.inputspace.input_space(**{"E_lab": np.linspace(1, 300, 50, dtype=np.dtype('f4')),
-    #                                              "interaction": self.nn_interaction})
-    # else:
-    #     ls_vals = np.linspace(0.02, 2.00, 50, dtype=np.dtype('f'))
-    # lambda_vals = np.linspace(250, 1000, 51, dtype=np.dtype('f4'))
-    #
-    # mesh_cart = gm.cartesian(lambda_vals, np.log(ls_vals), mpi_vals)
-    #
-    # # sets the RandomVariable objects
-    # LambdabVariable = RandomVariable(var=lambda_vals,
-    #                                  user_val=Lambda_b_true,
-    #                                  name='Lambdab',
-    #                                  label="\Lambda_{b}",
-    #                                  units="MeV",
-    #                                  ticks=[300, 600, 900, 1200],
-    #                                  logprior=Lb_logprior(lambda_vals),
-    #                                  logprior_name="Lambdab_uniformlogprior")
-    # # this will need to change for SGT vs. other observables
-    # LsVariable = RandomVariable(var=ls_vals,
-    #                             user_val=ls_true,
-    #                             name='ls',
-    #                             label="\ell",
-    #                             units="",
-    #                             ticks=[],
-    #                             logprior=np.zeros(len(ls_vals)),
-    #                             logprior_name="ls_nologprior")
-    # MpieffVariable = RandomVariable(var=mpi_vals,
-    #                                 user_val=mpi_true,
-    #                                 name='mpieff',
-    #                                 label="m_{\pi}",
-    #                                 units="MeV",
-    #                                 ticks=[50, 100, 150, 200, 250, 300, 350],
-    #                                 logprior=mpieff_logprior(mpi_vals),
-    #                                 logprior_name="mpieff_uniformlogprior")
-    # variables_array = np.array([LambdabVariable, LsVariable, MpieffVariable])
-
-    # # unit test for marginalization code
-    # # set the seed
-    # np.random.seed(7)
-    # # set the distribution from scipy.stats
-    # means_ut = [np.average(variable.var) for variable in variables_array]
-    # cov_ut = np.random.rand(len(variables_array), len(variables_array))
-    # print([np.average(variable.var) for variable in variables_array])
-    # rv_ut = stats.multivariate_normal(means_ut,
-    #                                   np.sqrt(np.tile(means_ut, (len(variables_array),1))) *
-    #                                   np.sqrt((np.tile(means_ut, (len(variables_array),1))).T) *
-    #                                   np.matmul(cov_ut, cov_ut.T))
-    # print(np.tile(means_ut, (len(variables_array),1)) *
-    #       (np.tile(means_ut, (len(variables_array),1))).T *
-    #       np.matmul(cov_ut, cov_ut.T))
-    # # create a mesh of random variables
-    # mesh_ut = gm.cartesian(*[variable.var for variable in variables_array])
-    # # print(np.shape(mesh_ut))
-    # # evaluate the likelihood across the mesh
-    # # print(np.shape(rv_ut.pdf(mesh_ut)))
-    # # print([len(variable.var) for variable in variables_array])
-    # like_ut = np.reshape( rv_ut.pdf(mesh_ut), (101, 100, 99) )
-    # # print(np.shape(like_ut))
-    # like_list = []
-    # like_list.append(like_ut)
-    # # information for plotting
-    # obs_name_corner = "unittest"
-    # posterior_label = r'UT'
-    # print(np.shape(like_list))
-
     # initiates the ray kernel for utilizing all processors on the laptop
     ray.shutdown()
     ray.init()
 
-
-
     BATCH_SIZE = 100
 
-    # no longer relying on self.kernel
-    # kernel_posterior = RBF(length_scale=(LsTlab.ls_guess, LsDeg.ls_guess),
-    #                   length_scale_bounds=((LsTlab.ls_lower, LsTlab.ls_upper), (LsDeg.ls_lower, LsDeg.ls_upper))) + \
-    #               WhiteKernel(1e-6, noise_level_bounds='fixed')
-    # kernel_posterior = RBF(length_scale=(LsTlab.ls_guess),
-    #                        length_scale_bounds=(
-    #                        (LsTlab.ls_lower, LsTlab.ls_upper))) + \
-    #                    WhiteKernel(1e-6, noise_level_bounds='fixed')
-    # kernel_posterior = RBF(length_scale=(LsDeg.ls_guess),
-    #                        length_scale_bounds=(
-    #                        (LsDeg.ls_lower, LsDeg.ls_upper))) + \
-    #                    WhiteKernel(1e-6, noise_level_bounds='fixed')
-
-    # obs_loglike_plots = []
+    # list for appending log-likelihoods
     like_list = []
 
     for (obs_grouping, obs_name, mesh_cart_group) in zip(obs_data_grouped_list, obs_name_grouped_list, mesh_cart_grouped_list):
-    # for (obs_grouping, obs_name, mesh_cart) in zip(obs_data_grouped_list, obs_name_grouped_list, mesh_cart_grouped_list):
-        # generates names for files and searches for whether they exist
         for order_counter in range(1, order_num + 1):
-            # order = np.max(self.nn_orders) - order_num + order_counter
             order = np.max(nn_orders_array) - order_num + order_counter
 
             try:
-                # like_list = []
-
+                # generates names for files and searches for whether they exist
                 if not whether_use_data:
                     raise ValueError("You elected not to use saved data.")
                 else:
-                    # for obs_name in obs_name_grouped_list:
-                    #     # generates names for files and searches for whether they exist
-                    #     for order_counter in range(1, order_num + 1):
-                    # order = np.max(self.nn_orders) - order_num + order_counter
-                    # print("order = " + str(order))
-
                     # if they exist, they are read in, reshaped, and appended to like_list
-                    print(make_likelihood_filename(FileName,
-                                                "data",
-                                                obs_name,
-                                                orders_names_dict[order],
-                                                [variable.logprior_name for variable in variables_array],
-                                                variables_array,
-                                                ))
                     like_list.append(np.reshape(
                         np.loadtxt(make_likelihood_filename(FileName,
                                                             "data",
@@ -2000,129 +1789,73 @@ def plot_posteriors_curvewise(
                                                             )),
                         tuple([len(random_var.var) for random_var in variables_array[marg_bool_array]]),
                     ))
-                    # print(np.reshape(
-                    #     np.loadtxt(make_likelihood_filename(self,
-                    #                                         "data",
-                    #                                         self.orders_names_dict[order],
-                    #                                         [variable.logprior_name for variable in variables_array],
-                    #                                         variables_array,
-                    #                                         )),
-                    #     tuple([len(random_var.var) for random_var in variables_array]),
-                    # ))
-                    # print(tuple([len(random_var.var) for random_var in variables_array]))
-                    # print(like_list)
 
             except:
-                # # initiates the ray kernel for utilizing all processors on the laptop
-                # ray.shutdown()
-                # ray.init()
-        # like_list = []
-
-        # for (obs_grouping, obs_name) in zip(obs_data_grouped_list, obs_name_grouped_list):
-        #     for order_counter in range(1, order_num + 1):
-                # sets the order number
-                # order = np.max(self.nn_orders) - order_num + order_counter
-                # print("order = " + str(order))
-                # orders_nho_ray = ray.put(self.nn_orders[:order])
-                orders_nho_ray = ray.put(nn_orders_array[:order])
-
+                # failing that, generates new data and saves it (if the user chooses)
                 obs_loglike_sum = np.zeros(tuple(len(random_var.var) for random_var in variables_array[marg_bool_array]))
 
                 for (obs_object, mesh_cart) in zip(obs_grouping, mesh_cart_group):
-                # for obs_object in obs_grouping:
                     obs_data_full = obs_object.data
-                    print("data has shape " + str(np.shape(obs_data_full)))
+
                     yref_type = obs_object.ref_type
 
                     if len(np.shape(obs_data_full)) == 2:
+                        # 1D observables
                         if np.shape(obs_data_full)[1] == len(degrees):
+                            # observables that depend only on scattering angle (of which none exist)
+                            # sets kernel
                             kernel_posterior = RBF(length_scale=(LsDeg.ls_guess),
                                                    length_scale_bounds=(
                                                        (LsDeg.ls_bound_lower, LsDeg.ls_bound_upper))) + \
                                                WhiteKernel(1e-6, noise_level_bounds='fixed')
 
-                            # converts the points in t_lab_pts to the current input space
-                            # need new value for t_lab_mom_pt
+                            # converts the points in degrees to the current input space
                             degrees_input = InputSpaceDeg.input_space(**{"deg_input": degrees})
                             degrees_train_pts_input = InputSpaceDeg.input_space(**{"deg_input": degrees_train_pts})
-                            # degrees_input_ray = ray.put(degrees_input)
-
-                            # not sure why we doubly transformed the energies here before
-                            # ratio_points_ray = ray.put(E_to_p(t_lab_pt, interaction=self.nn_interaction))
-                            # ratio_points_ray = ray.put(p_approx(self.p_param, t_lab_mom_pt, degrees))
-                            # ratio_points_ray = ray.put(p_approx(p_param, t_lab_mom_pt, degrees))
 
                             # sieves the data
-                            # obs_data = obs_data_full[..., np.isin(degrees, degrees_train_pts)]
                             obs_data = np.reshape(
                                 obs_data_full,
                                 # (len(self.nn_orders_full), -1))
                                 (len(nn_orders_full_array), -1))
-                            # print("obs_data_full has shape " + str(np.shape(obs_data)))
                             obs_data_train = np.reshape(
                                 obs_data_full[:, np.isin(degrees, degrees_train_pts)],
                                 # (len(self.nn_orders_full), -1))
                                 (len(nn_orders_full_array), -1))
 
+                            # sets yref
                             if yref_type == "dimensionful":
                                 yref = obs_data_train[-1]
                             elif yref_type == "dimensionless":
                                 yref = np.ones((len(degrees_train_pts)))
 
-                            # creates and fits the TruncationGP object
+                            # creates and fits the TruncationTP object
                             gp_post_obs = gm.TruncationTP(kernel_posterior,
-                                                          # ref=sgt_data[0],
                                                           ref=yref,
-                                                          # ref=obs_data[-1],
-                                                          # ref=np.ones((len(t_lab_pts))),
-                                                          # ratio=interp_f_ratio_posterior,
                                                           ratio=ratio_fn,
-                                                          # center=self.center,
-                                                          # disp=self.disp,
-                                                          # df=self.df,
-                                                          # scale=self.std_est,
-                                                          # excluded=self.excluded,
                                                           center=center,
                                                           disp=disp,
                                                           df=df,
                                                           scale=std_est,
                                                           excluded=excluded,
-                                                          # ratio_kws={
-                                                          #     "x_interp": degrees_input,
-                                                          #     # "x_interp": degrees,
-                                                          #     # "p": t_lab_mom_pt,
-                                                          #     "p": p_approx(self.p_param, t_lab_mom_pt,
-                                                          #                   degrees),
-                                                          #     "Q_param": self.Q_param,
-                                                          #     "mpi_var": mpi_true,
-                                                          #     "lambda_var": Lambda_b_true}
                                                           ratio_kws={**ratio_fn_kwargs,
                                                                      **{"p_shape": (len(degrees_train_pts))},
                                                                      **{"p_grid_train": degrees_train_pts[:, None]}
                                                                      }
                                                           )
+                            # fits the TP to data
                             gp_post_obs.fit(scaling_fn(degrees_train_pts_input, **scaling_fn_kwargs)[:, None],
                                             (obs_data_train[:order, :]).T,
-                                            # orders=self.nn_orders_full[:order])
                                             orders = nn_orders_full_array[:order])
 
                             # puts important objects into ray objects
                             gp_post_ray = ray.put(gp_post_obs)
 
                             # calculates the posterior using ray
-                            # log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_ray,
-                            #                             degrees_input_ray, ratio_points_ray)
-                            # log_like = calc_loglike_ray(np.delete(mesh_cart, 2, 1),
                             log_like = calc_loglike_ray(mesh_cart,
                                                         BATCH_SIZE,
                                                         log_likelihood_fn,
                                                         gp_post_ray,
-                                                        # [tlab_input],
-                                                        # np.reshape(p_approx(self.p_param, tlab_mom, np.array([60])),
-                                                        #          (len(tlab_mom))),
-                                                        # p_param = p_param,
-                                                        # p_shape = (len(tlab_train_pts_mom)),
-                                                        # Q_param = Q_param,
                                                         log_likelihood_fn_kwargs={**log_likelihood_fn_kwargs,
                                                                                   **{"p_shape": (len(degrees_train_pts))},
                                                                                   **{"p_grid_train": degrees_train_pts[:, None]}
@@ -2131,261 +1864,124 @@ def plot_posteriors_curvewise(
                             obs_loglike = np.reshape(log_like, tuple(
                                 len(random_var.var) for random_var in variables_array))
 
-                            # experimental new code
                             # adds the log-priors to the log-likelihoods
                             obs_loglike = add_logpriors(variables_array, obs_loglike)
                             # makes sure that the values don't get too big or too small
                             obs_like = np.exp(obs_loglike - np.max(obs_loglike))
-                            # print(np.shape(obs_like))
                             # marginalizes partially
-                            # print(np.array(range(len(variables_array)))[~marg_bool_array])
-                            # print(variables_array[~marg_bool_array])
                             for v, var in zip(np.flip(np.array(range(len(variables_array)))[~marg_bool_array]),
                                               np.flip(variables_array[~marg_bool_array])):
-                                # print("While marginalizing, " + str(v))
                                 obs_like = np.trapz(obs_like, x=variables_array[v].var, axis=v)
-                            # print(np.shape(obs_like))
+
                             # takes the log again to revert to the log-likelihood
                             obs_loglike_2d = np.log(obs_like)
                             obs_loglike_sum += obs_loglike_2d
-                            print("Energy slice, 1D.")
 
                         elif np.shape(obs_data_full)[1] == len(t_lab):
+                            # observables that depend only on scattering angle (e.g., total cross section, or SGT)
                             kernel_posterior = RBF(length_scale=(LsTlab.ls_guess),
                                                    length_scale_bounds=(
                                                        (LsTlab.ls_bound_lower, LsTlab.ls_bound_upper))) + \
                                                WhiteKernel(1e-6, noise_level_bounds='fixed')
 
-                            # # converts the points in t_lab_pts to the current input space
-                            # t_lab_input = InputSpaceTlab.input_space(**{"E_lab": t_lab,
-                            #                                              "interaction": self.nn_interaction})
-                            # t_lab_pts_input = InputSpaceTlab.input_space(**{"E_lab": t_lab_pts,
-                            #                                                  "interaction": self.nn_interaction})
+                            # # converts the points in t_lab to the current input space
                             tlab_input = InputSpaceTlab.input_space(**{"E_lab": t_lab,
                                                                        "interaction": nn_interaction})
-                            # print("tlab_input = " + str(tlab_input))
                             tlab_train_pts_input = InputSpaceTlab.input_space(**{"E_lab": t_lab_train_pts,
                                                                         "interaction": nn_interaction})
-                            # print("tlab_train_pts_input has shape " + str(np.shape(tlab_train_pts_input)))
-                            print("tlab_train_pts_input = " + str(tlab_train_pts_input))
-                            # tlab_test_pts_input = InputSpaceTlab.input_space(**{"E_lab": t_lab_test_pts,
-                            #                                             "interaction": nn_interaction}).T
-                            # print("tlab_test_pts_input = " + str(tlab_test_pts_input))
-                            # tlab_mom = E_to_p(t_lab, interaction=nn_interaction)
-                            # # print("tlab_mom = " + str(tlab_mom))
-                            # tlab_train_pts_mom = E_to_p(t_lab_train_pts, interaction=nn_interaction)
+
+                            # converts points in t_lab to momentum
                             tlab_mom = mom_fn(t_lab, **mom_fn_kwargs)
-                            # print("tlab_mom = " + str(tlab_mom))
                             tlab_train_pts_mom = mom_fn(t_lab_train_pts, **mom_fn_kwargs)
-                            print("tlab_train_pts_mom = " + str(tlab_train_pts_mom))
-                            # tlab_test_pts_mom = E_to_p(t_lab_test_pts, interaction=nn_interaction)
-                            # print("tlab_test_pts_mom = " + str(tlab_test_pts_mom))
-                            # tlab_input_ray = ray.put(tlab_input)
 
                             # sieves the data
-                            # obs_data = obs_data_full[:, np.isin(t_lab, t_lab_pts)]
                             obs_data = np.reshape(
                                 obs_data_full,
                                 # (len(self.nn_orders_full), -1))
                                 (len(nn_orders_full_array), -1))
-                            # print("obs_data_full has shape " + str(np.shape(obs_data)))
                             obs_data_train = np.reshape(
                                 obs_data_full[:, np.isin(t_lab, t_lab_train_pts)],
                                 # (len(self.nn_orders_full), -1))
                                 (len(nn_orders_full_array), -1))
-                            # print("obs_data_train has shape " + str(np.shape(obs_data_train)))
-                            # print("obs_data_train = " + str(obs_data_train[-1]))
-                            # obs_data_test = np.reshape(
-                            #     obs_data_full[:, np.isin(t_lab, t_lab_test_pts)],
-                            #     # (len(self.nn_orders_full), -1))
-                            #     (len(nn_orders_full_array), -1))
-                            # print("obs_data_test has shape " + str(np.shape(obs_data_test)))
 
+                            # sets yref
                             if yref_type == "dimensionful":
                                 yref = obs_data_train[-1]
                             elif yref_type == "dimensionless":
                                 yref = np.ones((len(t_lab_train_pts)))
 
-                            # interp_yref = lambda x_map: interpn([tlab_input], (obs_data_full[-1, ...]).T, x_map)
-                            # print("A random value of yref is " + str(interp_yref(np.array([31.5]))))
-                            # print("interp_yref evaluated at the training points = " + str(interp_yref(tlab_train_pts_input)))
-
-                            # creates and fits the TruncationGP object
+                            # creates and fits the TruncationTP object
                             gp_post_obs = gm.TruncationTP(kernel_posterior,
-                                                          # ref=sgt_data[0],
                                                           ref=yref,
-                                                          # ref= interp_yref,
-                                                          # ref=obs_data[-1],
-                                                          # ref=np.ones((len(t_lab_pts))),
-                                                          # ratio=interp_f_ratio_posterior,
-                                                          # ratio=ratio_fn_posterior,
                                                           ratio=ratio_fn,
-                                                          # center=self.center,
-                                                          # disp=self.disp,
-                                                          # df=self.df,
-                                                          # scale=self.std_est,
-                                                          # excluded=self.excluded,
                                                           center=center,
                                                           disp=disp,
                                                           df=df,
                                                           scale=std_est,
                                                           excluded=excluded,
-                                                          # ratio_kws={
-                                                          #           # "x_interp": [tlab_input],
-                                                          #           # "x_interp": degrees,
-                                                          #           # "p": t_lab_mom_pt,
-                                                          #           # "p": np.reshape(p_approx(self.p_param, tlab_mom,
-                                                          #           #                 np.array([60])), (len(tlab_mom))),
-                                                          #           # "p": np.reshape(p_approx(self.p_param, tlab_train_pts_mom,
-                                                          #           #                    np.array([60])),
-                                                          #           #           (len(tlab_train_pts_mom))),
-                                                          #           "p_param" : p_param,
-                                                          #           "p_shape" : (len(tlab_train_pts_mom)),
-                                                          #           "Q_param": Q_param,
-                                                          #           "mpi_var": mpi_true,
-                                                          #           "lambda_var": Lambda_b_true})
                                                           ratio_kws = {**ratio_fn_kwargs,
                                                                        **{"p_shape" : (len(tlab_train_pts_mom))},
                                                                        **{"p_grid_train" : tlab_train_pts_mom[:, None]}
                                                                        }
                                                           )
-                            print("train data has shape " + str(np.shape((obs_data_train[:order, :]).T)))
-                            print("tlab_train_pts_mom = " + str(tlab_train_pts_mom))
+                            # fits the TP to data
                             gp_post_obs.fit(scaling_fn(tlab_train_pts_input, **scaling_fn_kwargs)[:, None],
-                            # gp_post_obs.fit(tlab_train_pts_mom[:, None],
                                             (obs_data_train[:order, :]).T,
-                                            # orders=self.nn_orders_full[:order])
                                             orders = nn_orders_full_array[:order])
-
-                            # gp_post_obs.fit(tlab_train_pts_input[:, None],
-                            #                 (obs_data_train[:order, :]).T,
-                            #                 orders=self.nn_orders_full[:order])
 
                             # puts important objects into ray objects
                             gp_post_ray = ray.put(gp_post_obs)
-                            # gp_post_ray = gp_post_obs
-                            # t_lab_mom_ray = ray.put(E_to_p(t_lab, interaction=self.nn_interaction))
-                            # t_lab_mom_ray = ray.put(
-                            #     p_approx(self.p_param, E_to_p(t_lab, interaction=self.nn_interaction), 60))
 
                             # calculates the posterior using ray
-                            # log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_ray,
-                            #                             t_lab_input, t_lab_mom_ray)
-                            # log_like = log_likelihood(gp_post_ray,
-                            #                           [tlab_input],
-                            #                           np.reshape(p_approx(self.p_param, tlab_mom, np.array([60])), (len(tlab_mom))),
-                            #                           tlab_test_pts_input[:, None], (obs_data_test[:order, :]).T, mesh_cart)
-                            # print(np.delete(mesh_cart, 1, 1))
-                            # log_like = calc_loglike_ray(np.delete(mesh_cart, 1, 1),
                             log_like=calc_loglike_ray(mesh_cart,
                                                         BATCH_SIZE,
                                                         log_likelihood_fn,
                                                         gp_post_ray,
-                                                        # [tlab_input],
-                                                        # np.reshape(p_approx(self.p_param, tlab_mom, np.array([60])),
-                                                        #          (len(tlab_mom))),
-                                                        # p_param = p_param,
-                                                        # p_shape = (len(tlab_train_pts_mom)),
-                                                        # Q_param = Q_param,
                                                         log_likelihood_fn_kwargs={**log_likelihood_fn_kwargs,
                                                                                   **{"p_shape" : (len(t_lab_train_pts))},
                                                                                   **{"p_grid_train" : tlab_train_pts_mom[:, None]}
                                                                                   }
                                                         )
-                            print("log_like has shape " + str(np.shape(log_like)))
                             obs_loglike = np.reshape(log_like, tuple(
                                 len(random_var.var) for random_var in variables_array))
-                            print("obs_loglike has shape " + str(np.shape(obs_loglike)))
 
-                            # experimental new code
                             # adds the log-priors to the log-likelihoods
                             obs_loglike = add_logpriors(variables_array, obs_loglike)
                             # makes sure that the values don't get too big or too small
                             obs_like = np.exp(obs_loglike - np.max(obs_loglike))
-                            # print(np.shape(obs_like))
                             # marginalizes partially
-                            # print(np.array(range(len(variables_array)))[~marg_bool_array])
-                            # print(variables_array[~marg_bool_array])
                             for v, var in zip(np.flip(np.array(range(len(variables_array)))[~marg_bool_array]),
                                               np.flip(variables_array[~marg_bool_array])):
-                                # print("While marginalizing, " + str(v))
                                 obs_like = np.trapz(obs_like, x=variables_array[v].var, axis=v)
-                            # print(np.shape(obs_like))
                             # takes the log again to revert to the log-likelihood
                             obs_loglike_2d = np.log(obs_like)
                             obs_loglike_sum += obs_loglike_2d
-                            print("Angle slice, 1D.")
 
                     else:
+                        # 2D observables
+                        # sets kernel
                         kernel_posterior = RBF(length_scale=(LsDeg.ls_guess, LsTlab.ls_guess),
                                                length_scale_bounds=((LsDeg.ls_bound_lower, LsDeg.ls_bound_upper),
                                                                     (LsTlab.ls_bound_lower, LsTlab.ls_bound_upper))) + \
                                            WhiteKernel(1e-6, noise_level_bounds='fixed')
-                        # kernel_posterior = RBF(length_scale=(LsTlab.ls_guess, LsDeg.ls_guess),
-                        #                        length_scale_bounds=((LsTlab.ls_bound_lower, LsTlab.ls_bound_upper),
-                        #                                             (LsDeg.ls_bound_lower, LsDeg.ls_bound_upper))) + \
-                        #                    WhiteKernel(1e-6, noise_level_bounds='fixed')
-                        # print(LsTlab.ls_guess)
-                        # print(LsTlab.ls_bound_lower)
-                        # print(LsTlab.ls_bound_upper)
-                        # print(LsDeg.ls_guess)
-                        # print(LsDeg.ls_bound_lower)
-                        # print(LsDeg.ls_bound_upper)
 
-
-                        # for t_lab_pt, t_lab_mom_pt in zip(t_lab_pts,
-                        #                                   E_to_p(t_lab_pts, interaction=self.nn_interaction)):
-                        # converts the points in t_lab_pts to the current input space
-                        # degrees_input = self.inputspace.input_space(**{"deg_input": degrees,
-                        #                                                "p_input": t_lab_mom_pt})
-                        # degrees_pts_input = self.inputspace.input_space(**{"deg_input": degrees_pts,
-                        #                                                    "p_input": t_lab_mom_pt})
-                        # degrees_input_ray = ray.put(degrees_input)
-
-                        # grid_input = self.inputspace.input_space(**{"deg_input": degrees,
-                        #                                             "p_input": E_to_p(t_lab,
-                        #                                                               interaction=self.nn_interaction),
-                        #                                             "E_lab": t_lab,
-                        #                                             "interaction": self.nn_interaction
-                        #                                             })
-                        # grid_pts_input = self.inputspace.input_space(**{"deg_input": degrees_pts,
-                        #                                                 "p_input": E_to_p(t_lab_pts,
-                        #                                                                   interaction=self.nn_interaction),
-                        #                                                 "E_lab": t_lab_pts,
-                        #                                                 "interaction": self.nn_interaction
-                        #                                                 })
-
+                        # converts points in t_lab to the current input space
                         tlab_input = InputSpaceTlab.input_space(**{"E_lab": t_lab,
                                                                     "interaction": nn_interaction})
-                        # print("tlab_input = " + str(tlab_input))
                         tlab_train_pts_input = InputSpaceTlab.input_space(**{"E_lab": t_lab_train_pts,
                                                                         "interaction": nn_interaction})
-                        # print("tlab_train_pts_input = " + str(tlab_train_pts_input))
-                        # tlab_test_pts_input = InputSpaceTlab.input_space(**{"E_lab": t_lab_test_pts,
-                        #                                                "interaction": nn_interaction})
-                        # print("tlab_test_pts_input = " + str(tlab_test_pts_input))
-                        # tlab_mom = E_to_p(t_lab, interaction=nn_interaction)
-                        # # print("tlab_mom = " + str(tlab_mom))
-                        # tlab_train_pts_mom = E_to_p(t_lab_train_pts, interaction=nn_interaction)
-                        tlab_mom = mom_fn(t_lab, **mom_fn_kwargs)
-                        # print("tlab_mom = " + str(tlab_mom))
-                        tlab_train_pts_mom = mom_fn(t_lab_train_pts, **mom_fn_kwargs)
-                        # print("tlab_train_pts_mom = " + str(tlab_train_pts_mom))
-                        # tlab_test_pts_mom = E_to_p(t_lab_test_pts, interaction=nn_interaction)
-                        # print("tlab_test_pts_mom = " + str(tlab_test_pts_mom))
-                        # tlab_input_ray = ray.put(tlab_input)
 
+                        # converts points in t_lab to momentum
+                        tlab_mom = mom_fn(t_lab, **mom_fn_kwargs)
+                        tlab_train_pts_mom = mom_fn(t_lab_train_pts, **mom_fn_kwargs)
+
+                        # converts points in degrees to the current input space
                         degrees_input = InputSpaceDeg.input_space(**{"deg_input": degrees,
                                                                      "p_input" : tlab_mom})
-                        # print("degrees_input = " + str(degrees_input))
                         degrees_train_pts_input = InputSpaceDeg.input_space(**{"deg_input": degrees_train_pts,
                                                                                "p_input" : tlab_train_pts_mom})
-                        print("degrees_train_pts_input has shape " + str(np.shape(degrees_train_pts_input)))
-                        print("degrees_train_pts_input = " + str(degrees_train_pts_input))
-                        # degrees_test_pts_input = InputSpaceDeg.input_space(**{"deg_input": degrees_test_pts})
-                        # print("degrees_test_pts_input = " + str(degrees_test_pts_input))
-                        # degrees_input_ray = ray.put(degrees_input)
 
+                        # creates a grid of training points in the 2D input space
                         if tlab_train_pts_input.ndim == 1 and degrees_train_pts_input.ndim == 1:
                             grid_train = scaling_fn(np.flip(np.array(list(itertools.product(tlab_train_pts_input, degrees_train_pts_input))), axis = 1),
                                             **scaling_fn_kwargs)
@@ -2415,100 +2011,37 @@ def plot_posteriors_curvewise(
                                 ),
                                 axis=1),
                                 **scaling_fn_kwargs)
-                        print("grid_train = " + str(grid_train))
-                        # grid_train = np.flip(np.array(list(itertools.product(tlab_train_pts_mom, degrees_train_pts_input))), axis=1)
-                        # grid_test = np.flip(np.array(list(itertools.product(tlab_test_pts_input, degrees_test_pts_input))), axis = 1)
-
-                        # not sure why we doubly transformed the energies here before
-                        # ratio_points_ray = ray.put(E_to_p(t_lab_pt, interaction=self.nn_interaction))
-                        # p_points_ray = ray.put(p_approx(p_param, tlab_mom, degrees))
 
                         # sieves the data
-                        # print("DSG has shape " + str(np.shape(DSG)))
-                        # obs_data = np.reshape(
-                        #     obs_data_full[:, np.isin(t_lab, t_lab_pts)][..., np.isin(degrees, degrees_pts)],
-                        #     (len(self.nn_orders_full), -1))
                         obs_data = np.reshape(
                             obs_data_full,
-                            # (len(self.nn_orders_full), -1))
                             (len(nn_orders_full_array), -1))
-                        print("obs_data has shape " + str(np.shape(obs_data)))
                         obs_data_train = np.reshape(
                             obs_data_full[:, np.isin(t_lab, t_lab_train_pts)][..., np.isin(degrees, degrees_train_pts)],
-                            # (len(self.nn_orders_full), -1))
                             (len(nn_orders_full_array), -1))
-                        print("obs_data_train has shape " + str(np.shape(obs_data_train)))
-                        print("obs_data_train = " + str(obs_data_train[-1]))
-                        # obs_data_test = np.reshape(
-                        #     obs_data_full[:, np.isin(t_lab, t_lab_test_pts)][..., np.isin(degrees, degrees_test_pts)],
-                        #     # (len(self.nn_orders_full), -1))
-                        #     (len(nn_orders_full_array), -1))
-                        # print("obs_data_test has shape " + str(np.shape(obs_data_test)))
-                        # obs_data = obs_data_full
 
+                        # sets yref
                         if yref_type == "dimensionful":
                             yref = obs_data_train[-1]
                         elif yref_type == "dimensionless":
                             yref = np.ones((len(degrees_train_pts) * len(t_lab_train_pts)))
-                        # print("yref has shape " + str(np.shape(yref)))
-                        # print("yref = " + str(yref))
-                        # print("dsg_data has shape " + str(np.shape(dsg_data)))
-                        # print("dsg_data = " + str(dsg_data))
-                        # print("yref = " + str(dsg_data[0]))
-                        interp_yref = lambda x_map: interpn((degrees_input, tlab_input), (obs_data_full[-1, ...]).T, x_map)
-                        # print(degrees_input)
-                        # print(tlab_input)
-                        # print(interp_yref(np.array([-7.54709580e-01,  7.50308592e+01])))
-                        # # print(interp_yref(np.array([-7.54709580e-01,  1.24424604e+02])))
-                        # print(interp_yref(np.array([-5.00000000e-01,  2.16595434e+01])))
-                        # print(interp_yref(np.array([0.4, 100])))
 
-                        # creates and fits the TruncationGP object
+                        # creates and fits the TruncationTP object
                         gp_post_obs = gm.TruncationTP(kernel_posterior,
                                                       ref=yref,
-                                                      # ref=interp_yref,
-                                                      # ref=dsg_data[0],
-                                                      # ref=obs_data[-1],
-                                                      # ref=np.ones((len(degrees_pts))),
-                                                      # ratio=ratio_fn_posterior,
                                                       ratio=ratio_fn,
-                                                      # center=self.center,
-                                                      # disp=self.disp,
-                                                      # df=self.df,
-                                                      # scale=self.std_est,
-                                                      # excluded=self.excluded,
                                                       center=center,
                                                       disp=disp,
                                                       df=df,
                                                       scale=std_est,
                                                       excluded=excluded,
-                                                      # ratio_kws={
-                                                      #     # "x_interp": (degrees_input, tlab_input),
-                                                      #     # # "x_interp": degrees,
-                                                      #     # # "p": t_lab_mom_pt,
-                                                      #     # "p": p_approx(self.p_param, tlab_mom,
-                                                      #     #               degrees),
-                                                      #     # "Q_param": self.Q_param,
-                                                      #     # "mpi_var": mpi_true,
-                                                      #     # "lambda_var": Lambda_b_true
-                                                      #     "p_param": p_param,
-                                                      #     "p_shape": (len(degrees_train_pts) * len(tlab_train_pts_mom)),
-                                                      #     "Q_param": Q_param,
-                                                      #     "mpi_var": mpi_true,
-                                                      #     "lambda_var": Lambda_b_true
-                                                      # })
                                                       ratio_kws={**ratio_fn_kwargs,
                                                                  **{"p_shape" : (len(degrees_train_pts) * len(tlab_train_pts_mom))},
                                                                  **{"p_grid_train" : np.flip(np.array(list(itertools.product(tlab_train_pts_mom, degrees_train_pts))), axis = 1)}
-                                                                 #   **{"p_grid_train": np.flip(np.array(list(
-                                                                 #     itertools.product(t_lab_train_pts,
-                                                                 #                       degrees_train_pts))), axis=1)}
                                                                  }
 
                                                       )
-                        # print("obs_data_train up to order = " + str(obs_data_train[:order, :]))
-                        # print("obs_data_train transposed up to order = " + str((obs_data_train[:order, :]).T))
-                        # gp_post_obs.fit(np.array(list(itertools.product(degrees_train_pts_input, tlab_train_pts_input))),
+                        # fits the TP to data
                         gp_post_obs.fit(grid_train,
                                         (obs_data_train[:order, :]).T,
                                         # orders=self.nn_orders_full[:order])
@@ -2516,393 +2049,38 @@ def plot_posteriors_curvewise(
 
                         # # puts important objects into ray objects
                         gp_post_ray = ray.put(gp_post_obs)
-                        # gp_post_ray = gp_post_obs
 
                         # calculates the posterior using ray
-                        # log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_ray,
-                        #                 (degrees_input, tlab_input), p_approx(self.p_param, tlab_mom, degrees),
-                        #                 grid_test, obs_data_test)
-                        # log_like = log_likelihood(gp_post_ray,
-                        #                             (degrees_input, tlab_input),
-                        #                             p_approx(self.p_param, tlab_mom, degrees),
-                        #                             grid_test, (obs_data_test[:order, :]).T, mesh_cart)
                         log_like = calc_loglike_ray(mesh_cart,
                                                     BATCH_SIZE,
                                                     log_likelihood_fn,
                                                     gp_post_ray,
-                                                    # [tlab_input],
-                                                    # np.reshape(p_approx(self.p_param, tlab_mom, np.array([60])),
-                                                    #          (len(tlab_mom))),
-                                                    # p_param=p_param,
-                                                    # p_shape=(len(degrees_train_pts) * len(tlab_train_pts_mom)),
-                                                    # Q_param=Q_param,
                                                     log_likelihood_fn_kwargs={**log_likelihood_fn_kwargs,
                                                                               **{"p_shape" : (len(degrees_train_pts) * len(tlab_train_pts_mom))},
                                                                               **{"p_grid_train" : np.flip(np.array(list(itertools.product(tlab_train_pts_mom, degrees_train_pts))), axis = 1)}
-                                                                                # ** {"p_grid_train": np.flip(
-                                                                                #   np.array(list(
-                                                                                #       itertools.product(t_lab_train_pts,
-                                                                                #                         degrees_train_pts))),
-                                                                                #   axis=1)}
                                                                               }
                                                     )
                         obs_loglike = np.reshape(log_like, tuple(
                             len(random_var.var) for random_var in variables_array))
 
-                        # experimental new code
                         # adds the log-priors to the log-likelihoods
-                        print(len(variables_array))
-                        print(np.shape(obs_loglike))
                         obs_loglike = add_logpriors(variables_array, obs_loglike)
                         # makes sure that the values don't get too big or too small
                         obs_like = np.exp(obs_loglike - np.max(obs_loglike))
-                        # print(np.shape(obs_like))
                         # marginalizes partially
-                        # print(np.array(range(len(variables_array)))[~marg_bool_array])
-                        # print(variables_array[~marg_bool_array])
                         for v, var in zip(np.flip(np.array(range(len(variables_array)))[~marg_bool_array]),
                                           np.flip(variables_array[~marg_bool_array])):
-                            # print("While marginalizing, " + str(v))
                             obs_like = np.trapz(obs_like, x=variables_array[v].var, axis=v)
-                        # print(np.shape(obs_like))
                         # takes the log again to revert to the log-likelihood
                         obs_loglike_partmarg = np.log(obs_like)
                         obs_loglike_sum += obs_loglike_partmarg
-                        # obs_loglike = obs_loglike_2d
-                        print("2D.")
 
-                    # if slice_type == "angle":
-                    #     try:
-                    #         # converts the points in t_lab_pts to the current input space
-                    #         t_lab_input = self.inputspace.input_space(**{"E_lab": t_lab,
-                    #                                                      "interaction": self.nn_interaction})
-                    #         t_lab_pts_input = self.inputspace.input_space(**{"E_lab": t_lab_pts,
-                    #                                                          "interaction": self.nn_interaction})
-                    #
-                    #         # sieves the data
-                    #         obs_data = obs_data_full[:, np.isin(t_lab, t_lab_pts)]
-                    #         if yref_type == "dimensionful":
-                    #             yref = obs_data[-1]
-                    #         elif yref_type == "dimensionless":
-                    #             yref = np.ones((len(t_lab_pts)))
-                    #
-                    #         # creates and fits the TruncationGP object
-                    #         gp_post_obs = gm.TruncationTP(self.kernel,
-                    #                                       # ref=sgt_data[0],
-                    #                                       ref = yref,
-                    #                                       # ref=obs_data[-1],
-                    #                                       # ref=np.ones((len(t_lab_pts))),
-                    #                                       ratio=interp_f_ratio_posterior,
-                    #                                       center=self.center,
-                    #                                       disp=self.disp,
-                    #                                       df=self.df,
-                    #                                       scale=self.std_est,
-                    #                                       excluded=self.excluded,
-                    #                                       ratio_kws={"x_interp": t_lab_input,
-                    #                                                  # "p": E_to_p(t_lab, interaction=self.nn_interaction),
-                    #                                                  "p": p_approx(self.p_param, E_to_p(t_lab,
-                    #                                                                                     interaction=self.nn_interaction),
-                    #                                                                60),
-                    #                                                  "Q_param": self.Q_param,
-                    #                                                  "mpi_var": mpi_true,
-                    #                                                  "lambda_var": Lambda_b_true})
-                    #         gp_post_obs.fit(t_lab_pts_input[:, None],
-                    #                         (obs_data[:order]).T,
-                    #                         orders=self.nn_orders_full[:order])
-                    #
-                    #         # puts important objects into ray objects
-                    #         gp_post_ray = ray.put(gp_post_obs)
-                    #         # t_lab_mom_ray = ray.put(E_to_p(t_lab, interaction=self.nn_interaction))
-                    #         t_lab_mom_ray = ray.put(
-                    #             p_approx(self.p_param, E_to_p(t_lab, interaction=self.nn_interaction), 60))
-                    #
-                    #         # calculates the posterior using ray
-                    #         log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_ray,
-                    #                                     t_lab_input, t_lab_mom_ray)
-                    #         obs_loglike = np.reshape(log_like, tuple(
-                    #             len(random_var.var) for random_var in variables_array))
-                    #
-                    #         # experimental new code
-                    #         # adds the log-priors to the log-likelihoods
-                    #         obs_loglike = add_logpriors(variables_array, obs_loglike)
-                    #         # makes sure that the values don't get too big or too small
-                    #         obs_like = np.exp(obs_loglike - np.max(obs_loglike))
-                    #         # print(np.shape(obs_like))
-                    #         # marginalizes partially
-                    #         # print(np.array(range(len(variables_array)))[~marg_bool_array])
-                    #         # print(variables_array[~marg_bool_array])
-                    #         for v, var in zip(np.flip(np.array(range(len(variables_array)))[~marg_bool_array]),
-                    #                           np.flip(variables_array[~marg_bool_array])):
-                    #             # print("While marginalizing, " + str(v))
-                    #             obs_like = np.trapz(obs_like, x=variables_array[v].var, axis=v)
-                    #         # print(np.shape(obs_like))
-                    #         # takes the log again to revert to the log-likelihood
-                    #         obs_loglike_2d = np.log(obs_like)
-                    #         obs_loglike_sum += obs_loglike_2d
-                    #         print("Angle slice, 1D.")
-                    #     except:
-                    #         # obs_loglike = np.zeros(tuple(len(random_var.var) for random_var in variables_array))
-                    #
-                    #         for degrees_pt in degrees_pts:
-                    #             # converts the points in t_lab_pts to the current input space
-                    #             tlab_input = self.inputspace.input_space(**{"deg_input": degrees_pt,
-                    #                                                         "p_input": E_to_p(t_lab,
-                    #                                                                           interaction=self.nn_interaction),
-                    #                                                         "E_lab": t_lab,
-                    #                                                         "interaction": self.nn_interaction
-                    #                                                         })
-                    #             tlab_pts_input = self.inputspace.input_space(**{"deg_input": degrees_pt,
-                    #                                                             "p_input": E_to_p(t_lab_pts,
-                    #                                                                               interaction=self.nn_interaction),
-                    #                                                             "E_lab": t_lab_pts,
-                    #                                                             "interaction": self.nn_interaction
-                    #                                                             })
-                    #             tlab_mom = E_to_p(t_lab, interaction=self.nn_interaction)
-                    #             tlab_input_ray = ray.put(tlab_input)
-                    #
-                    #             # not sure why we doubly transformed the energies here before
-                    #             # ratio_points_ray = ray.put(E_to_p(t_lab, interaction=self.nn_interaction))
-                    #             ratio_points_ray = ray.put(
-                    #                 p_approx(self.p_param, E_to_p(t_lab, interaction=self.nn_interaction),
-                    #                          degrees_pt))
-                    #
-                    #             # sieves the data
-                    #             obs_data = np.reshape(
-                    #                 obs_data_full[:, np.isin(t_lab, t_lab_pts), np.isin(degrees, degrees_pt)],
-                    #                 (len(self.nn_orders_full), -1))
-                    #             if yref_type == "dimensionful":
-                    #                 yref = obs_data[-1]
-                    #             elif yref_type == "dimensionless":
-                    #                 yref = np.ones((len(t_lab_pts)))
-                    #
-                    #             # creates and fits the TruncationGP object
-                    #             gp_post_obs = gm.TruncationTP(self.kernel,
-                    #                              ref = yref,
-                    #                              # ref=obs_data[-1],
-                    #                              # ref=np.ones((len(t_lab_pts))),
-                    #                              # ref=spin_data[-1],
-                    #                              ratio=interp_f_ratio_posterior,
-                    #                              center=self.center,
-                    #                              disp=self.disp,
-                    #                              df=self.df,
-                    #                              scale=self.std_est,
-                    #                              excluded=self.excluded,
-                    #                              ratio_kws={"x_interp": tlab_input,
-                    #                                         # "p": tlab_mom,
-                    #                                         "p": p_approx(self.p_param,
-                    #                                                       tlab_mom,
-                    #                                                       degrees_pt),
-                    #                                         "Q_param": self.Q_param,
-                    #                                         "mpi_var": mpi_true,
-                    #                                         "lambda_var": Lambda_b_true})
-                    #
-                    #             gp_post_obs.fit(tlab_pts_input[:, None],
-                    #                                   (obs_data[:order, :]).T,
-                    #                                   orders=self.nn_orders_full[:order])
-                    #
-                    #             # puts important objects into ray objects
-                    #             gp_post_ray = ray.put(gp_post_obs)
-                    #
-                    #             # calculates the posterior using ray
-                    #             log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_ray,
-                    #                                         tlab_input_ray, ratio_points_ray)
-                    #             obs_loglike = np.reshape(log_like, tuple(
-                    #                 len(random_var.var) for random_var in variables_array))
-                    #
-                    #             # experimental new code
-                    #             # adds the log-priors to the log-likelihoods
-                    #             obs_loglike = add_logpriors(variables_array, obs_loglike)
-                    #             # makes sure that the values don't get too big or too small
-                    #             obs_like = np.exp(obs_loglike - np.max(obs_loglike))
-                    #             # print(np.shape(obs_like))
-                    #             # marginalizes partially
-                    #             # print(np.array(range(len(variables_array)))[~marg_bool_array])
-                    #             # print(variables_array[~marg_bool_array])
-                    #             for v, var in zip(np.flip(np.array(range(len(variables_array)))[~marg_bool_array]),
-                    #                               np.flip(variables_array[~marg_bool_array])):
-                    #                 # print("While marginalizing, " + str(v))
-                    #                 obs_like = np.trapz(obs_like, x=variables_array[v].var, axis=v)
-                    #             # print(np.shape(obs_like))
-                    #             # takes the log again to revert to the log-likelihood
-                    #             obs_loglike_2d = np.log(obs_like)
-                    #             obs_loglike_sum += obs_loglike_2d
-                    #         print("Angle slices, 2D.")
-                    # elif slice_type == "energy":
-                    #     try:
-                    #         # can never test this section
-                    #
-                    #         # converts the points in t_lab_pts to the current input space
-                    #         degrees_input = self.inputspace.input_space(**{"deg_input": degrees,
-                    #                                                        "p_input": t_lab_mom_pt})
-                    #         degrees_pts_input = self.inputspace.input_space(**{"deg_input": degrees_pts,
-                    #                                                            "p_input": t_lab_mom_pt})
-                    #         degrees_input_ray = ray.put(degrees_input)
-                    #
-                    #         # not sure why we doubly transformed the energies here before
-                    #         # ratio_points_ray = ray.put(E_to_p(t_lab_pt, interaction=self.nn_interaction))
-                    #         ratio_points_ray = ray.put(p_approx(self.p_param, t_lab_mom_pt, degrees))
-                    #
-                    #         # sieves the data
-                    #         obs_data = obs_data_full[..., np.isin(degrees, degrees_pts)]
-                    #         if yref_type == "dimensionful":
-                    #             yref = obs_data[-1]
-                    #         elif yref_type == "dimensionless":
-                    #             yref = np.ones((len(degrees_pts)))
-                    #
-                    #         # creates and fits the TruncationGP object
-                    #         gp_post_obs = gm.TruncationTP(self.kernel,
-                    #                                       # ref=sgt_data[0],
-                    #                                       ref = yref,
-                    #                                       # ref=obs_data[-1],
-                    #                                       # ref=np.ones((len(t_lab_pts))),
-                    #                                       ratio=interp_f_ratio_posterior,
-                    #                                       center=self.center,
-                    #                                       disp=self.disp,
-                    #                                       df=self.df,
-                    #                                       scale=self.std_est,
-                    #                                       excluded=self.excluded,
-                    #                                       ratio_kws={
-                    #                                           "x_interp": degrees_input,
-                    #                                           # "x_interp": degrees,
-                    #                                           # "p": t_lab_mom_pt,
-                    #                                           "p": p_approx(self.p_param, t_lab_mom_pt,
-                    #                                                         degrees),
-                    #                                           "Q_param": self.Q_param,
-                    #                                           "mpi_var": mpi_true,
-                    #                                           "lambda_var": Lambda_b_true})
-                    #         gp_post_obs.fit(degrees_pts_input[:, None],
-                    #                         (obs_data[:order]).T,
-                    #                         orders=self.nn_orders_full[:order])
-                    #
-                    #         # puts important objects into ray objects
-                    #         gp_post_ray = ray.put(gp_post_obs)
-                    #
-                    #         # calculates the posterior using ray
-                    #         log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_ray,
-                    #                                     degrees_input_ray, ratio_points_ray)
-                    #         obs_loglike = np.reshape(log_like, tuple(
-                    #             len(random_var.var) for random_var in variables_array))
-                    #
-                    #         # experimental new code
-                    #         # adds the log-priors to the log-likelihoods
-                    #         obs_loglike = add_logpriors(variables_array, obs_loglike)
-                    #         # makes sure that the values don't get too big or too small
-                    #         obs_like = np.exp(obs_loglike - np.max(obs_loglike))
-                    #         # print(np.shape(obs_like))
-                    #         # marginalizes partially
-                    #         # print(np.array(range(len(variables_array)))[~marg_bool_array])
-                    #         # print(variables_array[~marg_bool_array])
-                    #         for v, var in zip(np.flip(np.array(range(len(variables_array)))[~marg_bool_array]),
-                    #                           np.flip(variables_array[~marg_bool_array])):
-                    #             # print("While marginalizing, " + str(v))
-                    #             obs_like = np.trapz(obs_like, x=variables_array[v].var, axis=v)
-                    #         # print(np.shape(obs_like))
-                    #         # takes the log again to revert to the log-likelihood
-                    #         obs_loglike_2d = np.log(obs_like)
-                    #         obs_loglike_sum += obs_loglike_2d
-                    #         print("Energy slice, 1D.")
-                    #     except:
-                    #         # obs_loglike = np.zeros(tuple(len(random_var.var) for random_var in variables_array))
-                    #
-                    #         for t_lab_pt, t_lab_mom_pt in zip(t_lab_pts,
-                    #                                           E_to_p(t_lab_pts, interaction=self.nn_interaction)):
-                    #             # converts the points in t_lab_pts to the current input space
-                    #             degrees_input = self.inputspace.input_space(**{"deg_input": degrees,
-                    #                                                            "p_input": t_lab_mom_pt})
-                    #             degrees_pts_input = self.inputspace.input_space(**{"deg_input": degrees_pts,
-                    #                                                                "p_input": t_lab_mom_pt})
-                    #             degrees_input_ray = ray.put(degrees_input)
-                    #
-                    #             # not sure why we doubly transformed the energies here before
-                    #             # ratio_points_ray = ray.put(E_to_p(t_lab_pt, interaction=self.nn_interaction))
-                    #             ratio_points_ray = ray.put(p_approx(self.p_param, t_lab_mom_pt, degrees))
-                    #
-                    #             # sieves the data
-                    #             # print("DSG has shape " + str(np.shape(DSG)))
-                    #             obs_data = np.reshape(
-                    #                 obs_data_full[:, np.isin(t_lab, t_lab_pt)][..., np.isin(degrees, degrees_pts)],
-                    #                 (len(self.nn_orders_full), -1))
-                    #             if yref_type == "dimensionful":
-                    #                 yref = obs_data[-1]
-                    #             elif yref_type == "dimensionless":
-                    #                 yref = np.ones((len(degrees_pts)))
-                    #             # print("dsg_data has shape " + str(np.shape(dsg_data)))
-                    #             # print("dsg_data = " + str(dsg_data))
-                    #             # print("yref = " + str(dsg_data[0]))
-                    #             # creates and fits the TruncationGP object
-                    #             gp_post_obs = gm.TruncationTP(self.kernel,
-                    #                                           ref = yref,
-                    #                                           # ref=dsg_data[0],
-                    #                                           # ref=obs_data[-1],
-                    #                                           # ref=np.ones((len(degrees_pts))),
-                    #                                           ratio=interp_f_ratio_posterior,
-                    #                                           center=self.center,
-                    #                                           disp=self.disp,
-                    #                                           df=self.df,
-                    #                                           scale=self.std_est,
-                    #                                           excluded=self.excluded,
-                    #                                           ratio_kws={
-                    #                                               "x_interp": degrees_input,
-                    #                                               # "x_interp": degrees,
-                    #                                               # "p": t_lab_mom_pt,
-                    #                                               "p": p_approx(self.p_param, t_lab_mom_pt,
-                    #                                                             degrees),
-                    #                                               "Q_param": self.Q_param,
-                    #                                               "mpi_var": mpi_true,
-                    #                                               "lambda_var": Lambda_b_true})
-                    #
-                    #             gp_post_obs.fit(degrees_pts_input[:, None],
-                    #                             (obs_data[:order, :]).T,
-                    #                             orders=self.nn_orders_full[:order])
-                    #
-                    #             # puts important objects into ray objects
-                    #             gp_post_ray = ray.put(gp_post_obs)
-                    #
-                    #             # calculates the posterior using ray
-                    #             log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_ray,
-                    #                                         degrees_input_ray, ratio_points_ray)
-                    #             obs_loglike = np.reshape(log_like, tuple(
-                    #                 len(random_var.var) for random_var in variables_array))
-                    #
-                    #             # experimental new code
-                    #             # adds the log-priors to the log-likelihoods
-                    #             obs_loglike = add_logpriors(variables_array, obs_loglike)
-                    #             # makes sure that the values don't get too big or too small
-                    #             obs_like = np.exp(obs_loglike - np.max(obs_loglike))
-                    #             # print(np.shape(obs_like))
-                    #             # marginalizes partially
-                    #             # print(np.array(range(len(variables_array)))[~marg_bool_array])
-                    #             # print(variables_array[~marg_bool_array])
-                    #             for v, var in zip(np.flip(np.array(range(len(variables_array)))[~marg_bool_array]),
-                    #                               np.flip(variables_array[~marg_bool_array])):
-                    #                 # print("While marginalizing, " + str(v))
-                    #                 obs_like = np.trapz(obs_like, x=variables_array[v].var, axis=v)
-                    #             # print(np.shape(obs_like))
-                    #             # takes the log again to revert to the log-likelihood
-                    #             obs_loglike_2d = np.log(obs_like)
-                    #             obs_loglike_sum += obs_loglike_2d
-                    #         # obs_loglike = obs_loglike_2d
-                    #         print("Energy slices, 2D.")
-
-                    # # sums log-likelihood
-                    # obs_loglike_sum += obs_loglike
-
-                # # appends log-likelihood
-                # obs_loglike_plots.append(obs_loglike_sum)
-
-                # obs_like = [np.exp(oll - np.max(oll)) for oll in obs_loglike_plots]
+                # makes sure that the values don't get too big or too small
                 obs_like = np.exp(obs_loglike_sum - np.max(obs_loglike_sum))
-                # print(np.shape(obs_like))
-                # like_list.append(obs_like)
-                # print(np.shape(like_list))
-                # print("We made it this far!")
-                # print(make_likelihood_filename(self,
-                #                             "data",
-                #                             self.orders_names_dict[order],
-                #                             [variable.logprior_name for variable in variables_array],
-                #                             variables_array,
-                #                             ))
+
+
                 if whether_save_data:
+                    # saves data, if the user chooses
                     np.savetxt(make_likelihood_filename(FileName,
                                                         "data",
                                                         obs_name,
@@ -2913,581 +2091,25 @@ def plot_posteriors_curvewise(
                                np.reshape(obs_like, (np.prod(
                                    [len(random_var.var) for random_var in variables_array[marg_bool_array]]))))
 
-                # print(obs_like)
                 like_list.append(obs_like)
-                print("Before reshaping, like_list has shape " + str(np.shape(like_list)))
 
-                # if self.observable_name == "SGT" or plot_all_obs or (slice_type == "angle" and combine_all_obs):
-                #     # converts the points in t_lab_pts to the current input space
-                #     t_lab_input = self.inputspace.input_space(**{"E_lab": t_lab,
-                #                                                  "interaction": self.nn_interaction})
-                #     t_lab_pts_input = self.inputspace.input_space(**{"E_lab": t_lab_pts,
-                #                                                      "interaction": self.nn_interaction})
-                #
-                #     # sieves the data
-                #     obs_data = SGT[:, np.isin(t_lab, t_lab_pts)]
-                #
-                #     # creates and fits the TruncationGP object
-                #     gp_post_obs = gm.TruncationTP(self.kernel,
-                #                                       # ref=sgt_data[0],
-                #                                       ref=obs_data[-1],
-                #                                       # ref=np.ones((len(t_lab_pts))),
-                #                                       ratio=interp_f_ratio_posterior,
-                #                                       center=self.center,
-                #                                       disp=self.disp,
-                #                                       df=self.df,
-                #                                       scale=self.std_est,
-                #                                       excluded=self.excluded,
-                #                                       ratio_kws={"x_interp": t_lab_input,
-                #                                                  # "p": E_to_p(t_lab, interaction=self.nn_interaction),
-                #                                                  "p": p_approx(self.p_param, E_to_p(t_lab, interaction=self.nn_interaction), 60),
-                #                                                  "Q_param": self.Q_param,
-                #                                                  "mpi_var": mpi_true,
-                #                                                  "lambda_var": Lambda_b_true})
-                #     gp_post_obs.fit(t_lab_pts_input[:, None],
-                #                         (obs_data[:order]).T,
-                #                         orders=self.nn_orders_full[:order])
-                #
-                #     # puts important objects into ray objects
-                #     gp_post_ray = ray.put(gp_post_obs)
-                #     # t_lab_mom_ray = ray.put(E_to_p(t_lab, interaction=self.nn_interaction))
-                #     t_lab_mom_ray = ray.put(p_approx(self.p_param, E_to_p(t_lab, interaction=self.nn_interaction), 60))
-                #
-                #     # calculates the posterior using ray
-                #     log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_ray,
-                #                                 t_lab_input, t_lab_mom_ray)
-                #     # log_like_ids = []
-                #     # for i in range(0, len(mesh_cart), BATCH_SIZE):
-                #     #     batch = mesh_cart[i: i + BATCH_SIZE]
-                #     #     log_like_ids.append(log_likelihood.remote(gp_post_nho_ray,
-                #     #                                               t_lab_input, t_lab_mom_ray, batch))
-                #     # log_like = list(itertools.chain(*ray.get(log_like_ids)))
-                #     obs_loglike = np.reshape(log_like, tuple(len(random_var.var) for random_var in variables_array))
-                #
-                #     # experimental new code
-                #     # adds the log-priors to the log-likelihoods
-                #     obs_loglike = add_logpriors(variables_array, obs_loglike)
-                #     # makes sure that the values don't get too big or too small
-                #     obs_like = np.exp(obs_loglike - np.max(obs_loglike))
-                #     print(np.shape(obs_like))
-                #     # marginalizes partially
-                #     print(np.array(range(len(variables_array)))[~marg_bool_array])
-                #     print(variables_array[~marg_bool_array])
-                #     for v, var in zip(np.array(range(len(variables_array)))[~marg_bool_array], variables_array[~marg_bool_array]):
-                #         # print("While marginalizing, " + str(v))
-                #         obs_like = np.trapz(obs_like, x=variables_array[v].var, axis=v)
-                #     print(np.shape(obs_like))
-                #     # takes the log again to revert to the log-likelihood
-                #     obs_loglike = np.log(obs_like)
-                #
-                #     # appends log-likelihood
-                #     obs_loglike_plots.append(obs_loglike)
-                #     print("Done.")
-                # if self.observable_name == "DSG" or plot_all_obs or combine_all_obs:
-                #     obs_loglike = np.zeros(tuple(len(random_var.var) for random_var in variables_array))
-                #
-                #     if slice_type == "energy":
-                #         for t_lab_pt, t_lab_mom_pt in zip(t_lab_pts, E_to_p(t_lab_pts, interaction=self.nn_interaction)):
-                #             # converts the points in t_lab_pts to the current input space
-                #             degrees_input = self.inputspace.input_space(**{"deg_input": degrees,
-                #                                                            "p_input": t_lab_mom_pt})
-                #             degrees_pts_input = self.inputspace.input_space(**{"deg_input": degrees_pts,
-                #                                                                "p_input": t_lab_mom_pt})
-                #             degrees_input_ray = ray.put(degrees_input)
-                #
-                #             # not sure why we doubly transformed the energies here before
-                #             # ratio_points_ray = ray.put(E_to_p(t_lab_pt, interaction=self.nn_interaction))
-                #             ratio_points_ray = ray.put(p_approx(self.p_param, t_lab_mom_pt, degrees))
-                #
-                #             # sieves the data
-                #             # print("DSG has shape " + str(np.shape(DSG)))
-                #             obs_data = np.reshape(DSG[:, np.isin(t_lab, t_lab_pt)][..., np.isin(degrees, degrees_pts)],
-                #                                   (len(self.nn_orders_full), -1))
-                #             # print("dsg_data has shape " + str(np.shape(dsg_data)))
-                #             # print("dsg_data = " + str(dsg_data))
-                #             # print("yref = " + str(dsg_data[0]))
-                #             # creates and fits the TruncationGP object
-                #             gp_post_obs = gm.TruncationTP(self.kernel,
-                #                                           # ref=dsg_data[0],
-                #                                           ref=obs_data[-1],
-                #                                           # ref=np.ones((len(degrees_pts))),
-                #                                           ratio=interp_f_ratio_posterior,
-                #                                           center=self.center,
-                #                                           disp=self.disp,
-                #                                           df=self.df,
-                #                                           scale=self.std_est,
-                #                                           excluded=self.excluded,
-                #                                           ratio_kws={
-                #                                                      "x_interp": degrees_input,
-                #                                                      # "x_interp": degrees,
-                #                                                      # "p": t_lab_mom_pt,
-                #                                                      "p": p_approx(self.p_param, t_lab_mom_pt, degrees),
-                #                                                      "Q_param": self.Q_param,
-                #                                                      "mpi_var": mpi_true,
-                #                                                      "lambda_var": Lambda_b_true})
-                #             # gp_post_dsg_nho.fit(degrees_pts_input[:, None],
-                #             #                       dsg_data.T,
-                #             #                       orders = self.nn_orders_full,
-                #             #                       orders_eval = self.nn_orders[:order])
-                #             gp_post_obs.fit(degrees_pts_input[:, None],
-                #                                 (obs_data[:order, :]).T,
-                #                                 orders=self.nn_orders_full[:order])
-                #
-                #             # puts important objects into ray objects
-                #             gp_post_ray = ray.put(gp_post_obs)
-                #
-                #             # calculates the posterior using ray
-                #             log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_ray,
-                #                                         degrees_input_ray, ratio_points_ray)
-                #             # log_like_ids = []
-                #             # for i in range(0, len(mesh_cart), BATCH_SIZE):
-                #             #     batch = mesh_cart[i: i + BATCH_SIZE]
-                #             #     log_like_ids.append(log_likelihood.remote(gp_post_nho_ray,
-                #             #                                               degrees_input_ray, ratio_points_ray, batch))
-                #             # log_like = list(itertools.chain(*ray.get(log_like_ids)))
-                #             obs_loglike += np.reshape(log_like, tuple(len(random_var.var) for random_var in variables_array))
-                #
-                #             # experimental new code
-                #             # adds the log-priors to the log-likelihoods
-                #             obs_loglike = add_logpriors(variables_array, obs_loglike)
-                #             # makes sure that the values don't get too big or too small
-                #             obs_like = np.exp(obs_loglike - np.max(obs_loglike))
-                #             print(np.shape(obs_like))
-                #             # marginalizes partially
-                #             print(np.array(range(len(variables_array)))[~marg_bool_array])
-                #             print(variables_array[~marg_bool_array])
-                #             for v, var in zip(np.array(range(len(variables_array)))[~marg_bool_array],
-                #                               variables_array[~marg_bool_array]):
-                #                 # print("While marginalizing, " + str(v))
-                #                 obs_like = np.trapz(obs_like, x=variables_array[v].var, axis=v)
-                #             print(np.shape(obs_like))
-                #             # takes the log again to revert to the log-likelihood
-                #             obs_loglike_2d = np.log(obs_like)
-                #         obs_loglike = obs_loglike_2d
-                #         obs_loglike_plots.append(obs_loglike)
-                #         print("Done.")
-                #     elif slice_type == "angle":
-                #         for degrees_pt in degrees_pts:
-                #             # converts the points in t_lab_pts to the current input space
-                #             tlab_input = self.inputspace.input_space(**{"deg_input": degrees_pt,
-                #                                                         "p_input": E_to_p(t_lab,
-                #                                                                           interaction=self.nn_interaction),
-                #                                                         "E_lab": t_lab,
-                #                                                         "interaction": self.nn_interaction
-                #                                                         })
-                #             tlab_pts_input = self.inputspace.input_space(**{"deg_input": degrees_pt,
-                #                                                         "p_input": E_to_p(t_lab_pts,
-                #                                                                           interaction=self.nn_interaction),
-                #                                                         "E_lab": t_lab_pts,
-                #                                                         "interaction": self.nn_interaction
-                #                                                         })
-                #             tlab_mom = E_to_p(t_lab, interaction=self.nn_interaction)
-                #             tlab_input_ray = ray.put(tlab_input)
-                #
-                #             # not sure why we doubly transformed the energies here before
-                #             # ratio_points_ray = ray.put(E_to_p(t_lab, interaction=self.nn_interaction))
-                #             ratio_points_ray = ray.put(p_approx(self.p_param, E_to_p(t_lab, interaction=self.nn_interaction), degrees_pt))
-                #
-                #             # sieves the data
-                #             obs_data = np.reshape(DSG[:, np.isin(t_lab, t_lab_pts), np.isin(degrees, degrees_pt)],
-                #                                   (len(self.nn_orders_full), -1))
-                #             # print("dsg_data has shape " + str(np.shape(dsg_data)))
-                #
-                #             # creates and fits the TruncationGP object
-                #             gp_post_obs = gm.TruncationTP(self.kernel,
-                #                                               # ref=dsg_data[0],
-                #                                                 ref=obs_data[-1],
-                #                                               # ref=np.ones((len(degrees_pts))),
-                #                                               ratio=interp_f_ratio_posterior,
-                #                                               center=self.center,
-                #                                               disp=self.disp,
-                #                                               df=self.df,
-                #                                               scale=self.std_est,
-                #                                               excluded=self.excluded,
-                #                                               ratio_kws={"x_interp": tlab_input,
-                #                                                          # "p": tlab_mom,
-                #                                                          "p": p_approx(self.p_param, tlab_mom, degrees_pt),
-                #                                                          "Q_param": self.Q_param,
-                #                                                          "mpi_var": mpi_true,
-                #                                                          "lambda_var": Lambda_b_true})
-                #             # gp_post_dsg_nho.fit(degrees_pts_input[:, None],
-                #             #                       dsg_data.T,
-                #             #                       orders = self.nn_orders_full,
-                #             #                       orders_eval = self.nn_orders[:order])
-                #             gp_post_obs.fit(tlab_pts_input[:, None],
-                #                                 (obs_data[:order, :]).T,
-                #                                 orders=self.nn_orders_full[:order])
-                #
-                #             # puts important objects into ray objects
-                #             gp_post_ray = ray.put(gp_post_obs)
-                #
-                #             # calculates the posterior using ray
-                #             log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_ray,
-                #                                         tlab_input_ray, ratio_points_ray)
-                #             # log_like_ids = []
-                #             # for i in range(0, len(mesh_cart), BATCH_SIZE):
-                #             #     batch = mesh_cart[i: i + BATCH_SIZE]
-                #             #     log_like_ids.append(log_likelihood.remote(gp_post_nho_ray,
-                #             #                                               degrees_input_ray, ratio_points_ray, batch))
-                #             # log_like = list(itertools.chain(*ray.get(log_like_ids)))
-                #             obs_loglike += np.reshape(log_like,
-                #                                       tuple(len(random_var.var) for random_var in variables_array))
-                #
-                #             # experimental new code
-                #             # adds the log-priors to the log-likelihoods
-                #             obs_loglike = add_logpriors(variables_array, obs_loglike)
-                #             # makes sure that the values don't get too big or too small
-                #             obs_like = np.exp(obs_loglike - np.max(obs_loglike))
-                #             print(np.shape(obs_like))
-                #             # marginalizes partially
-                #             print(np.array(range(len(variables_array)))[~marg_bool_array])
-                #             print(variables_array[~marg_bool_array])
-                #             for v, var in zip(np.array(range(len(variables_array)))[~marg_bool_array],
-                #                               variables_array[~marg_bool_array]):
-                #                 # print("While marginalizing, " + str(v))
-                #                 obs_like = np.trapz(obs_like, x=variables_array[v].var, axis=v)
-                #             print(np.shape(obs_like))
-                #             # takes the log again to revert to the log-likelihood
-                #             obs_loglike_2d = np.log(obs_like)
-                #         obs_loglike = obs_loglike_2d
-                #         if combine_all_obs:
-                #             obs_loglike_plots += obs_loglike
-                #             print("Done.")
-                #         else:
-                #             obs_loglike_plots.append(obs_loglike)
-                # if self.observable_name == "A" or self.observable_name == "AY" or \
-                #         self.observable_name == "D" or self.observable_name == "AYY" or \
-                #         self.observable_name == "AXX"  or plot_all_obs or combine_all_obs:
-                #     obs_loglike = np.zeros(tuple(len(random_var.var) for random_var in variables_array))
-                #     spin_obs_list = [AY, A, D, AXX, AYY]
-                #     # spin_obs_list = [D]
-                #
-                #     if slice_type == "energy":
-                #         for t_lab_pt, t_lab_mom_pt in zip(t_lab_pts, E_to_p(t_lab_pts, interaction=self.nn_interaction)):
-                #             # converts the points in t_lab_pts to the current input space
-                #             degrees_input = self.inputspace.input_space(**{"deg_input": degrees,
-                #                                                            "p_input": t_lab_mom_pt})
-                #             degrees_pts_input = self.inputspace.input_space(**{"deg_input": degrees_pts,
-                #                                                                "p_input": t_lab_mom_pt})
-                #             degrees_input_ray = ray.put(degrees_input)
-                #
-                #             # not sure why we doubly transformed the energies here before
-                #             # ratio_points_ray = ray.put(E_to_p(t_lab_pt, interaction=self.nn_interaction))
-                #             ratio_points_ray = ray.put(p_approx(self.p_param, t_lab_mom_pt, degrees))
-                #
-                #             gp_fits_spins = []
-                #             # gp_fits_spins_ho = []
-                #
-                #             for so, spin_obs in enumerate(spin_obs_list):
-                #                 # sieves the data
-                #                 spin_data = np.reshape(
-                #                     spin_obs[:, np.isin(t_lab, t_lab_pt)][..., np.isin(degrees, degrees_pts)],
-                #                     (len(self.nn_orders_full), -1))
-                #
-                #                 # creates and fits the TruncationGP object
-                #                 gp_fits_spins.append(gm.TruncationTP(self.kernel,
-                #                                                          ref=np.ones((len(degrees_pts))),
-                #                                                          # ref=spin_data[-1],
-                #                                                          ratio=interp_f_ratio_posterior,
-                #                                                          center=self.center,
-                #                                                          disp=self.disp,
-                #                                                          df=self.df,
-                #                                                          scale=self.std_est,
-                #                                                          excluded=self.excluded,
-                #                                                          ratio_kws={"x_interp": degrees_input,
-                #                                                                     # "p": t_lab_mom_pt,
-                #                                                                     "p": p_approx(self.p_param,
-                #                                                                                   t_lab_mom_pt,
-                #                                                                                   degrees),
-                #                                                                     "Q_param": self.Q_param,
-                #                                                                     "mpi_var": mpi_true,
-                #                                                                     "lambda_var": Lambda_b_true}))
-                #                 # gp_fits_spins_nho[so].fit(degrees_pts_input[:, None],
-                #                 #                       spin_data.T,
-                #                 #                       orders = self.nn_orders_full,
-                #                 #                       orders_eval = self.nn_orders[:order])
-                #                 gp_fits_spins[so].fit(degrees_pts_input[:, None],
-                #                                           (spin_data[:order, :]).T,
-                #                                           orders=self.nn_orders_full[:order])
-                #
-                #             for gp_fit_spins in gp_fits_spins:
-                #                 # puts important objects into ray objects
-                #                 gp_post_ray = ray.put(gp_fit_spins)
-                #
-                #                 # calculates the posterior using ray
-                #                 log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_ray,
-                #                     degrees_input_ray, ratio_points_ray)
-                #                 # log_like_ids = []
-                #                 # for i in range(0, len(mesh_cart), BATCH_SIZE):
-                #                 #     batch = mesh_cart[i: i + BATCH_SIZE]
-                #                 #     log_like_ids.append(log_likelihood.remote(gp_post_nho_ray,
-                #                 #                                               degrees_input_ray, ratio_points_ray, batch))
-                #                 # log_like = list(itertools.chain(*ray.get(log_like_ids)))
-                #                 obs_loglike += np.reshape(log_like, tuple(len(random_var.var) for random_var in variables_array))
-                #
-                #                 # experimental new code
-                #                 # adds the log-priors to the log-likelihoods
-                #                 obs_loglike = add_logpriors(variables_array, obs_loglike)
-                #                 # makes sure that the values don't get too big or too small
-                #                 obs_like = np.exp(obs_loglike - np.max(obs_loglike))
-                #                 print(np.shape(obs_like))
-                #                 # marginalizes partially
-                #                 print(np.array(range(len(variables_array)))[~marg_bool_array])
-                #                 print(variables_array[~marg_bool_array])
-                #                 for v, var in zip(np.array(range(len(variables_array)))[~marg_bool_array],
-                #                                   variables_array[~marg_bool_array]):
-                #                     # print("While marginalizing, " + str(v))
-                #                     obs_like = np.trapz(obs_like, x=variables_array[v].var, axis=v)
-                #                 print(np.shape(obs_like))
-                #                 # takes the log again to revert to the log-likelihood
-                #                 obs_loglike_2d = np.log(obs_like)
-                #         obs_loglike = obs_loglike_2d
-                #         if combine_all_obs:
-                #             obs_loglike_plots += obs_loglike
-                #             print("Done.")
-                #         else:
-                #             obs_loglike_plots.append(obs_loglike)
-                #     elif slice_type == "angle":
-                #         for degrees_pt in degrees_pts:
-                #             # converts the points in t_lab_pts to the current input space
-                #             tlab_input = self.inputspace.input_space(**{"deg_input": degrees_pt,
-                #                                                         "p_input": E_to_p(t_lab,
-                #                                                                           interaction=self.nn_interaction),
-                #                                                         "E_lab": t_lab,
-                #                                                         "interaction": self.nn_interaction
-                #                                                         })
-                #             tlab_pts_input = self.inputspace.input_space(**{"deg_input": degrees_pt,
-                #                                                         "p_input": E_to_p(t_lab_pts,
-                #                                                                           interaction=self.nn_interaction),
-                #                                                         "E_lab": t_lab_pts,
-                #                                                         "interaction": self.nn_interaction
-                #                                                         })
-                #             tlab_mom = E_to_p(t_lab, interaction=self.nn_interaction)
-                #             tlab_input_ray = ray.put(tlab_input)
-                #
-                #             # not sure why we doubly transformed the energies here before
-                #             # ratio_points_ray = ray.put(E_to_p(t_lab, interaction=self.nn_interaction))
-                #             ratio_points_ray = ray.put(
-                #                 p_approx(self.p_param, E_to_p(t_lab, interaction=self.nn_interaction), degrees_pt))
-                #
-                #             gp_fits_spins = []
-                #
-                #             for so, spin_obs in enumerate(spin_obs_list):
-                #                 # sieves the data
-                #                 spin_data = np.reshape(
-                #                     spin_obs[:, np.isin(t_lab, t_lab_pts), np.isin(degrees, degrees_pt)],
-                #                                   (len(self.nn_orders_full), -1))
-                #
-                #                 # creates and fits the TruncationGP object
-                #                 gp_fits_spins.append(gm.TruncationTP(self.kernel,
-                #                                                   ref=np.ones((len(t_lab_pts))),
-                #                                                   # ref=spin_data[-1],
-                #                                                   ratio=interp_f_ratio_posterior,
-                #                                                   center=self.center,
-                #                                                   disp=self.disp,
-                #                                                   df=self.df,
-                #                                                   scale=self.std_est,
-                #                                                   excluded=self.excluded,
-                #                                                   ratio_kws={"x_interp": tlab_input,
-                #                                                          # "p": tlab_mom,
-                #                                                          "p": p_approx(self.p_param, tlab_mom,
-                #                                                                        degrees_pt),
-                #                                                          "Q_param": self.Q_param,
-                #                                                          "mpi_var": mpi_true,
-                #                                                          "lambda_var": Lambda_b_true}))
-                #                 # gp_post_dsg_nho.fit(degrees_pts_input[:, None],
-                #                 #                       dsg_data.T,
-                #                 #                       orders = self.nn_orders_full,
-                #                 #                       orders_eval = self.nn_orders[:order])
-                #                 gp_fits_spins[so].fit(tlab_pts_input[:, None],
-                #                                     (spin_data[:order, :]).T,
-                #                                     orders=self.nn_orders_full[:order])
-                #
-                #             for gp_fit_spins in gp_fits_spins:
-                #                 # puts important objects into ray objects
-                #                 gp_post_ray = ray.put(gp_fit_spins)
-                #
-                #                 # calculates the posterior using ray
-                #                 log_like = calc_loglike_ray(mesh_cart, BATCH_SIZE, log_likelihood, gp_post_ray,
-                #                                             tlab_input_ray, ratio_points_ray)
-                #                 # log_like_ids = []
-                #                 # for i in range(0, len(mesh_cart), BATCH_SIZE):
-                #                 #     batch = mesh_cart[i: i + BATCH_SIZE]
-                #                 #     log_like_ids.append(log_likelihood.remote(gp_post_nho_ray,
-                #                 #                                               degrees_input_ray, ratio_points_ray, batch))
-                #                 # log_like = list(itertools.chain(*ray.get(log_like_ids)))
-                #                 obs_loglike += np.reshape(log_like,
-                #                                           tuple(len(random_var.var) for random_var in variables_array))
-                #
-                #                 # experimental new code
-                #                 # adds the log-priors to the log-likelihoods
-                #                 obs_loglike = add_logpriors(variables_array, obs_loglike)
-                #                 # makes sure that the values don't get too big or too small
-                #                 obs_like = np.exp(obs_loglike - np.max(obs_loglike))
-                #                 print(np.shape(obs_like))
-                #                 # marginalizes partially
-                #                 print(np.array(range(len(variables_array)))[~marg_bool_array])
-                #                 print(variables_array[~marg_bool_array])
-                #                 for v, var in zip(np.array(range(len(variables_array)))[~marg_bool_array],
-                #                                   variables_array[~marg_bool_array]):
-                #                     # print("While marginalizing, " + str(v))
-                #                     obs_like = np.trapz(obs_like, x=variables_array[v].var, axis=v)
-                #                 print(np.shape(obs_like))
-                #                 # takes the log again to revert to the log-likelihood
-                #                 obs_loglike_2d = np.log(obs_like)
-                #         obs_loglike = obs_loglike_2d
-                #         if combine_all_obs:
-                #             obs_loglike_plots += obs_loglike
-                #             print("Done.")
-                #         else:
-                #             obs_loglike_plots.append(obs_loglike)
-                # loglike_list.append(obs_loglike)
-
-                # # adds the log-priors to the log-likelihoods
-                # obs_loglike_plots = [add_logpriors(variables_array, oll) for oll in obs_loglike_plots]
-
-            #     # Makes sure that the values don't get too big or too small
-            #     # print(np.shape(obs_loglike_plots))
-            #     print(np.shape(obs_loglike_plots))
-            #     print(obs_loglike_plots)
-            #     obs_like = [np.exp(oll - np.max(oll)) for oll in obs_loglike_plots]
-            #     # print(np.shape(obs_like))
-            #     # like_list.append(obs_like)
-            #     # print(np.shape(like_list))
-            #     # print("We made it this far!")
-            #     # print(make_likelihood_filename(self,
-            #     #                             "data",
-            #     #                             self.orders_names_dict[order],
-            #     #                             [variable.logprior_name for variable in variables_array],
-            #     #                             variables_array,
-            #     #                             ))
-            #     if whether_save_data:
-            #         np.savetxt(make_likelihood_filename(self,
-            #                                         "data",
-            #                                         obs_name_corner,
-            #                                         self.orders_names_dict[order],
-            #                                         [variable.logprior_name for variable in variables_array],
-            #                                         variables_array,
-            #                                         ),
-            #                np.reshape(obs_like, (np.prod([len(random_var.var) for random_var in variables_array[marg_bool_array]]))))
-            #     # np.savetxt('data/posterior_pdf_curvewise_SGT_SMS_500MeV_N3LO_Qsmoothmax_Qofprel_Elab_Lambdab_uniformlogprior_ls_nologprior_mpieff_uniformlogprior_Lambdab26pts213p90to1500p00_ls25pts1p00to300p00_mpieff24pts44p52to427p80.txt', np.reshape(obs_like, (np.prod([len(random_var.var) for random_var in variables_array]))))
-            #
-            # # we reshape obs_like so that observables are grouped sequentially, in order of increased order
-            # print(obs_like)
-            # like_list = obs_like
-
-    # print(np.shape(like_list))
     like_list = np.reshape(np.reshape(like_list, (np.shape(like_list)[0] // orders, orders) + np.shape(like_list)[1:], order = 'C'),
                           np.shape(like_list))
-    # print(np.shape(like_list))
 
     if whether_plot_posteriors or whether_plot_corner:
+        # calculates all joint and fully marginalized posterior pdfs
         marg_post_array, joint_post_array = marginalize_likelihoods(variables_array[marg_bool_array], like_list)
-    # marg_post_list = []
-    # joint_post_list = []
-    #
-    # for like_idx, like in enumerate(like_list):
-    #     # creates the normalized fully marginalized posteriors
-    #     for v, var in enumerate(variables_array):
-    #         var_idx_array = np.arange(0, np.shape(variables_array)[0], 1, dtype=int)
-    #         var_idx_array = var_idx_array[var_idx_array != v]
-    #         var_idx_array = np.flip(var_idx_array)
-    #
-    #         marg_post = np.copy(like)
-    #
-    #         for idx in var_idx_array:
-    #             marg_post = np.trapz(marg_post, x=variables_array[idx].var, axis=idx)
-    #
-    #         marg_post /= np.trapz(marg_post, x=variables_array[v].var, axis=0)
-    #
-    #         marg_post_list.append(marg_post)
-    #
-    #     # creates the normalized joint posteriors
-    #     comb_array = np.array(np.meshgrid(np.arange(0, np.shape(variables_array)[0], 1, dtype=int),
-    #                                       np.arange(0, np.shape(variables_array)[0], 1, dtype=int))).T.reshape(-1,
-    #                                                                                                            2)
-    #     comb_array = np.delete(comb_array, [comb[0] >= comb[1] for comb in comb_array], axis=0)
-    #     p = np.argsort(comb_array[:, 1])
-    #     comb_array = np.flip(comb_array[p], axis=0)
-    #
-    #     for v in np.flip(np.roll(np.arange(0, np.shape(variables_array)[0], 1, dtype=int), 1)):
-    #         joint_post = np.trapz(like, x=variables_array[v].var, axis=v)
-    #
-    #         joint_post /= np.trapz(np.trapz(joint_post,
-    #                                         x=variables_array[comb_array[v, 1]].var, axis=1),
-    #                                x=variables_array[comb_array[v, 0]].var, axis=0
-    #                                )
-    #
-    #         joint_post_list.append(joint_post)
-    #
-    # # print(np.shape(marg_post_list))
-    # # print(np.shape(joint_post_list))
-    # marg_post_array = np.reshape(marg_post_list, (len(variables_array), order_num), order='F')
-    # joint_post_array = np.reshape(joint_post_list,
-    #                               (len(variables_array) * (len(variables_array) - 1) // 2, order_num), order='F')
-    # print("marg_post_array has shape " + str(np.shape(marg_post_array)))
+
     if whether_plot_posteriors:
+        # plots and saves all fully marginalized posterior pdfs
         for (variable, result) in zip(variables_array[marg_bool_array], marg_post_array):
-            # print(np.shape(result))
             fig = plot_marg_posteriors(variable, result, obs_labels_grouped_list, Lb_colors, order_num,
                                        # self.nn_orders, self.orders_labels_dict, self, whether_save_plots, obs_name_grouped_list)
                                     nn_orders_array, orders_labels_dict, FileName, whether_save_plots, obs_name_grouped_list)
-        #     # Plot each posterior and its summary statistics
-        #     fig, ax = plt.subplots(1, 1, figsize=(3.4, 3.4))
-        #
-        #     for i, posterior_raw in enumerate(result):
-        #         # scales the posteriors so they're all the same height
-        #         # print(posterior_raw)
-        #         posterior = posterior_raw / (1.2 * np.max(posterior_raw))
-        #         # Make the lines taper off
-        #         vals_restricted = variable.var[posterior > 1e-2]
-        #         posterior = posterior[posterior > 1e-2]
-        #         # Plot and fill posterior, and add summary statistics
-        #         ax.plot(vals_restricted, posterior - i, c='gray')
-        #
-        #         ax.fill_between(vals_restricted, -i, posterior - i, facecolor=Lb_colors[i])
-        #
-        #         bounds = np.zeros((2, 2))
-        #         for j, p in enumerate([0.68, 0.95]):
-        #             bounds[j] = gm.hpd_pdf(pdf=posterior_raw, alpha=p, x=variable.var)
-        #
-        #         median = gm.median_pdf(pdf=posterior_raw, x=variable.var)
-        #
-        #         draw_summary_statistics(*bounds, median, ax=ax, height=-i)
-        #
-        #     # Plot formatting
-        #     ax.set_yticks([0])
-        #     ax.set_yticklabels([posterior_label])
-        #     ax.tick_params(axis='both', which='both', direction='in')
-        #     ax.tick_params(which='major', length=0)
-        #     ax.tick_params(which='minor', length=7, right=True)
-        #     ax.set_xticks(variable.ticks)
-        #     ax.set_xlabel((r'$' + variable.label + r'$ (' + variable.units + ')').replace('()', ''))
-        #     ax.legend(title=r'$\mathrm{pr}(' + variable.label + r' \, | \, \vec{\mathbf{y}}_{k}, \mathbf{f})$',
-        #               handles=[Patch(facecolor=Lb_colors[o],
-        #                              edgecolor='gray',
-        #                              linewidth=1,
-        #                              label=self.orders_labels_dict[(np.sort(self.nn_orders))[-1 - o]])
-        #                        for o in range(0, order_num)])
-        #     ax.grid(axis='x')
-        #     ax.set_axisbelow(True)
-        #
-        #     plt.show()
-
-            # if 'fig' in locals() and whether_save_plots:
-            #     fig.tight_layout()
-            #
-            #     fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' +
-            #                  variable.name + '_posterior_pdf_curvewise' + '_' + obs_name_corner +
-            #                  '_' + self.scheme + '_' +
-            #                  self.scale + '_Q' + self.Q_param + '_' + self.p_param + '_' + self.vs_what +
-            #                  self.filename_addendum).replace('_0MeVlab_', '_'))
 
     if whether_plot_corner:
         with plt.rc_context({"text.usetex": True}):
-            # for joint_post_idx, (obs_grouping, obs_name) in enumerate(zip(obs_data_grouped_list, obs_name_grouped_list)):
-            print("joint_post_array has shape " + str(np.shape(joint_post_array)))
-            print("marg_post_array has shape " + str(np.shape(marg_post_array)))
+            # plots and saves all joint and fully marginalized posterior pdfs in the form of corner plots
             fig = plot_corner_posteriors('Blues',
                                          order_num,
                                          variables_array[marg_bool_array],
@@ -3498,212 +2120,16 @@ def plot_posteriors_curvewise(
                                          whether_save_plots,
                                          nn_orders_array,
                                          orders_labels_dict)
-            # cmap_name = 'Blues'
-            # cmap = mpl.cm.get_cmap(cmap_name)
-            #
-            # for i in range(order_num):
-            #     # sets up axes
-            #     n_plots = np.shape(variables_array)[0]
-            #     fig, ax_joint_array, ax_marg_array, ax_title = corner_plot(n_plots=n_plots)
-            #
-            #     mean_list = []
-            #     stddev_list = []
-            #
-            #     for variable_idx, variable in enumerate(np.roll(variables_array, 1)):
-            #         # Now plot the marginal distributions
-            #         dist_mean, dist_stddev = mean_and_stddev(variable.var, marg_post_array[variable_idx - 1, i])
-            #         ax_marg_array[variable_idx].set_xlim(left=np.max([0, dist_mean - 5 * dist_stddev]),
-            #                                              right=dist_mean + 5 * dist_stddev)
-            #         mean_list.append(dist_mean)
-            #         stddev_list.append(dist_stddev)
-            #         dist_mean = sig_figs(dist_mean, 3)
-            #         dist_stddev = round_to_same_digits(dist_stddev, dist_mean)
-            #         ax_marg_array[variable_idx].set_title(rf'${variable.label}$ = {dist_mean} $\pm$ {dist_stddev}',
-            #                                               fontsize=18)
-            #
-            #         ax_marg_array[variable_idx].plot(variable.var, marg_post_array[variable_idx - 1, i],
-            #                                          c=cmap(0.8), lw=1)
-            #         ax_marg_array[variable_idx].fill_between(variable.var, np.zeros_like(variable.var),
-            #                                                  marg_post_array[variable_idx - 1, i],
-            #                                                  facecolor=cmap(0.2), lw=1)
-            #         try:
-            #             ax_marg_array[variable_idx].axvline(
-            #                 np.roll([variable.user_val for variable in variables_array], 1)[variable_idx], 0, 1,
-            #                 c=gray, lw=1)
-            #         except:
-            #             pass
-            #         if variable_idx == np.shape(variables_array)[0] - 1:
-            #             ax_marg_array[variable_idx].set_xticklabels(variable.ticks)
-            #
-            #     comb_array = np.array(np.meshgrid(np.arange(0, np.shape(variables_array)[0], 1, dtype=int),
-            #                                       np.arange(0, np.shape(variables_array)[0], 1,
-            #                                                 dtype=int))).T.reshape(-1, 2)
-            #     comb_array = np.delete(comb_array, [comb[0] >= comb[1] for comb in comb_array], axis=0)
-            #     p = np.argsort(comb_array[:, 1])
-            #     comb_array = comb_array[p]
-            #
-            #     for joint_idx, joint in enumerate(joint_post_array[:, i]):
-            #         # plots contours
-            #         ax_joint_array[joint_idx].set_xlim(left=np.max(
-            #             [0, mean_list[comb_array[joint_idx, 0]] - 5 * stddev_list[comb_array[joint_idx, 0]]]),
-            #                                            right=mean_list[comb_array[joint_idx, 0]] + 5 * stddev_list[
-            #                                                comb_array[joint_idx, 0]])
-            #         ax_joint_array[joint_idx].set_ylim(bottom=np.max(
-            #             [0, mean_list[comb_array[joint_idx, 1]] - 5 * stddev_list[comb_array[joint_idx, 1]]]),
-            #                                            top=mean_list[comb_array[joint_idx, 1]] + 5 * stddev_list[
-            #                                                comb_array[joint_idx, 1]])
-            #         try:
-            #             ax_joint_array[joint_idx].contour(np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-            #                                               np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-            #                                               joint,
-            #                                               levels=[np.amax(joint) * level for level in \
-            #                                                       ([np.exp(-0.5 * r ** 2) for r in
-            #                                                         np.arange(9, 0, -0.5)] + [0.999])],
-            #                                               cmap=cmap_name)
-            #             corr_coeff = correlation_coefficient(
-            #                 np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-            #                 np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-            #                 joint)
-            #         except:
-            #             ax_joint_array[joint_idx].contour(np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-            #                                               np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-            #                                               joint.T,
-            #                                               levels=[np.amax(joint.T) * level for level in \
-            #                                                       ([np.exp(-0.5 * r ** 2) for r in
-            #                                                         np.arange(9, 0, -0.5)] + [0.999])],
-            #                                               cmap=cmap_name)
-            #             corr_coeff = correlation_coefficient(
-            #                 np.roll(variables_array, 1)[comb_array[joint_idx, 0]].var,
-            #                 np.roll(variables_array, 1)[comb_array[joint_idx, 1]].var,
-            #                 joint.T)
-            #         ax_joint_array[joint_idx].text(.99, .99, rf'$\rho$ = {corr_coeff:.2f}',
-            #                                        ha='right', va='top',
-            #                                        transform=ax_joint_array[joint_idx].transAxes,
-            #                                        fontsize=18)
-            #         try:
-            #             ax_joint_array[joint_idx].axvline(
-            #                 np.roll([variable.user_val for variable in variables_array], 1)[
-            #                     comb_array[joint_idx, 0]], 0, 1, c=gray, lw=1)
-            #         except:
-            #             pass
-            #         try:
-            #             ax_joint_array[joint_idx].axhline(
-            #                 np.roll([variable.user_val for variable in variables_array], 1)[
-            #                     comb_array[joint_idx, 1]], 0, 1, c=gray, lw=1)
-            #         except:
-            #             pass
-            #
-            #     ax_title.text(.99, .99,
-            #                   obs_name_corner + '\n' +
-            #                   self.scheme + '\,' + self.scale + '\n' +
-            #                   r'' + self.orders_labels_dict[max(self.nn_orders) - order_num + 1 + i] + '\n' +
-            #                   r'$Q_{\mathrm{' + self.Q_param + '}}$' + '\n' +
-            #                   self.p_param + '\n' +
-            #                   self.vs_what,
-            #                   ha='right', va='top',
-            #                   transform=ax_title.transAxes,
-            #                   fontsize=25)
-            #
-            # plt.show()
-
-            # if 'fig' in locals() and whether_save_plots:
-            #     fig.tight_layout()
-            #
-            #     fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' +
-            #                  'corner_plot_curvewise' + '_' + obs_name_corner + '_' + self.scheme + '_' +
-            #                  self.scale + '_Q' + self.Q_param + '_' + self.p_param + '_' + self.vs_what +
-            #                  self.filename_addendum).replace('_0MeVlab_', '_'))
 
         # creates a list of the values of the random variables corresponding to the
         # point of highest probability in the posterior
-        print(np.shape(like_list))
-        # print(like_list)
         indices_opt = np.where(like_list[-1] == np.amax(like_list[-1]))
-        print(indices_opt)
         opt_vals_list = []
         for idx, var in zip(indices_opt, [variable.var for variable in variables_array[marg_bool_array]]):
-            # print(idx)
-            # print(var)
-            # print(var[idx])
             opt_vals_list.append((var[idx])[0])
         print("opt_vals_list = " + str(opt_vals_list))
 
     return opt_vals_list
-
-        # # generates the coefficient plots and the MC and PC with the optimal parameters instead
-        # ratio_optimal = Q_approx(
-        #     self.inputspace.mom,
-        #     self.Q_param,
-        #     Lambda_b=opt_vals_list[0],
-        #     m_pi=opt_vals_list[1],
-        # )
-        # print("ratio_optimal has shape " + str(np.shape(ratio_optimal)))
-        #
-        # if self.fixed_quantity_name == "angle":
-        #     if self.fixed_quantity_value == 0:
-        #         ratio_optimal = ratio_optimal[0, :]
-        #         print("ratio_optimal has shape " + str(np.shape(ratio_optimal)))
-        #         ratio_optimal = np.reshape(ratio_optimal, (len(t_lab)))
-        #         print("ratio_optimal has shape " + str(np.shape(ratio_optimal)))
-        #     else:
-        #         ratio_optimal = ratio_optimal[np.isin(degrees, self.fixed_quantity_value), :]
-        #         print("ratio_optimal has shape " + str(np.shape(ratio_optimal)))
-        #         ratio_optimal = np.reshape(ratio_optimal, (len(t_lab)))
-        #         print("ratio_optimal has shape " + str(np.shape(ratio_optimal)))
-        # else:
-        #     ratio_optimal = ratio_optimal[:, np.isin(t_lab, self.fixed_quantity_value)]
-        #     print("ratio_optimal has shape " + str(np.shape(ratio_optimal)))
-        #     ratio_optimal = np.reshape(ratio_optimal, (len(degrees)))
-        #     print("ratio_optimal has shape " + str(np.shape(ratio_optimal)))
-        #
-        # # Extract the coefficients and define kernel
-        # self.coeffs = gm.coefficients(self.data, ratio=ratio_optimal,
-        #                               ref=self.ref, orders=self.nn_orders_full)
-        #
-        # # uses interpolation to find the proper ratios for training and testing
-        # self.interp_f_ratio = interp1d(self.x, ratio_optimal * np.ones(len(self.x)))
-        # self.ratio_train = self.interp_f_ratio(self.x_train)
-        # self.coeffs_train = gm.coefficients(self.y_train, ratio=self.ratio_train,
-        #                                     ref=self.ref_train,
-        #                                     orders=self.nn_orders_full)
-        # self.ratio_test = self.interp_f_ratio(self.x_test)
-        # self.coeffs_test = gm.coefficients(self.y_test, ratio=self.ratio_test,
-        #                                    ref=self.ref_test,
-        #                                    orders=self.nn_orders_full)
-        #
-        # # # defines the kernel
-        # # if self.fixed_quantity_name == "energy" and \
-        # #         self.fixed_quantity_value < 70.1 and \
-        # #         self.fixed_quantity_value >= 1.:
-        # #     self.kernel = RBF(length_scale=opt_vals_list[1],
-        # #                       length_scale_bounds=(opt_vals_list[1], opt_vals_list[1])) + \
-        # #                   WhiteKernel(1e-6, noise_level_bounds='fixed')
-        # # else:
-        # #     self.kernel = RBF(length_scale=opt_vals_list[1],
-        # #                       length_scale_bounds=(opt_vals_list[1], opt_vals_list[1])) + \
-        # #                   WhiteKernel(1e-10, noise_level_bounds='fixed')
-        # # self.kernel = RBF(length_scale=self.ls,
-        # #                   length_scale_bounds=(self.ls_lower, self.ls_upper)) + \
-        # #               WhiteKernel(1e-4, noise_level_bounds='fixed')
-        # # self.ls = opt_vals_list[1]
-        # # print(self.kernel)
-        #
-        # # # Define the GP
-        # # self.gp = gm.ConjugateGaussianProcess(
-        # #     self.kernel, center=self.center, disp=self.disp, df=self.df,
-        # #     scale=self.std_est, n_restarts_optimizer=50, random_state=self.seed,
-        # #     sd=self.sd)
-        #
-        # self.coeffs = (self.coeffs.T[self.mask_restricted]).T
-        # self.coeffs_train = (self.coeffs_train.T[self.mask_restricted]).T
-        # self.coeffs_test = (self.coeffs_test.T[self.mask_restricted]).T
-        #
-        # self.plot_coefficients(whether_save=whether_save_opt)
-        # self.plot_md(whether_save=whether_save_opt)
-        # self.plot_pc(whether_save=whether_save_opt)
-
-        # except:
-        #     print("Error in plotting the curvewise posterior PDF.")
 
 def plot_posteriors_pointwise(
         light_colors,
@@ -3711,10 +2137,6 @@ def plot_posteriors_pointwise(
         nn_orders_full_array,
         excluded,
         orders_labels_dict,
-        orders_names_dict,
-
-        p_param,
-        Q_param,
 
         obs_data_grouped_list,
         obs_name_grouped_list,
@@ -3741,10 +2163,57 @@ def plot_posteriors_pointwise(
 
         orders=2,
         FileName=None,
-        ax=None,
         whether_plot_posteriors=True,
         whether_save_plots=True,
 ):
+    """
+    Calculates the log-likelihood for a set of inputs using a pointwise method.
+
+    Parameters
+    ----------
+    light_colors (array) : array of MatPlotLib colors for filling.
+    nn_orders_array (int array) : array of orders for plotting data.
+    nn_orders_full_array (int array) : array of orders corresponding to all possible orders of data.
+    excluded (int list) : list of orders excluded from nn_orders_full_array, along with 0.
+    orders_labels_dict (dict) : dictionary for linking order numbers and markdown strings for plotting.
+
+    obs_data_grouped_list (array list) : list of arrays of observable data grouped together as decided by user.
+    obs_name_grouped_list (str list) : list of strings for observables for file-naming as decided by user.
+    obs_labels_grouped_list (str list) : list of markdown strings for observables for file-naming as decided by user.
+    mesh_cart_grouped_list (array list) : list of arrays of Cartesian meshes for evaluating log-likelihood, grouped
+        together as decided by user.
+    t_lab (array) : array of lab-energy points for evaluation.
+    t_lab_train_pts (array) : list of lab-energy training points for evaluation.
+    InputSpaceTlab (InputSpaceBunch) : object encoding information about lab-energy input space
+    degrees (array) : array of scattering-angle points for evaluation.
+    degrees_train_pts (array) : list of scattering-angle training points for evaluation.
+    InputSpaceDeg : object encoding information about scattering-angle input space
+    variables_array (RandomVariable array) : list of RandomVariable objects for each random variable.
+        Must be simply (Lambda_b).
+
+    mom_fn_tlab (function) : function for converting from lab energy to relative momentum.
+    mom_fn_tlab_kwargs (dict) : keyword arguments for mom_fn_tlab.
+
+    mom_fn_degrees (function) : function for converting from scattering angle to relative momentum.
+    mom_fn_degrees_kwargs (dict) : keyword arguments for mom_fn_degrees.
+
+    p_fn (function) : function for converting from input spaces to relative momentum.
+    p_fnp (dict) : keyword arguments for p_fn.
+
+    ratio_fn (function) : function for evaluating the ratio (dimensionless expansion parameter, or Q).
+    ratio_fn_kwargs (dict) : keyword arguments for ratio_fn.
+
+    orders (int) : number of orders to include in the calculations, starting from and including the highest allowed
+        order and counting down.
+        Default : 2
+    FileName (FileNaming) : object encoding information for naming files.
+        Default : None
+
+    whether_plot_posteriors (bool) : whether to plot posteriors.
+        Default : True
+    whether_save_plots : whether to save plots.
+        Default : True
+    """
 
     # sets the number of orders and the corresponding colors
     order_num = int(orders)
