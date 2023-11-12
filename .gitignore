@@ -138,4 +138,4 @@ scripts/figures/
 # observables data
 observables_data/
 # figures from tests
-tests/figures
+tests/figures/
