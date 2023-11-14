@@ -1471,16 +1471,18 @@ def make_likelihood_filename(FileNameObj,
             + str(FileNameObj.vs_what)
     )
 
-    for logprior in logpriors_names:
-        filename += "_" + str(logprior)
-    for random_var in random_vars_array:
-        filename += (
-                "_"
-                + str(random_var.name)
-                + str(len(random_var.var))
-                + "pts"
-        )
-    print(filename)
+    # for logprior in logpriors_names:
+    #     filename += "_" + str(logprior)
+    # for random_var in random_vars_array:
+    #     filename += (
+    #             "_"
+    #             + str(random_var.name)
+    #             + str(len(random_var.var))
+    #             + "pts"
+    #     )
+    for (logprior, random_var) in zip(logpriors_names, random_vars_array):
+        filename += "_" + str(random_var.name) + "_" + str(logprior) + '_' + str(len(random_var.var)) + "pts"
+
     return str(filename.replace("__", "_") + FileNameObj.filename_addendum + ".txt")
 
 def calc_loglike_ray(mesh_cart,
@@ -2105,7 +2107,7 @@ def plot_posteriors_curvewise(
         for (variable, result) in zip(variables_array[marg_bool_array], marg_post_array):
             fig = plot_marg_posteriors(variable, result, obs_labels_grouped_list, Lb_colors, order_num,
                                        # self.nn_orders, self.orders_labels_dict, self, whether_save_plots, obs_name_grouped_list)
-                                    nn_orders_array, orders_labels_dict, FileName, whether_save_plots, obs_name_grouped_list)
+                                    nn_orders_array, orders_labels_dict)
 
     if whether_plot_corner:
         with plt.rc_context({"text.usetex": True}):
