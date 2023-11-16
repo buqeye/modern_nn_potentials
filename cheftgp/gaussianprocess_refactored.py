@@ -2359,8 +2359,7 @@ def plot_posteriors_pointwise(
         for (variable, result) in zip(variables_array, marg_post_list):
             # generates plots of posteriors for multiple observables and orders
             fig = plot_marg_posteriors(variable, result, obs_labels_grouped_list, Lb_colors, order_num,
-                                       nn_orders_array, orders_labels_dict, FileName, whether_save_plots,
-                                       obs_name_grouped_list)
+                                       nn_orders_array, orders_labels_dict)
 
             # saves
             obs_name_corner_concat = ''.join(obs_name_grouped_list)

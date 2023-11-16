@@ -54,25 +54,6 @@ def generate_posteriors(
         ( https://doi.org/10.1103/PhysRevC.90.054323 )
     Default: [RKE500MeV]
 
-    observable_input (str list): observables for evaluation. Note that SGT
-        should not be in the same list as other observables.
-    Built-in options: "SGT", "DSG", "AY", "A", "D", "AXX", "AYY"
-    Default: ["DSG"]
-
-    E_input_array (int list): lab energies in MeV for evaluation. Note that SGT
-        must be treated differently since it is not evaluated at one energy at
-        a time.
-    May be any integer x such that 1 <= x <= 350
-    Must be [0] for SGT
-    If no evaluation at fixed lab energy is desired, set equal to [0]
-    Default: [150]
-
-    deg_input_array (int list): angles in degrees for evaluation.
-    May be any integer x such that 1 <= x <= 179
-    Must be [0] for SGT
-    If no evaluation at fixed angle measure is desired, set equal to [0]
-    Default: []
-
     Q_param_method_array (str list): methods of parametrizing the dimensionless
         expansion parameter Q for evaluation.
     Built-in options: "smax", "max", "sum", or "rawsum"
@@ -82,13 +63,6 @@ def generate_posteriors(
         momentum p in Q(p) for evaluation.
     Built-in options: "Qofprel", "Qofqcm", "Qofpq"
     Default: ["Qofprel"]
-
-    input_space_input (str list): input spaces for evaluation. Note that SGT
-        must be treated differently since it is not evaluated at one energy at
-        a time.
-    Built-in options: "Elab", "prel" for energy-dependent input spaces
-    Built-in options: "deg", "cos", "qcm", "qcm2" for angle-dependent input spaces
-    Default: ["cos"]
 
     input_space_deg (str): angle-dependent input space for evaluating the posterior
         pdf for the breakdown scale, effective soft scale, length scales, etc.
@@ -108,14 +82,6 @@ def generate_posteriors(
         TruncationTP object will be trained. Will be converted to input_space_deg by
         another function.
     Default: []
-
-    train_test_split_array (TrainTestSplit list): splits of training and
-        testing points for evaluation. Note that SGT must be treated
-        differently since it is not evaluated at one energy at a time.
-    Built-in options: Nolowenergysplit, Yeslowenergysplit for SGT
-    Built-in options: Fullspaceanglessplit, Forwardanglessplit,
-        Backwardanglessplit for all other observables
-    Default: Fullspaceanglessplit
 
     orders_excluded (int list): list of *coefficient* orders to be excluded from
         the fitting procedure. 2 corresponds to c2, 3 to c3, etc.
@@ -142,11 +108,6 @@ def generate_posteriors(
         of the initial guess for the correlation length. Fitting may be bypassed
         when whether_fit = False.
     Default: LengthScale(0.25, 0.25, 4, whether_fit = True)
-
-    fixed_sd (float): fixed standard deviation for the Gaussian process fit.
-        May be any positive float. If None, then there is no fixed standard
-        deviation and it is calculated by the fitting procedure.
-    Default: None
 
     m_pi_eff (float): effective pion mass for the theory (in MeV).
     Default: 138
@@ -743,9 +704,8 @@ def generate_posteriors(
                                     whether_use_data=False,
                                     whether_save_data=True,
                                     whether_save_plots=save_lambdapost_curvewise_bool,
-                                    # whether_save_opt=False,
                                 )
-                            elif plot_lambdapost_pointwise_bool:
+                            if plot_lambdapost_pointwise_bool:
                                 plot_posteriors_pointwise(
                                     # order stuff
                                     light_colors=Orders.lightcolors_array,
