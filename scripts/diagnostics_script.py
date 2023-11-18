@@ -373,7 +373,7 @@ def generate_diagnostics(
                                 degrees,
                             ),
                             r"$E_{\mathrm{lab}}$ (MeV)",
-                            [r"$", Observable.title, r"(E_{\mathrm{lab}})$"],
+                            [r"$", Observable.title, r"(E_{\mathrm{lab}}, \theta= ", angle_lab, "^{\circ})$"],
                         )
 
                         PrelBunch = InputSpaceBunch(
@@ -385,7 +385,7 @@ def generate_diagnostics(
                                 degrees,
                             ),
                             r"$p_{\mathrm{rel}}$ (MeV)",
-                            [r"$", Observable.title, r"(p_{\mathrm{rel}})$"],
+                            [r"$", Observable.title, r"(p_{\mathrm{rel}}, \theta= ", angle_lab, "^{\circ})$"],
                         )
 
                         vsquantity_array_tlab = [ElabBunch, PrelBunch]
@@ -401,7 +401,7 @@ def generate_diagnostics(
                                 degrees,
                             ),
                             r"$E_{\mathrm{lab}}$ (MeV)",
-                            [r"$", Observable.title, r"(E_{\mathrm{lab}})$"],
+                            [r"$", Observable.title, r"(E_{\mathrm{lab}}, \theta= ", angle_lab, "^{\circ})$"],
                         )
 
                         PrelBunch = InputSpaceBunch(
@@ -413,7 +413,7 @@ def generate_diagnostics(
                                 degrees,
                             ),
                             r"$p_{\mathrm{rel}}$ (MeV)",
-                            [r"$", Observable.title, r"(p_{\mathrm{rel}})$"],
+                            [r"$", Observable.title, r"(p_{\mathrm{rel}}, \theta= ", angle_lab, "^{\circ})$"],
                         )
 
                         vsquantity_array_tlab = [ElabBunch, PrelBunch]
@@ -736,12 +736,12 @@ generate_diagnostics(
     nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
     observable_input=["D"],
-    E_input_array=[200],
-    deg_input_array=[],
+    E_input_array=[],
+    deg_input_array=[90],
     Q_param_method_array=["sum"],
     p_param_method_array=["Qofprel"],
-    input_space_input=["deg"],
-    train_test_split_array=[Fullspaceanglessplit1],
+    input_space_input=["prel"],
+    train_test_split_array=[Allenergysplit1],
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
@@ -753,16 +753,16 @@ generate_diagnostics(
     print_all_classes=False,
     savefile_type="png",
     plot_coeffs_bool=True,
-    plot_md_bool=False,
+    plot_md_bool=True,
     plot_pc_bool=False,
-    plot_ci_bool=True,
+    plot_ci_bool=False,
     plot_pdf_bool=False,
     plot_trunc_bool=False,
     plot_plotzilla_bool=False,
-    save_coeffs_bool=True,
-    save_md_bool=True,
-    save_pc_bool=True,
-    save_ci_bool=True,
+    save_coeffs_bool=False,
+    save_md_bool=False,
+    save_pc_bool=False,
+    save_ci_bool=False,
     save_pdf_bool=False,
     save_trunc_bool=False,
     save_plotzilla_bool=False,

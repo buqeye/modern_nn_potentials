@@ -701,8 +701,8 @@ def generate_posteriors(
 
                                     FileName = FileName,
 
-                                    whether_use_data=False,
-                                    whether_save_data=True,
+                                    whether_use_data=True,
+                                    whether_save_data=False,
                                     whether_save_plots=save_lambdapost_curvewise_bool,
                                 )
                             if plot_lambdapost_pointwise_bool:
@@ -818,10 +818,10 @@ def generate_posteriors(
 generate_posteriors(
     nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
-    Q_param_method_array=["sum", "smax"],
-    p_param_method_array=["Qofprel", "Qofpq"],
-    input_space_deg=["cos", "qcm"],
-    input_space_tlab=["ELab", "prel"],
+    Q_param_method_array=["sum"],
+    p_param_method_array=["Qofprel"],
+    input_space_deg=["cos"],
+    input_space_tlab=["prel"],
     t_lab_train_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]),  # set0 / refactor
     # t_lab_pts=np.array([25, 75, 125, 175, 225, 275, 325]), # set1
     # t_lab_pts=np.array([1, 10, 28, 55, 90, 133, 185]), # set2
@@ -849,5 +849,5 @@ generate_posteriors(
     plot_lambdapost_curvewise_bool=True,
     save_lambdapost_pointwise_bool=False,
     save_lambdapost_curvewise_bool=False,
-    filename_addendum="_equal_0",
+    filename_addendum="_cluster",
 )

@@ -1079,7 +1079,6 @@ class GSUMDiagnostics:
 
             # fits the GP with or without a constraint
             if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
-                # print("We got this far.")
                 self.gp_trunc.fit(self.X_train, self.y_train,
                                   orders=self.nn_orders_full,
                                   # orders_eval=self.nn_orders,
@@ -1608,10 +1607,7 @@ def marginalize_likelihoods(variables_array, like_list):
 
             joint_post_list.append(joint_post)
 
-    print("marg_post_list has shape " + str(np.shape(marg_post_list)))
-    print("like_list has shape " + str(np.shape(like_list)))
     marg_post_array = np.reshape(marg_post_list, (len(variables_array), np.shape(like_list)[0]) + np.shape(marg_post_list)[1:], order='F')
-    print("marg_post_array has shape " + str(np.shape(marg_post_array)))
 
     joint_post_array = np.array(joint_post_list)
 
