@@ -75,6 +75,9 @@ def p_approx(p_name, prel, degrees):
     elif p_name == "Qofpq":
         return np.array([[softmax_mom(p, deg_to_qcm(p, d))
                          for p in prel] for d in degrees])
+    elif p_name == "Qofpqmax":
+        return np.array([[np.max(p, deg_to_qcm(p, d))
+                         for p in prel] for d in degrees])
 
 
 def deg_fn(deg_input, **kwargs):
@@ -171,7 +174,7 @@ def Lb_logprior(Lambda_b):
     Uniform log-prior for the breakdown scale (in MeV).
     Similar to Melendez et al., Eq. (31)
     """
-    return np.where((300 <= Lambda_b) & (Lambda_b <= 1500), 0, -np.inf)
+    return np.where((300 <= Lambda_b) & (Lambda_b <= 900), 0, -np.inf)
     # return np.where((200 <= Lambda_b) & (Lambda_b <= 1000), 0, -np.inf)
 
 def mpieff_logprior(m_pi):
@@ -180,4 +183,4 @@ def mpieff_logprior(m_pi):
     Similar to Melendez et al., Eq. (31)
     """
     # return np.where((50 <= m_pi) & (m_pi <= 300), np.log(1. / m_pi), -np.inf)
-    return np.where((10 <= m_pi) & (m_pi <= 1000), 0, -np.inf)
+    return np.where((50 <= m_pi) & (m_pi <= 300), 0, -np.inf)

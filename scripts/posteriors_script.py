@@ -362,7 +362,7 @@ def generate_posteriors(
                         mpi_vals = np.linspace(50, 300, 30, dtype=np.dtype('f4'))
                         # mpi_vals = 138 * np.array([0.9999, 1.0001])
                         ls_deg_vals = np.linspace(0.01,
-                                              1.0 * (VsQuantityPosteriorDeg.input_space(
+                                              1.5 * (VsQuantityPosteriorDeg.input_space(
                                                   **{"p_input": E_to_p(np.max(t_lab_train_pts), nn_interaction),
                                                      "deg_input": max(degrees),
                                                      "interaction": nn_interaction}) -
