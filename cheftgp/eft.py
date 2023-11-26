@@ -66,17 +66,17 @@ def p_approx(p_name, prel, degrees):
     prel (float or array): relative momentum for the interaction (in MeV)
     degrees (float array): degrees
     """
-    if p_name == "Qofprel":
+    if p_name == "Qofprel" or p_name == "pprel":
         return np.tile(np.array(prel), (len(degrees), 1))
 
-    elif p_name == "Qofqcm":
+    elif p_name == "Qofqcm" or p_name == "pqcm":
         return np.array([np.array(deg_to_qcm(prel, d)) for d in degrees])
 
-    elif p_name == "Qofpq":
+    elif p_name == "Qofpq" or p_name == "psmax":
         return np.array([[softmax_mom(p, deg_to_qcm(p, d))
                          for p in prel] for d in degrees])
-    elif p_name == "Qofpqmax":
-        return np.array([[np.max(p, deg_to_qcm(p, d))
+    elif p_name == "Qofpqmax" or p_name == "pmax":
+        return np.array([[max(p, deg_to_qcm(p, d))
                          for p in prel] for d in degrees])
 
 
