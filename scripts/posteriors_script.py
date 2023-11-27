@@ -821,7 +821,7 @@ generate_posteriors(
     nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
     Q_param_method_array=["sum"],
-    p_param_method_array=["pprel"],
+    p_param_method_array=["Qofprel"],
     input_space_deg=["cos"],
     input_space_tlab=["prel"],
     t_lab_train_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]),  # set0 / refactor
@@ -849,7 +849,7 @@ generate_posteriors(
     savefile_type="png",
     plot_lambdapost_pointwise_bool=True,
     plot_lambdapost_curvewise_bool=True,
-    save_lambdapost_pointwise_bool=False,
-    save_lambdapost_curvewise_bool=False,
+    save_lambdapost_pointwise_bool=True,
+    save_lambdapost_curvewise_bool=True,
     filename_addendum="_cluster",
 )

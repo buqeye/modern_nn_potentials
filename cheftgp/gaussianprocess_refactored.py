@@ -2105,6 +2105,16 @@ def plot_posteriors_curvewise(
                                        # self.nn_orders, self.orders_labels_dict, self, whether_save_plots, obs_name_grouped_list)
                                     nn_orders_array, orders_labels_dict)
 
+            if whether_save_plots:
+                # saves
+                obs_name_corner_concat = ''.join(obs_name_grouped_list)
+                fig.savefig(('figures/' + FileName.scheme + '_' + FileName.scale + '/' +
+                             variable.name + '_curvewise_pdf_pointwise' + '_' + obs_name_corner_concat +
+                             '_' + FileName.scheme + '_' +
+                             FileName.scale + '_Q' + FileName.Q_param + '_' + FileName.p_param + '_' +
+                             InputSpaceDeg.name + 'x' + InputSpaceTlab.name +
+                             FileName.filename_addendum).replace('_0MeVlab_', '_'))
+
     if whether_plot_corner:
         with plt.rc_context({"text.usetex": True}):
             # plots and saves all joint and fully marginalized posterior pdfs in the form of corner plots
@@ -2364,7 +2374,7 @@ def plot_posteriors_pointwise(
                              variable.name + '_posterior_pdf_pointwise' + '_' + obs_name_corner_concat +
                              '_' + FileName.scheme + '_' +
                              FileName.scale + '_Q' + FileName.Q_param + '_' + FileName.p_param + '_' +
-                             InputSpaceTlab.name + '_' + InputSpaceDeg.name +
+                             InputSpaceDeg.name + 'x' + InputSpaceTlab.name +
                              FileName.filename_addendum).replace('_0MeVlab_', '_'))
 
         # finds and prints the MAP value for Lambda_b
