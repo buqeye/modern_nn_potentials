@@ -183,4 +183,4 @@ def mpieff_logprior(m_pi):
     Similar to Melendez et al., Eq. (31)
     """
     # return np.where((50 <= m_pi) & (m_pi <= 300), np.log(1. / m_pi), -np.inf)
-    return np.where((50 <= m_pi) & (m_pi <= 300), 0, -np.inf)
+    return np.where((50 <= m_pi) & (m_pi <= 350), 0, -np.inf)

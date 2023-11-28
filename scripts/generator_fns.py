@@ -1078,7 +1078,7 @@ def generate_posteriors(
                         # length
 
                         # sets the meshes for the random variable arrays
-                        mpi_vals = np.linspace(50, 300, 120, dtype=np.dtype('f4'))
+                        mpi_vals = np.linspace(50, 350, 120, dtype=np.dtype('f4'))
                         # mpi_vals = 138 * np.array([0.9999, 1.0001])
                         ls_deg_vals = np.linspace(0.01,
                                               1.5 * (VsQuantityPosteriorDeg.input_space(
@@ -1421,7 +1421,7 @@ def generate_posteriors(
                                     FileName = FileName,
 
                                     whether_use_data=True,
-                                    whether_save_data=False,
+                                    whether_save_data=True,
                                     whether_save_plots=save_lambdapost_curvewise_bool,
                                 )
                             if plot_lambdapost_pointwise_bool:
