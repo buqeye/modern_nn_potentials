@@ -1078,7 +1078,7 @@ def generate_posteriors(
                         # length
 
                         # sets the meshes for the random variable arrays
-                        mpi_vals = np.linspace(50, 350, 120, dtype=np.dtype('f4'))
+                        mpi_vals = np.linspace(50, 350, 30, dtype=np.dtype('f4'))
                         # mpi_vals = 138 * np.array([0.9999, 1.0001])
                         ls_deg_vals = np.linspace(0.01,
                                               1.5 * (VsQuantityPosteriorDeg.input_space(
@@ -1089,9 +1089,9 @@ def generate_posteriors(
                                                        **{"p_input": E_to_p(np.min(t_lab_train_pts), nn_interaction),
                                                           "deg_input": min(degrees),
                                                           "interaction": nn_interaction})),
-                                              120)
-                        ls_tlab_vals = np.linspace(1, 150, 120, dtype=np.dtype('f4'))
-                        lambda_vals = np.linspace(300, 900, 120, dtype=np.dtype('f4'))
+                                              30)
+                        ls_tlab_vals = np.linspace(1, 150, 30, dtype=np.dtype('f4'))
+                        lambda_vals = np.linspace(300, 900, 30, dtype=np.dtype('f4'))
                         # lambda_vals = np.linspace(300, 1200, 500, dtype=np.dtype('f4'))
                         # lambda_vals = 600 * np.array([0.9999, 1.0001])
 
@@ -1233,12 +1233,12 @@ def generate_posteriors(
                             # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$']
                             # mesh_cart_grouped_list = [mesh_cart_sgt, mesh_cart]
 
-                            # # for equalizing SGT and DSG
-                            # plot_obs_list = [["SGT"], ["DSG"], ["SGT", "DSG"]]
-                            # obs_name_grouped_list = ["SGT", "DSG", "TWOOBS"]
-                            # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$', r'2Obs.']
-                            # # mesh_cart_grouped_list = [mesh_cart, mesh_cart, mesh_cart]
-                            # mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart], [mesh_cart_sgt, mesh_cart]]
+                            # for equalizing SGT and DSG
+                            plot_obs_list = [["SGT"], ["DSG"], ["SGT", "DSG"]]
+                            obs_name_grouped_list = ["SGT", "DSG", "TWOOBS"]
+                            obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$', r'2Obs.']
+                            # mesh_cart_grouped_list = [mesh_cart, mesh_cart, mesh_cart]
+                            mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart], [mesh_cart_sgt, mesh_cart]]
 
                             # # for SGT, DSG, and D
                             # plot_obs_list = [["SGT"], ["DSG"], ["D"]]
@@ -1281,16 +1281,16 @@ def generate_posteriors(
                             # mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart], [mesh_cart], [mesh_cart], [mesh_cart],
                             #                           [mesh_cart], [mesh_cart]]
 
-                            # EACHOBS and ALLOBS for energy input spaces
-                            plot_obs_list = [["SGT"], ["DSG"], ["D"], ["AXX"], ["AYY"], ["A"], ["AY"],
-                                             ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]]
-                            obs_name_grouped_list = ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY", "ALLOBS"]
-                            obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$',
-                                                       r'$D$', r'$A_{xx}$', r'$A_{yy}$', r'$A$', r'$A_{y}$', r'Obs.']
-                            mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart], [mesh_cart], [mesh_cart],
-                                                      [mesh_cart], [mesh_cart], [mesh_cart],
-                                                      [mesh_cart_sgt, mesh_cart, mesh_cart, mesh_cart,
-                                                      mesh_cart, mesh_cart, mesh_cart]]
+                            # # EACHOBS and ALLOBS for energy input spaces
+                            # plot_obs_list = [["SGT"], ["DSG"], ["D"], ["AXX"], ["AYY"], ["A"], ["AY"],
+                            #                  ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]]
+                            # obs_name_grouped_list = ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY", "ALLOBS"]
+                            # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$',
+                            #                            r'$D$', r'$A_{xx}$', r'$A_{yy}$', r'$A$', r'$A_{y}$', r'Obs.']
+                            # mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart], [mesh_cart], [mesh_cart],
+                            #                           [mesh_cart], [mesh_cart], [mesh_cart],
+                            #                           [mesh_cart_sgt, mesh_cart, mesh_cart, mesh_cart,
+                            #                           mesh_cart, mesh_cart, mesh_cart]]
 
                             # # ALLOBS for energy input spaces
                             # plot_obs_list = [["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]]

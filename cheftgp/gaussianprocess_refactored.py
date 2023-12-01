@@ -13,6 +13,7 @@ import ray
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
+from matplotlib.lines import Line2D
 import gsum as gm
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel
 import itertools
@@ -707,7 +708,9 @@ class GSUMDiagnostics:
             ax.plot(self.x, self.pred[:, i], color=self.colors[i], ls='--', zorder=5 * i - 3)
             ax.plot(self.x, self.coeffs[:, i], color=self.colors[i], zorder=5 * i - 2)
             ax.plot(self.x_train, self.coeffs_train[:, i], color=self.colors[i],
-                    ls='', marker='o', label=r'$c_{}$'.format(n), zorder=5 * i - 1)
+                    ls='', marker='o',
+                    # label=r'$c_{}$'.format(n),
+                    zorder=5 * i - 1)
 
         # Format
         ax.axhline(2 * self.underlying_std, 0, 1, color=gray, zorder=-10, lw=1)
@@ -724,9 +727,13 @@ class GSUMDiagnostics:
         ax.set_yticks(ticks=[-2 * self.underlying_std, 2 * self.underlying_std])
         ax.set_yticklabels(labels=['{:.1f}'.format(-2 * self.underlying_std), '{:.1f}'.format(2 * self.underlying_std)])
         ax.set_yticks([-1 * self.underlying_std, self.underlying_std], minor=True)
-        ax.legend(ncol=2, borderpad=0.4,# labelspacing=0.5, columnspacing=1.3,
-                  borderaxespad=0.6, loc = 'best',
-                  title = self.title_coeffs).set_zorder(5 * i)
+        ax.legend(
+            # ncol=2,
+            borderpad=0.4,
+            # labelspacing=0.5, columnspacing=1.3,
+            borderaxespad=0.6,
+            loc = 'best',
+            title = self.title_coeffs).set_zorder(5 * i)
 
         # takes constraint into account, if applicable
         if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
@@ -744,13 +751,13 @@ class GSUMDiagnostics:
             ax.plot(self.x, -2 * std_interp, color='gray', ls='--', zorder=-10, lw=1)
 
         # draws length scales
-        ax.annotate("", xy=(np.min(self.x), -0.65 * 2 * self.underlying_std),
-                    xytext=(np.min(self.x) + self.ls, -0.65 * 2 * self.underlying_std),
-                    arrowprops=dict(arrowstyle="<->", capstyle='projecting', lw=1,
-                                    color='k', shrinkA = 0, shrinkB = 0), annotation_clip=False, zorder=5 * i)
-        ax.text(np.min(self.x) + self.ls + 0.2 * (np.max(self.x) - np.min(self.x)),
-                -0.65 * 2 * self.underlying_std, r'$\ell_{\mathrm{guess}}$', fontsize=14,
-                horizontalalignment='right', verticalalignment='center', zorder=5 * i)
+        # ax.annotate("", xy=(np.min(self.x), -0.65 * 2 * self.underlying_std),
+        #             xytext=(np.min(self.x) + self.ls, -0.65 * 2 * self.underlying_std),
+        #             arrowprops=dict(arrowstyle="<->", capstyle='projecting', lw=1,
+        #                             color='k', shrinkA = 0, shrinkB = 0), annotation_clip=False, zorder=5 * i)
+        # ax.text(np.min(self.x) + self.ls + 0.2 * (np.max(self.x) - np.min(self.x)),
+        #         -0.65 * 2 * self.underlying_std, r'$\ell_{\mathrm{guess}}$', fontsize=14,
+        #         horizontalalignment='right', verticalalignment='center', zorder=5 * i)
 
         ax.annotate("", xy=(np.min(self.x), -0.9 * 2 * self.underlying_std),
                     xytext=(np.min(self.x) + self.ls_true, -0.9 * 2 * self.underlying_std),
@@ -761,14 +768,14 @@ class GSUMDiagnostics:
                 horizontalalignment='right', verticalalignment='center', zorder=5 * i)
 
         # draws standard deviations
-        ax.annotate("", xy=(np.min(self.x) + 0.90 * (np.max(self.x) - np.min(self.x)), 0),
-                    xytext=(np.min(self.x) + 0.90 * (np.max(self.x) - np.min(self.x)),
-                            -1. * self.std_est),
-                    arrowprops=dict(arrowstyle="<->", capstyle='projecting', lw=1,
-                                    color='k', shrinkA = 0, shrinkB = 0), annotation_clip=False, zorder=5 * i)
-        ax.text(np.min(self.x) + 0.90 * (np.max(self.x) - np.min(self.x)),
-                -1.2 * self.std_est, r'$\sigma_{\mathrm{guess}}$', fontsize=14,
-                horizontalalignment='center', verticalalignment='bottom', zorder=5 * i)
+        # ax.annotate("", xy=(np.min(self.x) + 0.90 * (np.max(self.x) - np.min(self.x)), 0),
+        #             xytext=(np.min(self.x) + 0.90 * (np.max(self.x) - np.min(self.x)),
+        #                     -1. * self.std_est),
+        #             arrowprops=dict(arrowstyle="<->", capstyle='projecting', lw=1,
+        #                             color='k', shrinkA = 0, shrinkB = 0), annotation_clip=False, zorder=5 * i)
+        # ax.text(np.min(self.x) + 0.90 * (np.max(self.x) - np.min(self.x)),
+        #         -1.2 * self.std_est, r'$\sigma_{\mathrm{guess}}$', fontsize=14,
+        #         horizontalalignment='center', verticalalignment='bottom', zorder=5 * i)
 
         ax.annotate("", xy=(np.min(self.x) + 0.74 * (np.max(self.x) - np.min(self.x)), 0),
                     xytext=(np.min(self.x) + 0.74 * (np.max(self.x) - np.min(self.x)),
@@ -894,6 +901,22 @@ class GSUMDiagnostics:
                 ax.text(0.05, 0.95, r'$\mathrm{D}_{\mathrm{PC}}$', bbox=text_bbox,
                         transform=ax.transAxes, va='top', ha='left')
 
+                # plots legend
+                legend_handles = []
+                for i, n in enumerate(self.nn_orders_full[self.mask_restricted]):
+                    # legend_handles.append(Patch(color=self.colors[i], label=r'$c_{}$'.format(n)))
+                    legend_handles.append(Line2D([0], [0], marker='o',
+                                            color='w',
+                                            label=r'$c_{}$'.format(n),
+                                            markerfacecolor=self.colors[i],
+                                            markersize=8))
+                ax.legend(handles=legend_handles,
+                          loc='center left',
+                          bbox_to_anchor=(1, 0.5),
+                          handletextpad=0.02,
+                          borderpad=0.2)
+
+                fig.tight_layout()
                 plt.show()
 
                 # saves figure

@@ -221,9 +221,9 @@ def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_
         # scales the posteriors so they're all the same height
         posterior = posterior_raw / (1.2 * np.max(posterior_raw))
         # Make the lines taper off
-        # vals_restricted = variable.var[posterior > 1e-7]
-        # posterior = posterior[posterior > 1e-7]
-        vals_restricted = variable.var
+        vals_restricted = variable.var[posterior > 1e-2]
+        posterior = posterior[posterior > 1e-2]
+        # vals_restricted = variable.var
         # Plot and fill posterior, and add summary statistics
         ax.plot(vals_restricted, posterior - i, c='gray')
 
@@ -242,7 +242,7 @@ def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_
             pass
 
     # Plot formatting
-    ax.set_yticks(-1 * (order_num * np.arange(len(y_label)) + (order_num - 1)))
+    ax.set_yticks(-1 * (order_num * np.arange(len(y_label)) + (order_num - 2)))
     ax.set_yticklabels(y_label)
     ax.tick_params(axis='both', which='both', direction='in')
     ax.tick_params(which='major', length=0)
