@@ -139,5 +139,7 @@ scripts/figures/
 observables_data/
 # figures from tests
 tests/figures/
+# figures from tests
+notebooks/figures2/
 # figures for paper (ignored for now)
 notebooks/figures/
