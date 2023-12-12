@@ -1425,7 +1425,7 @@ def interp_f_ratio_posterior(x_map, x_interp, p, Q_param, mpi_var, lambda_var):
     """
     return interpn(x_interp, Q_approx(p, Q_param, Lambda_b=lambda_var, m_pi=mpi_var), x_map)
 
-def ratio_fn_curvewise(X, p_grid_train, p_param, p_shape, Q_param, mpi_var, lambda_var):
+def ratio_fn_curvewise(X, p_grid_train, p_param, p_shape, Q_param, mpi_var, lambda_var, single_expansion = False):
     """
     Function for interpolating between the input space and the ratio across that input space.
 
@@ -1448,7 +1448,7 @@ def ratio_fn_curvewise(X, p_grid_train, p_param, p_shape, Q_param, mpi_var, lamb
         except:
             p = np.append(p, p_approx(p_name=p_param, degrees=np.array([0]), prel=np.array([pt[0]])))
 
-    return Q_approx(p = np.reshape(p, p_shape), Q_parametrization=Q_param, Lambda_b = lambda_var, m_pi = mpi_var)
+    return Q_approx(p = np.reshape(p, p_shape), Q_parametrization=Q_param, Lambda_b = lambda_var, m_pi = mpi_var, single_expansion=single_expansion)
 
 def make_likelihood_filename(FileNameObj,
         folder,
@@ -2047,6 +2047,13 @@ def plot_posteriors_curvewise(
                         elif yref_type == "dimensionless":
                             yref = np.ones((len(degrees_train_pts) * len(t_lab_train_pts)))
 
+                        # # DELETE ASAP
+                        # obs_data_train_ugly = np.swapaxes(np.swapaxes(np.tile(obs_data_grouped_list[0][0].data, (179, 1, 1)), 0, 1), 1, 2)
+                        # obs_data_train_ugly = np.reshape(
+                        #     obs_data_train_ugly[:, np.isin(t_lab, t_lab_train_pts)][..., np.isin(degrees, degrees_train_pts)],
+                        #     (len(nn_orders_full_array), -1))
+                        # yref = obs_data_train_ugly[-1] * (4 * np.pi)
+
                         # creates and fits the TruncationTP object
                         gp_post_obs = gm.TruncationTP(kernel_posterior,
                                                       ref=yref,
@@ -2067,6 +2074,28 @@ def plot_posteriors_curvewise(
                                         (obs_data_train[:order, :]).T,
                                         # orders=self.nn_orders_full[:order])
                                         orders = nn_orders_full_array[:order])
+
+                        # # takes account for the constraint, if applicable
+                        # if obs_object.constraint is not None:
+                        #     if obs_object.constraint[2] == 'angle':
+                        #         print("We're invoking the constraint.")
+                        #         gp_post_obs.fit(grid_train,
+                        #                         (obs_data_train[:order, :]).T,
+                        #                         orders=nn_orders_full_array[:order],
+                        #                         dX=np.array([[degrees_input[i]] for i in obs_object.constraint[0]]),
+                        #                         dy=[j for j in obs_object.constraint[1]])
+                        #     # elif obs_object.constraint[2] == 'energy':
+                        #     #     gp_post_obs.fit(grid_train,
+                        #     #                     (obs_data_train[:order, :]).T,
+                        #     #                     orders=nn_orders_full_array[:order],
+                        #     #                     dX=np.array([[self.x[i]] for i in obs_object.constraint[0]]),
+                        #     #                     dy=[j for j in obs_object.constraint[1]])
+                        # else:
+                        #     # fits the TP to data
+                        #     gp_post_obs.fit(grid_train,
+                        #                     (obs_data_train[:order, :]).T,
+                        #                     # orders=self.nn_orders_full[:order])
+                        #                     orders=nn_orders_full_array[:order])
 
                         # # puts important objects into ray objects
                         gp_post_ray = ray.put(gp_post_obs)
@@ -2132,7 +2161,7 @@ def plot_posteriors_curvewise(
                 # saves
                 obs_name_corner_concat = ''.join(obs_name_grouped_list)
                 fig.savefig(('figures/' + FileName.scheme + '_' + FileName.scale + '/' +
-                             variable.name + '_curvewise_pdf_pointwise' + '_' + obs_name_corner_concat +
+                             variable.name + '_posterior_pdf_curvewise' + '_' + obs_name_corner_concat +
                              '_' + FileName.scheme + '_' +
                              FileName.scale + '_Q' + FileName.Q_param + '_' + FileName.p_param + '_' +
                              InputSpaceDeg.name + 'x' + InputSpaceTlab.name +

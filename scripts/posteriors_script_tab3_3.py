@@ -816,7 +816,6 @@ from generator_fns import *
 #         print("Available length scales: " + str(lengthscale_current_list))
 #         print("************************************")
 
-
 generate_posteriors(
     nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
@@ -847,9 +846,9 @@ generate_posteriors(
     Lambdab=480,
     print_all_classes=False,
     savefile_type="png",
-    plot_lambdapost_pointwise_bool=False,
+    plot_lambdapost_pointwise_bool=True,
     plot_lambdapost_curvewise_bool=True,
-    save_lambdapost_pointwise_bool=False,
-    save_lambdapost_curvewise_bool=False,
+    save_lambdapost_pointwise_bool=True,
+    save_lambdapost_curvewise_bool=True,
     filename_addendum="_cluster_3",
 )

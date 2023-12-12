@@ -847,6 +847,7 @@ def generate_posteriors(
         files.
     Default: ''
     """
+
     mpl.rc(
         "savefig",
         transparent=False,
@@ -888,6 +889,27 @@ def generate_posteriors(
             "d \sigma / d \Omega",
             "dimensionful",
         )
+        radians = degrees * np.pi / 180
+        SGTnosine = 2 * np.pi * np.trapz(DSG, x=radians, axis=2)
+        SGTnosineBunch = ObservableBunch(
+            "SGTnosine",
+            SGTnosine,
+            [],
+            [],
+            "\Sigma_{\mathrm{tot}}",
+            "dimensionful",
+        )
+        radians_tiled = np.tile(radians, (len(t_lab), 1))
+        radians_tiled = np.tile(radians_tiled, (np.shape(SGT)[0], 1, 1))
+        DSGsine = DSG * np.sin(radians_tiled * radians_tiled)
+        DSGsineBunch = ObservableBunch(
+            "DSGsine",
+            DSGsine,
+            [],
+            [],
+            "d \sigma / d \Omega \mathrm{sin}(\Theta)",
+            "dimensionful",
+        )
         AYBunch = ObservableBunch(
             "AY",
             AY,
@@ -896,6 +918,17 @@ def generate_posteriors(
             "A_{y}",
             "dimensionless",
             constraint=[[0, -1], [0, 0], "angle"],
+        )
+        AYint = 2 * np.pi * np.trapz(AY, x=radians, axis=2)
+        print("AYint = " + str(AYint))
+        AYintBunch = ObservableBunch(
+            "AYint",
+            AYint,
+            [],
+            [],
+            "\int A_{y}",
+            "dimensionless",
+            constraint=[[0], [0], "angle"],
         )
         ABunch = ObservableBunch(
             "A",
@@ -906,28 +939,61 @@ def generate_posteriors(
             "dimensionless",
             constraint=[[0], [0], "angle"],
         )
+        Aint = 2 * np.pi * np.trapz(A, x=radians, axis=2)
+        print("Aint = " + str(Aint))
+        AintBunch = ObservableBunch(
+            "Aint",
+            Aint,
+            [],
+            [],
+            "\int A",
+            "dimensionless",
+            constraint=[[0], [0], "angle"],
+        )
         DBunch = ObservableBunch(
             "D", D, [], [], "D", "dimensionless"
         )
         DBunch_dimensionful = ObservableBunch(
             "D_dimensionful", D, [], [], "D", "dimensionful"
         )
+        Dint = 2 * np.pi * np.trapz(D, x=radians, axis=2)
+        print("Dint = " + str(Dint))
+        DintBunch = ObservableBunch(
+            "Dint", Dint, [], [], "\int D", "dimensionless"
+        )
         AXXBunch = ObservableBunch(
             "AXX", AXX, [], [], "A_{xx}", "dimensionless"
+        )
+        AXXint = 2 * np.pi * np.trapz(AXX, x=radians, axis=2)
+        print("AXXint = " + str(AXXint))
+        AXXintBunch = ObservableBunch(
+            "AXXint", AXXint, [], [], "\int A_{xx}", "dimensionless"
         )
         AYYBunch = ObservableBunch(
             "AYY", AYY, [], [], "A_{yy}", "dimensionless"
         )
+        AYYint = 2 * np.pi * np.trapz(AYY, x=radians, axis=2)
+        print("AYYint = " + str(AYYint))
+        AYYintBunch = ObservableBunch(
+            "AYYint", AYYint, [], [], "\int A_{yy}", "dimensionless"
+        )
 
         observable_array = [
             SGTBunch,
+            SGTnosineBunch,
             DSGBunch,
+            DSGsineBunch,
             AYBunch,
             ABunch,
+            AYintBunch,
+            AintBunch,
             DBunch,
             DBunch_dimensionful,
+            DintBunch,
             AXXBunch,
             AYYBunch,
+            AXXintBunch,
+            AYYintBunch,
         ]
         # runs through the parametrizations of p in Q(p)
         for p, PParamMethod in enumerate(p_param_method_array):
@@ -1079,7 +1145,7 @@ def generate_posteriors(
 
                         # sets the meshes for the random variable arrays
                         mpi_vals = np.linspace(50, 350, 30, dtype=np.dtype('f4'))
-                        # mpi_vals = 138 * np.array([0.9999, 1.0001])
+                        # mpi_vals = 200 * np.array([0.9999, 1.0001])
                         ls_deg_vals = np.linspace(0.01,
                                               1.5 * (VsQuantityPosteriorDeg.input_space(
                                                   **{"p_input": E_to_p(np.max(t_lab_train_pts), nn_interaction),
@@ -1131,7 +1197,7 @@ def generate_posteriors(
                                                         name='mpieff',
                                                         label="m_{\pi}",
                                                         units="MeV",
-                                                        ticks=[100, 150, 200, 250, 300, 350],
+                                                        ticks=[100, 150, 200, 250, 300],
                                                         logprior=mpieff_logprior(mpi_vals),
                                                         logprior_name="uniformprior",
                                                         marg_bool = True)
@@ -1188,7 +1254,85 @@ def generate_posteriors(
                         )
 
                         if plot_lambdapost_curvewise_bool or plot_lambdapost_pointwise_bool:
-                            obs_dict = {"SGT": SGTBunch, "DSG": DSGBunch, "D": DBunch, "AXX": AXXBunch, "AYY": AYYBunch, "A": ABunch, "AY": AYBunch}
+                            # new stuff for "sb" ("spin-blocked") observables here
+                            ratio_sb_2d = Q_approx(
+                                p_approx(PParamMethod, E_to_p(t_lab, interaction = 'np'), degrees),
+                                QParamMethod,
+                                Lambda_b=Lambdab,
+                                m_pi=m_pi_eff,
+                            )
+                            # print("ratio_sb_2d has shape " + str(np.shape(ratio_sb_2d)))
+                            ratio_sb_1d = Q_approx(
+                                p_approx(PParamMethod, E_to_p(t_lab, interaction='np'), np.array([1])),
+                                QParamMethod,
+                                Lambda_b=Lambdab,
+                                m_pi=m_pi_eff,
+                            )
+
+                            # # turn into coefficients
+                            # Dsb_coeffs = gm.coefficients(np.reshape(D, (np.shape(D)[0], np.shape(D)[1] * np.shape(D)[2])).T,
+                            #                 ratio=np.reshape(ratio_sb_2d, np.shape(ratio_sb_2d)[0] * np.shape(ratio_sb_2d)[1]),
+                            #                 ref=1,
+                            #                 orders=Orders.orders_full).T
+                            # # integrate
+                            # Dsb_coeffs = np.reshape(Dsb_coeffs, np.shape(D))
+                            # Dsb_coeffs_int = 2 * np.pi * np.trapz(Dsb_coeffs, x = radians, axis = 2)
+                            # # put back into observables
+                            # Dsb = gm.partials(
+                            #     coeffs=np.reshape(Dsb_coeffs_int, (len(Orders.orders_full), len(t_lab))).T,
+                            #     ratio=np.reshape(ratio_sb_1d, (len(t_lab))),
+                            #     ref=1,
+                            #     orders=Orders.orders_full).T
+                            # # make ObservableBunch
+                            # DsbBunch = ObservableBunch(
+                            #     "Dsb", Dsb, [], [], "D_{sb}", "dimensionless"
+                            # )
+
+                            OBSsb_list = []
+                            for OBS in [DSG, D, AXX, AYY, A, AY]:
+                                # turn into coefficients
+                                OBSsb_coeffs = gm.coefficients(
+                                    np.reshape(OBS, (np.shape(OBS)[0], np.shape(OBS)[1] * np.shape(OBS)[2])).T,
+                                    ratio=np.reshape(ratio_sb_2d, np.shape(ratio_sb_2d)[0] * np.shape(ratio_sb_2d)[1]),
+                                    ref=1,
+                                    orders=Orders.orders_full).T
+                                # integrate
+                                OBSsb_coeffs = np.reshape(OBSsb_coeffs, np.shape(OBS))
+                                OBSsb_coeffs_int = 2 * np.pi * np.trapz(OBSsb_coeffs, x=radians, axis=2)
+                                # put back into observables
+                                OBSsb = gm.partials(
+                                    coeffs=np.reshape(OBSsb_coeffs_int, (len(Orders.orders_full), len(t_lab))).T,
+                                    ratio=np.reshape(ratio_sb_1d, (len(t_lab))),
+                                    ref=1,
+                                    orders=Orders.orders_full).T
+                                OBSsb_list.append(OBSsb)
+
+                            # make ObservableBunch
+                            DSGsbBunch = ObservableBunch(
+                                "DSGsb", OBSsb_list[0], [], [], "DSG_{sb}", "dimensionful"
+                            )
+                            DsbBunch = ObservableBunch(
+                                "Dsb", OBSsb_list[1], [], [], "D_{sb}", "dimensionless"
+                            )
+                            AXXsbBunch = ObservableBunch(
+                                "AXXsb", OBSsb_list[2], [], [], "A_{xxsb}", "dimensionless"
+                            )
+                            AYYsbBunch = ObservableBunch(
+                                "AYYsb", OBSsb_list[3], [], [], "A_{yysb}", "dimensionless"
+                            )
+                            AsbBunch = ObservableBunch(
+                                "Asb", OBSsb_list[4], [], [], "A_{sb}", "dimensionless"
+                            )
+                            AYsbBunch = ObservableBunch(
+                                "AYsb", OBSsb_list[5], [], [], "A_{ysb}", "dimensionless"
+                            )
+
+                            obs_dict = {"SGT": SGTBunch, "DSG": DSGBunch, "D": DBunch, "AXX": AXXBunch,
+                                        "AYY": AYYBunch, "A": ABunch, "AY": AYBunch, "SGTnosine": SGTnosineBunch,
+                                        "DSGsine": DSGsineBunch, "Dint": DintBunch, "AXXint": AXXintBunch,
+                                        "AYYint": AYYintBunch, "Aint": AintBunch, "AYint": AYintBunch,
+                                        "Dsb": DsbBunch, "DSGsb": DSGsbBunch, "AXXsb": AXXsbBunch, "AYYsb": AYYsbBunch,
+                                        "AYsb": AYsbBunch, "Asb": AsbBunch, }
 
                             # # just SGT
                             # plot_obs_list = [["SGT"]]
@@ -1226,24 +1370,63 @@ def generate_posteriors(
                             # plot_obs_list = [["AY"]]
                             # obs_name_grouped_list = ["AY"]
                             # obs_labels_grouped_list = [r'$A_{y}$']
+                            # mesh_cart_grouped_list = [[mesh_cart]]
 
                             # # for equalizing SGT and DSG
                             # plot_obs_list = [["SGT"], ["DSG"]]
                             # obs_name_grouped_list = ["SGT", "DSG"]
                             # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$']
-                            # mesh_cart_grouped_list = [mesh_cart_sgt, mesh_cart]
+                            # mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart]]
 
-                            # for equalizing SGT and DSG
-                            plot_obs_list = [["SGT"], ["DSG"], ["SGT", "DSG"]]
-                            obs_name_grouped_list = ["SGT", "DSG", "TWOOBS"]
-                            obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$', r'2Obs.']
-                            # mesh_cart_grouped_list = [mesh_cart, mesh_cart, mesh_cart]
-                            mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart], [mesh_cart_sgt, mesh_cart]]
+                            # # for equalizing SGT and DSG
+                            # plot_obs_list = [["SGT"], ["DSG"], ["SGT", "DSG"]]
+                            # obs_name_grouped_list = ["SGT", "DSG", "TWOOBS"]
+                            # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$', r'2Obs.']
+                            # # mesh_cart_grouped_list = [mesh_cart, mesh_cart, mesh_cart]
+                            # mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart], [mesh_cart_sgt, mesh_cart]]
+
+                            #
+                            # plot_obs_list = [["SGT"], ["SGTnosine"], ["DSGsine"], ["DSG"]]
+                            # obs_name_grouped_list = ["SGT", "SGTnosine", "DSGsine", "DSG"]
+                            # obs_labels_grouped_list = [r'$\sigma$', r'$\Sigma$',
+                            #                            r'$\displaystyle\frac{d\sigma}{d\Omega}\mathrm{sin}(\theta)$',
+                            #                            r'$\displaystyle\frac{d\sigma}{d\Omega}$']
+                            # mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart_sgt], [mesh_cart], [mesh_cart]]
+
+                            # #
+                            # plot_obs_list = [["DSGsine"], ["DSG"]]
+                            # obs_name_grouped_list = ["DSGsine", "DSG"]
+                            # obs_labels_grouped_list = [
+                            #                            r'$\displaystyle\frac{d\sigma}{d\Omega}\mathrm{sin}(\theta)$',
+                            #                            r'$\displaystyle\frac{d\sigma}{d\Omega}$']
+                            # mesh_cart_grouped_list = [[mesh_cart], [mesh_cart]]
 
                             # # for SGT, DSG, and D
                             # plot_obs_list = [["SGT"], ["DSG"], ["D"]]
                             # obs_name_grouped_list = ["SGT", "DSG", "D"]
                             # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$', r'$D$']
+
+                            # #
+                            # plot_obs_list = [["SGT"], ["DSG"], ["DSGsb"], ["D"], ["Dint"], ["Dsb"],
+                            #                  ["AXX"], ["AXXint"], ["AXXsb"], ["AYY"], ["AYYint"], ["AYYsb"],
+                            #                  ["A"], ["Aint"], ["Asb"], ["AY"], ["AYint"], ["AYsb"],]
+                            # obs_name_grouped_list = ["SGT", "DSG", "DSGsb", "D", "Dint", "Dsb", "AXX", "AXXint", "AXXsb",
+                            #                          "AYY", "AYYint", "AYYsb", "A", "Aint", "Asb" "AY", "AYint", "AYsb"]
+                            # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$',
+                            #                            r'$\displaystyle\frac{d\sigma}{d\Omega}_{sb}$', r'$D$',
+                            #                            r'$\int D$', r'$D_{sb}$', r'$A_{xx}$', r'$\int A_{xx}$', r'$A_{xxsb}$',
+                            #                            r'$A_{yy}$', r'$\int A_{yy}$', r'$A_{yysb}$',
+                            #                            r'$A$', r'$\int A$', r'$A_{sb}$', r'$A_{y}$', r'$\int A_{y}$', r'$A_{ysb}$', ]
+                            # mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart], [mesh_cart_sgt], [mesh_cart],
+                            #                           [mesh_cart_sgt], [mesh_cart_sgt],
+                            #                           [mesh_cart], [mesh_cart_sgt], [mesh_cart_sgt], [mesh_cart], [mesh_cart_sgt],
+                            #                           [mesh_cart_sgt], [mesh_cart], [mesh_cart_sgt], [mesh_cart_sgt],
+                            #                           [mesh_cart], [mesh_cart_sgt], [mesh_cart_sgt], ]
+
+                            # plot_obs_list = [["D"], ["Dint"], ["Dsb"]]
+                            # obs_name_grouped_list = ["D", "Dint", "Dsb"]
+                            # obs_labels_grouped_list = [r'$D$', r'$\int D$', r'$D_{sb}$']
+                            # mesh_cart_grouped_list = [[mesh_cart], [mesh_cart_sgt], [mesh_cart_sgt],]
 
                             # # spins
                             # plot_obs_list = [["D", "AXX", "AYY", "A", "AY"]]
@@ -1273,13 +1456,13 @@ def generate_posteriors(
                             # obs_labels_grouped_list = [r'$\displaystyle\frac{d\sigma}{d\Omega}$',
                             #                            r'$X_{pqik}$']
 
-                            # # EACHOBS for energy input spaces
-                            # plot_obs_list = [["SGT"], ["DSG"], ["D"], ["AXX"], ["AYY"], ["A"], ["AY"]]
-                            # obs_name_grouped_list = ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]
-                            # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$',
-                            #                            r'$D$', r'$A_{xx}$', r'$A_{yy}$', r'$A$', r'$A_{y}$']
-                            # mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart], [mesh_cart], [mesh_cart], [mesh_cart],
-                            #                           [mesh_cart], [mesh_cart]]
+                            # EACHOBS for energy input spaces
+                            plot_obs_list = [["SGT"], ["DSG"], ["D"], ["AXX"], ["AYY"], ["A"], ["AY"]]
+                            obs_name_grouped_list = ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]
+                            obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$',
+                                                       r'$D$', r'$A_{xx}$', r'$A_{yy}$', r'$A$', r'$A_{y}$']
+                            mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart], [mesh_cart], [mesh_cart], [mesh_cart],
+                                                      [mesh_cart], [mesh_cart]]
 
                             # # EACHOBS and ALLOBS for energy input spaces
                             # plot_obs_list = [["SGT"], ["DSG"], ["D"], ["AXX"], ["AYY"], ["A"], ["AY"],
@@ -1408,19 +1591,21 @@ def generate_posteriors(
                                         "p_param": PParamMethod,
                                         "Q_param": QParamMethod,
                                         "mpi_var": m_pi_eff,
-                                        "lambda_var": Lambdab
+                                        "lambda_var": Lambdab,
+                                        "single_expansion": False,
                                     },
                                     log_likelihood_fn=log_likelihood,
                                     log_likelihood_fn_kwargs={
                                         "p_param": PParamMethod,
-                                        "Q_param": QParamMethod
+                                        "Q_param": QParamMethod,
+                                        "single_expansion": False,
                                     },
 
                                     orders=2,
 
                                     FileName = FileName,
 
-                                    whether_use_data=True,
+                                    whether_use_data=False,
                                     whether_save_data=True,
                                     whether_save_plots=save_lambdapost_curvewise_bool,
                                 )
