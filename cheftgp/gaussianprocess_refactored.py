@@ -1450,6 +1450,20 @@ def ratio_fn_curvewise(X, p_grid_train, p_param, p_shape, Q_param, mpi_var, lamb
 
     return Q_approx(p = np.reshape(p, p_shape), Q_parametrization=Q_param, Lambda_b = lambda_var, m_pi = mpi_var, single_expansion=single_expansion)
 
+def ratio_fn_posterior_const(X, p_shape, p_grid_train, Q):
+    """
+    Function for interpolating between the input space and the ratio across that input space.
+
+    Parameters
+    ----------
+    X (array) : array of points onto which to map.
+    p_shape (tuple) : shape into which to shape the array of p values.
+    p_grid_train (array) : momentum/momenta for calculating the ratio (dimensionless expansion parameter).
+    Q (float) : value of the ratio.
+    """
+    return Q
+
+
 def make_likelihood_filename(FileNameObj,
         folder,
         observable_name,
@@ -1601,11 +1615,14 @@ def marginalize_likelihoods(variables_array, like_list):
 
             marg_post_list.append(list(marg_post))
 
-        comb_array = []
-        for ca in range(1, np.shape(variables_array)[0]):
-            for ca_less in range(0, ca):
-                comb_array.append([ca, ca_less])
-        comb_array = np.flip(np.array(comb_array), axis=1)
+        if np.shape(variables_array)[0] > 1:
+            comb_array = []
+            for ca in range(1, np.shape(variables_array)[0]):
+                for ca_less in range(0, ca):
+                    comb_array.append([ca, ca_less])
+            comb_array = np.flip(np.array(comb_array), axis=1)
+        else:
+            comb_array = np.array([0, 0])
 
         for (v_norm, v_marg) in zip(comb_array,
                                     np.flip(np.array([np.arange(0, np.shape(variables_array)[0], 1, dtype=int)[
@@ -1657,6 +1674,24 @@ def log_likelihood(gp_fitted,
                                                     "lambda_var": pt[0]}}
 
                                               ) for pt in mesh_points]
+
+@ray.remote
+def log_likelihood_const(gp_fitted,
+                   mesh_points,
+                   log_likelihood_fn_kwargs
+                   ):
+    """
+    Function for interpolating calculating the log-likelihood for a fitted TrunctionTP object.
+    Specifically, this is for cases with random variables (Q, ell_degrees, ell_tlab).
+    Parameters
+    ----------
+    gp_fitted (TruncationTP) : Student t-distribution object from GSUM.
+    mesh_points (array) : array over which evaluation takes place.
+    log_likelihood_fn_kwargs (dict) : kwargs for evaluation.
+    """
+    return [gp_fitted.log_marginal_likelihood([pt[1 + n] for n in range(len(pt) - 1)],
+                                              **{**log_likelihood_fn_kwargs,
+                                                 **{"Q": pt[0]}}) for pt in mesh_points]
 
 def plot_posteriors_curvewise(
                           light_colors,
@@ -2181,13 +2216,13 @@ def plot_posteriors_curvewise(
                                          nn_orders_array,
                                          orders_labels_dict)
 
-        # creates a list of the values of the random variables corresponding to the
-        # point of highest probability in the posterior
-        indices_opt = np.where(like_list[-1] == np.amax(like_list[-1]))
-        opt_vals_list = []
-        for idx, var in zip(indices_opt, [variable.var for variable in variables_array[marg_bool_array]]):
-            opt_vals_list.append((var[idx])[0])
-        print("opt_vals_list = " + str(opt_vals_list))
+    # # creates a list of the values of the random variables corresponding to the
+    # # point of highest probability in the posterior
+    # indices_opt = np.where(like_list[-1] == np.amax(like_list[-1]))
+    opt_vals_list = []
+    # for idx, var in zip(indices_opt, [variable.var for variable in variables_array[marg_bool_array]]):
+    #     opt_vals_list.append((var[idx])[0])
+    # print("opt_vals_list = " + str(opt_vals_list))
 
     return opt_vals_list
 

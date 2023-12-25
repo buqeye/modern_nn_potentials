@@ -831,12 +831,14 @@ generate_posteriors(
     # t_lab_pts=np.array([1, 8, 19, 36, 58, 85, 118]),  # set4
     # t_lab_pts=np.array([1, 11, 31, 61, 100, 150]),  # set5
     # t_lab_pts=np.array([1, 6, 15, 28, 45, 65, 90, 118, 150]),  # set6
-    t_lab_train_pts=np.array([36, 58, 85, 118, 155, 198, 246, 300]),  # set7
+    # t_lab_train_pts=np.array([36, 58, 85, 118, 155, 198, 246, 300]),  # set7
     # t_lab_train_pts=np.array([12, 33, 65, 108, 161, 225, 300]),  # set8
     # t_lab_train_pts=np.array([33, 65, 108, 161, 225, 300]),  # set9
-    # t_lab_train_pts=np.array([65, 108, 161, 225, 300]),  # set10
+    t_lab_train_pts=np.array([65, 108, 161, 225, 300]),  # set10
     # t_lab_train_pts=np.array([108, 161, 225, 300]),  # set11
     # t_lab_train_pts=np.array([20, 40, 60, 80, 100, 120, 140, 160, 180, 200, 220, 240, 260, 280, 300, 320, 340]),  # 1704
+    # t_lab_train_pts=np.array([42, 69, 103, 144, 192]),  # setdrp5
+    # t_lab_train_pts=np.array([42, 62, 85, 113, 145, 179, 218]),  # setdrp7
     degrees_train_pts=np.array([41, 60, 76, 90, 104, 120, 139]), # evencos
     # degrees_train_pts=np.array(
     #     [15, 31, 50, 90, 130, 149, 165]
@@ -855,7 +857,7 @@ generate_posteriors(
     savefile_type="png",
     plot_lambdapost_pointwise_bool=True,
     plot_lambdapost_curvewise_bool=True,
-    save_lambdapost_pointwise_bool=True,
+    save_lambdapost_pointwise_bool=False,
     save_lambdapost_curvewise_bool=True,
-    filename_addendum="_set7",
+    filename_addendum="_potfin_set10",
 )

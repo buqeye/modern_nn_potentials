@@ -38,7 +38,8 @@ def Q_approx(p, Q_parametrization, Lambda_b, m_pi=138,
 
     elif Q_parametrization == "sum":
         # Transition from m_pi to p with a simple sum and a scaling factor (k_sum) as a function of mpi
-        q = (p + m_pi) / (Qsum_to_Qsmoothmax(m_pi) * Lambda_b)
+        # q = (p + m_pi) / (Qsum_to_Qsmoothmax(m_pi) * Lambda_b)
+        q = (p + m_pi) / (1.6 * Lambda_b)
         return q
 
     elif Q_parametrization == "rawsum":
@@ -56,6 +57,7 @@ def Qsum_to_Qsmoothmax(m_pi):
     m_pi (float or array) : pion mass value(s) (in MeV).
     """
     return (m_pi + 750) / 600
+    # return 1.7
 def p_approx(p_name, prel, degrees):
     """
     Returns the dimensionless expansion parameter Q.
@@ -78,7 +80,6 @@ def p_approx(p_name, prel, degrees):
     elif p_name == "Qofpqmax" or p_name == "pmax":
         return np.array([[max(p, deg_to_qcm(p, d))
                          for p in prel] for d in degrees])
-
 
 def deg_fn(deg_input, **kwargs):
     """
@@ -174,7 +175,7 @@ def Lb_logprior(Lambda_b):
     Uniform log-prior for the breakdown scale (in MeV).
     Similar to Melendez et al., Eq. (31)
     """
-    return np.where((300 <= Lambda_b) & (Lambda_b <= 900), 0, -np.inf)
+    return np.where((0 <= Lambda_b) & (Lambda_b <= 4000), 0, -np.inf)
     # return np.where((200 <= Lambda_b) & (Lambda_b <= 1000), 0, -np.inf)
 
 def mpieff_logprior(m_pi):
@@ -183,4 +184,4 @@ def mpieff_logprior(m_pi):
     Similar to Melendez et al., Eq. (31)
     """
     # return np.where((50 <= m_pi) & (m_pi <= 300), np.log(1. / m_pi), -np.inf)
-    return np.where((1 <= m_pi) & (m_pi <= 451), 0, -np.inf)
+    return np.where((0 <= m_pi) & (m_pi <= 4000), 0, -np.inf)

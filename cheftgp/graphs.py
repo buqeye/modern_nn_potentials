@@ -241,6 +241,20 @@ def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_
         except:
             pass
 
+        dist_mean, dist_stddev = mean_and_stddev(variable.var, posterior_raw)
+        index_opt = np.where(posterior_raw == np.amax(posterior_raw))
+        MAP = variable.var[index_opt]
+
+        print("Observable " + str(y_label[i % len(y_label)]) +
+              # ", order " + str(orders_labels_dict[nn_orders[i % order_num]]) +
+              ", variable " + str(variable.name) + ": mean = " + str(dist_mean))
+        print("Observable " + str(y_label[i % len(y_label)]) +
+              # ", order " + str(orders_labels_dict[nn_orders[i % order_num]]) +
+              ", variable " + str(variable.name) + ": MAP value = " + str(MAP[0]))
+        print("Observable " + str(y_label[i % len(y_label)]) +
+              # ", order " + str(orders_labels_dict[nn_orders[i % order_num]]) +
+              ", variable " + str(variable.name) + ": std. dev. = " + str(dist_stddev))
+
     # Plot formatting
     ax.set_yticks(-1 * (order_num * np.arange(len(y_label)) + (order_num - 2)))
     ax.set_yticklabels(y_label)
