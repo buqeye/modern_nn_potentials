@@ -47,6 +47,11 @@ def Q_approx(p, Q_parametrization, Lambda_b, m_pi=138,
         q = (p + m_pi) / Lambda_b
         return q
 
+    elif Q_parametrization == "twosum":
+        # Transition from m_pi to p with a simple sum
+        q = (p + m_pi) / (m_pi + Lambda_b)
+        return q
+
 def Qsum_to_Qsmoothmax(m_pi):
     """
     Converts the denominator of the dimensionless expansion parameter from the Qsmax to the Qsum prescription, based on

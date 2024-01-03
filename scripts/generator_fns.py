@@ -1241,10 +1241,10 @@ def generate_posteriors(
                         # length
 
                         # sets the meshes for the random variable arrays
-                        mpi_vals = np.linspace(50, 350, 30, dtype=np.dtype('f4'))
+                        mpi_vals = np.linspace(1, 350, 45, dtype=np.dtype('f4'))
                         # mpi_vals = 200 * np.array([0.9999, 1.0001])
                         ls_deg_vals = np.linspace(0.01,
-                                              1.5 * (VsQuantityPosteriorDeg.input_space(
+                                              2 * (VsQuantityPosteriorDeg.input_space(
                                                   **{"p_input": E_to_p(np.max(t_lab_train_pts), nn_interaction),
                                                      "deg_input": max(degrees),
                                                      "interaction": nn_interaction}) -
@@ -1252,9 +1252,9 @@ def generate_posteriors(
                                                        **{"p_input": E_to_p(np.min(t_lab_train_pts), nn_interaction),
                                                           "deg_input": min(degrees),
                                                           "interaction": nn_interaction})),
-                                              30)
-                        ls_tlab_vals = np.linspace(1, 150, 30, dtype=np.dtype('f4'))
-                        lambda_vals = np.linspace(300, 900, 30, dtype=np.dtype('f4'))
+                                              45)
+                        ls_tlab_vals = np.linspace(1, 150, 45, dtype=np.dtype('f4'))
+                        lambda_vals = np.linspace(200, 900, 45, dtype=np.dtype('f4'))
                         # lambda_vals = np.linspace(300, 1200, 500, dtype=np.dtype('f4'))
                         # lambda_vals = 600 * np.array([0.9999, 1.0001])
 
@@ -1269,7 +1269,7 @@ def generate_posteriors(
                                                          name='Lambdab',
                                                          label="\Lambda_{b}",
                                                          units="MeV",
-                                                         ticks=[450, 600, 750],
+                                                         ticks=[300, 450, 600, 750],
                                                          logprior=Lb_logprior(lambda_vals),
                                                          logprior_name="uniformprior",
                                                          marg_bool = True)
@@ -1296,7 +1296,7 @@ def generate_posteriors(
                                                         name='mpieff',
                                                         label="m_{\pi}",
                                                         units="MeV",
-                                                        ticks=[100, 150, 200, 250, 300],
+                                                        ticks=[50, 100, 150, 200, 250, 300],
                                                         logprior=mpieff_logprior(mpi_vals),
                                                         logprior_name="uniformprior",
                                                         marg_bool = True)
@@ -1799,14 +1799,14 @@ def generate_posteriors(
                                     # log_likelihood_fn = log_likelihood_const,
                                     # log_likelihood_fn_kwargs = {},
 
-                                    orders=3,
+                                    orders=1,
 
                                     FileName = FileName,
 
                                     whether_plot_posteriors=True,
                                     whether_plot_corner=True,
 
-                                    whether_use_data=False,
+                                    whether_use_data=True,
                                     whether_save_data=True,
                                     whether_save_plots=save_lambdapost_curvewise_bool,
                                 )
