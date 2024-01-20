@@ -846,9 +846,9 @@ generate_posteriors(
     Lambdab=480,
     print_all_classes=False,
     savefile_type="png",
-    plot_lambdapost_pointwise_bool=True,
+    plot_lambdapost_pointwise_bool=False,
     plot_lambdapost_curvewise_bool=True,
-    save_lambdapost_pointwise_bool=True,
+    save_lambdapost_pointwise_bool=False,
     save_lambdapost_curvewise_bool=True,
     filename_addendum="_cluster_3",
 )

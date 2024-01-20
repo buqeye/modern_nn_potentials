@@ -39,7 +39,8 @@ def Q_approx(p, Q_parametrization, Lambda_b, m_pi=138,
     elif Q_parametrization == "sum":
         # Transition from m_pi to p with a simple sum and a scaling factor (k_sum) as a function of mpi
         # q = (p + m_pi) / (Qsum_to_Qsmoothmax(m_pi) * Lambda_b)
-        q = (p + m_pi) / (1.6 * Lambda_b)
+        # q = (p + m_pi) / (1.6 * Lambda_b)
+        q = (p + m_pi) / (m_pi + Lambda_b)
         return q
 
     elif Q_parametrization == "rawsum":

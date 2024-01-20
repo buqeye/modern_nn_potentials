@@ -1324,7 +1324,8 @@ class GSUMDiagnostics:
             self.gr_dgn.credible_interval(
                 np.linspace(1e-5, 1, 100), band_perc=[0.68, 0.95], ax=ax, title=None,
                 xlabel=r'Credible Interval ($100\alpha\%$)',
-                ylabel=r'Empirical Coverage ($\%$)\,(N = ' + str(len(self.X_test)) + r')')
+                # ylabel=r'Empirical Coverage ($\%$)\,(N = ' + str(len(self.X_test)) + r')')
+                ylabel=r'Empirical Coverage ($\%$)')
 
             ax.set_xticks([0, 0.2, 0.4, 0.6, 0.8, 1])
             ax.set_xticklabels([0, 20, 40, 60, 80, 100])

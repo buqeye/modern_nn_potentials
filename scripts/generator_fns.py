@@ -742,6 +742,7 @@ def generate_posteriors(
     input_space_tlab=["prel"],
     t_lab_train_pts = np.array([]),
     degrees_train_pts = np.array([]),
+    orders_from_ho = 1,
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
@@ -751,10 +752,19 @@ def generate_posteriors(
     Lambdab=600,
     print_all_classes=False,
     savefile_type="pdf",
-    plot_lambdapost_pointwise_bool=False,
-    plot_lambdapost_curvewise_bool=False,
-    save_lambdapost_pointwise_bool=False,
-    save_lambdapost_curvewise_bool=False,
+    plot_obs_list = [None],
+    obs_name_grouped_list = [None],
+    obs_labels_grouped_list = [None],
+    mesh_cart_grouped_list = [None],
+    variables_array_curvewise = [None],
+    variables_array_pointwise = [None],
+    plot_posterior_pointwise_bool=False,
+    plot_posterior_curvewise_bool=False,
+    plot_corner_curvewise_bool=False,
+    use_data_curvewise_bool=False,
+    save_data_curvewise_bool=False,
+    save_posterior_pointwise_bool=False,
+    save_posterior_curvewise_bool=False,
     filename_addendum="",
 ):
     """
@@ -1234,134 +1244,6 @@ def generate_posteriors(
                 for j, VsQuantityPosteriorTlab in enumerate(vsquantity_posterior_array_tlab):
                     # runs through the angle-based input spaces
                     for i, VsQuantityPosteriorDeg in enumerate(vsquantity_posterior_array_deg):
-                        # creates the posterior bounds for the Lambda-ell
-                        # posterior probability distribution function scaled using
-                        # the current value of Lambdab and an estimate of
-                        # 1/4 of the total input space size for the correlation
-                        # length
-
-                        # sets the meshes for the random variable arrays
-                        mpi_vals = np.linspace(1, 350, 45, dtype=np.dtype('f4'))
-                        # mpi_vals = 200 * np.array([0.9999, 1.0001])
-                        ls_deg_vals = np.linspace(0.01,
-                                              2 * (VsQuantityPosteriorDeg.input_space(
-                                                  **{"p_input": E_to_p(np.max(t_lab_train_pts), nn_interaction),
-                                                     "deg_input": max(degrees),
-                                                     "interaction": nn_interaction}) -
-                                                   VsQuantityPosteriorDeg.input_space(
-                                                       **{"p_input": E_to_p(np.min(t_lab_train_pts), nn_interaction),
-                                                          "deg_input": min(degrees),
-                                                          "interaction": nn_interaction})),
-                                              45)
-                        ls_tlab_vals = np.linspace(1, 150, 45, dtype=np.dtype('f4'))
-                        lambda_vals = np.linspace(200, 900, 45, dtype=np.dtype('f4'))
-                        # lambda_vals = np.linspace(300, 1200, 500, dtype=np.dtype('f4'))
-                        # lambda_vals = 600 * np.array([0.9999, 1.0001])
-
-                        mesh_cart = gm.cartesian(lambda_vals, np.log(ls_deg_vals), np.log(ls_tlab_vals), mpi_vals)
-                        mesh_cart_sgt = np.delete(mesh_cart, 1, 1)
-                        mesh_cart_ang = np.delete(mesh_cart, 2, 1)
-                        # print(mesh_cart_ang)
-
-                        # sets the RandomVariable objects
-                        LambdabVariable = RandomVariable(var=lambda_vals,
-                                                         user_val=Lambdab,
-                                                         name='Lambdab',
-                                                         label="\Lambda_{b}",
-                                                         units="MeV",
-                                                         ticks=[300, 450, 600, 750],
-                                                         logprior=Lb_logprior(lambda_vals),
-                                                         logprior_name="uniformprior",
-                                                         marg_bool = True)
-                        LsDegVariable = RandomVariable(var=ls_deg_vals,
-                                                    user_val=None,
-                                                    name='lsdeg',
-                                                    label="\ell_{\Theta}",
-                                                    units="",
-                                                    ticks=[],
-                                                    logprior=np.zeros(len(ls_deg_vals)),
-                                                    logprior_name="noprior",
-                                                    marg_bool=False)
-                        LsTlabVariable = RandomVariable(var=ls_tlab_vals,
-                                                    user_val=None,
-                                                    name='lstlab',
-                                                    label="\ell_{T}",
-                                                    units="MeV",
-                                                    ticks=[],
-                                                    logprior=np.zeros(len(ls_tlab_vals)),
-                                                    logprior_name="noprior",
-                                                    marg_bool=False)
-                        MpieffVariable = RandomVariable(var=mpi_vals,
-                                                        user_val=m_pi_eff,
-                                                        name='mpieff',
-                                                        label="m_{\pi}",
-                                                        units="MeV",
-                                                        ticks=[50, 100, 150, 200, 250, 300],
-                                                        logprior=mpieff_logprior(mpi_vals),
-                                                        logprior_name="uniformprior",
-                                                        marg_bool = True)
-                        variables_array = np.array([LambdabVariable, LsDegVariable, LsTlabVariable, MpieffVariable])
-
-                        # ls_deg_vals = np.linspace(0.01,
-                        #                           1.5 * (VsQuantityPosteriorDeg.input_space(
-                        #                               **{"p_input": E_to_p(np.max(t_lab_train_pts), nn_interaction),
-                        #                                  "deg_input": max(degrees),
-                        #                                  "interaction": nn_interaction}) -
-                        #                                  VsQuantityPosteriorDeg.input_space(
-                        #                                      **{"p_input": E_to_p(np.min(t_lab_train_pts),
-                        #                                                           nn_interaction),
-                        #                                         "deg_input": min(degrees),
-                        #                                         "interaction": nn_interaction})),
-                        #                           100)
-                        # q_vals = np.linspace(0.01, 1.01, 100, dtype=np.dtype('f4'))
-                        #
-                        # mesh_cart_q = gm.cartesian(q_vals, np.log(ls_deg_vals))
-                        #
-                        # QVariable = RandomVariable(var=q_vals,
-                        #                                 user_val=0.3,
-                        #                                 name='Q',
-                        #                                 label="Q",
-                        #                                 units="",
-                        #                                 ticks=[0.2, 0.4, 0.6, 0.8],
-                        #                                 logprior=np.zeros(len(q_vals)),
-                        #                                 logprior_name="noprior",
-                        #                                 marg_bool=True)
-                        # LsDegVariable = RandomVariable(var=ls_deg_vals,
-                        #                                user_val=None,
-                        #                                name='lsdeg',
-                        #                                label="\ell_{\Theta}",
-                        #                                units="",
-                        #                                ticks=[],
-                        #                                logprior=np.zeros(len(ls_deg_vals)),
-                        #                                logprior_name="noprior",
-                        #                                marg_bool=False)
-                        # variables_array = np.array([QVariable, LsDegVariable])
-
-                        # chooses a starting guess for the GP length scale optimization procedure
-                        # LengthScaleGuess = length_scale_input
-                        # if E_angle_pair[0]:
-                        #     LengthScaleGuess = LengthScaleDegInput
-                        #     LengthScaleGuess.make_guess(
-                        #         VsQuantity.input_space(
-                        #             **{
-                        #                 "deg_input": degrees,
-                        #                 "p_input": E_to_p(
-                        #                     E_lab, interaction=nn_interaction
-                        #                 ),
-                        #             }
-                        #         )
-                        #     )
-                        # else:
-                        #     LengthScaleGuess = LengthScaleTlabInput
-                        #     LengthScaleGuess.make_guess(
-                        #         VsQuantity.input_space(
-                        #             **{
-                        #                 "E_lab": t_lab,
-                        #                 "interaction": nn_interaction,
-                        #             }
-                        #         )
-                        #     )
-
                         center = 0
                         df = 1
                         disp = 0
@@ -1387,7 +1269,7 @@ def generate_posteriors(
                             orders_labels_dict=orders_labels_dict,
                         )
 
-                        if plot_lambdapost_curvewise_bool or plot_lambdapost_pointwise_bool:
+                        if plot_posterior_curvewise_bool or plot_posterior_pointwise_bool:
                             # new stuff for "sb" ("spin-blocked") observables here
                             ratio_sb_2d = Q_approx(
                                 p_approx(PParamMethod, E_to_p(t_lab, interaction = 'np'), degrees),
@@ -1473,219 +1355,6 @@ def generate_posteriors(
                                         "DSG85": DSG85Bunch, "DSG133": DSG133Bunch,
                                         }
 
-                            # # just SGT
-                            # plot_obs_list = [["SGT"]]
-                            # obs_name_grouped_list = ["SGT"]
-                            # obs_labels_grouped_list = [r'$\sigma$']
-                            # mesh_cart_grouped_list = [mesh_cart_sgt]
-
-                            # just DSG
-                            # plot_obs_list = [["DSG"]]
-                            # obs_name_grouped_list = ["DSG"]
-                            # obs_labels_grouped_list = [r'$\displaystyle\frac{d\sigma}{d\Omega}$']
-                            # # mesh_cart_grouped_list = [mesh_cart]
-                            # mesh_cart_grouped_list = [[mesh_cart_q]]
-
-                            # # just D
-                            # plot_obs_list = [["D"]]
-                            # obs_name_grouped_list = ["D"]
-                            # obs_labels_grouped_list = [r'$D$']
-
-                            # # just AXX
-                            # plot_obs_list = [["AXX"]]
-                            # obs_name_grouped_list = ["AXX"]
-                            # obs_labels_grouped_list = [r'$A_{xx}$']
-
-                            # # just AYY
-                            # plot_obs_list = [["AYY"]]
-                            # obs_name_grouped_list = ["AYY"]
-                            # obs_labels_grouped_list = [r'$A_{yy}$']
-
-                            # # just A
-                            # plot_obs_list = [["A"]]
-                            # obs_name_grouped_list = ["A"]
-                            # obs_labels_grouped_list = [r'$A$']
-
-                            # # just AY
-                            # plot_obs_list = [["AY"]]
-                            # obs_name_grouped_list = ["AY"]
-                            # obs_labels_grouped_list = [r'$A_{y}$']
-                            # mesh_cart_grouped_list = [[mesh_cart]]
-
-                            # # for equalizing SGT and DSG
-                            # plot_obs_list = [["SGT"], ["DSG"]]
-                            # obs_name_grouped_list = ["SGT", "DSG"]
-                            # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$']
-                            # mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart]]
-
-                            # # EACHOBS for energy input spaces
-                            # plot_obs_list = [["DSG21"]]
-                            # obs_name_grouped_list = ["DSG21"]
-                            # obs_labels_grouped_list = [r'$\displaystyle\frac{d\sigma}{d\Omega}(\Theta, p = 100\,\mathrm{MeV})$', ]
-                            # mesh_cart_grouped_list = [[mesh_cart_ang]]
-
-                            # # for equalizing SGT and DSG
-                            # plot_obs_list = [["SGT"], ["DSG"], ["SGT", "DSG"]]
-                            # obs_name_grouped_list = ["SGT", "DSG", "TWOOBS"]
-                            # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$', r'2Obs.']
-                            # # mesh_cart_grouped_list = [mesh_cart, mesh_cart, mesh_cart]
-                            # mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart], [mesh_cart_sgt, mesh_cart]]
-
-                            #
-                            # plot_obs_list = [["SGT"], ["SGTnosine"], ["DSGsine"], ["DSG"]]
-                            # obs_name_grouped_list = ["SGT", "SGTnosine", "DSGsine", "DSG"]
-                            # obs_labels_grouped_list = [r'$\sigma$', r'$\Sigma$',
-                            #                            r'$\displaystyle\frac{d\sigma}{d\Omega}\mathrm{sin}(\theta)$',
-                            #                            r'$\displaystyle\frac{d\sigma}{d\Omega}$']
-                            # mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart_sgt], [mesh_cart], [mesh_cart]]
-
-                            # #
-                            # plot_obs_list = [["DSGsine"], ["DSG"]]
-                            # obs_name_grouped_list = ["DSGsine", "DSG"]
-                            # obs_labels_grouped_list = [
-                            #                            r'$\displaystyle\frac{d\sigma}{d\Omega}\mathrm{sin}(\theta)$',
-                            #                            r'$\displaystyle\frac{d\sigma}{d\Omega}$']
-                            # mesh_cart_grouped_list = [[mesh_cart], [mesh_cart]]
-
-                            # # for SGT, DSG, and D
-                            # plot_obs_list = [["SGT"], ["DSG"], ["D"]]
-                            # obs_name_grouped_list = ["SGT", "DSG", "D"]
-                            # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$', r'$D$']
-
-                            # #
-                            # plot_obs_list = [["SGT"], ["DSG"], ["DSGsb"], ["D"], ["Dint"], ["Dsb"],
-                            #                  ["AXX"], ["AXXint"], ["AXXsb"], ["AYY"], ["AYYint"], ["AYYsb"],
-                            #                  ["A"], ["Aint"], ["Asb"], ["AY"], ["AYint"], ["AYsb"],]
-                            # obs_name_grouped_list = ["SGT", "DSG", "DSGsb", "D", "Dint", "Dsb", "AXX", "AXXint", "AXXsb",
-                            #                          "AYY", "AYYint", "AYYsb", "A", "Aint", "Asb" "AY", "AYint", "AYsb"]
-                            # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$',
-                            #                            r'$\displaystyle\frac{d\sigma}{d\Omega}_{sb}$', r'$D$',
-                            #                            r'$\int D$', r'$D_{sb}$', r'$A_{xx}$', r'$\int A_{xx}$', r'$A_{xxsb}$',
-                            #                            r'$A_{yy}$', r'$\int A_{yy}$', r'$A_{yysb}$',
-                            #                            r'$A$', r'$\int A$', r'$A_{sb}$', r'$A_{y}$', r'$\int A_{y}$', r'$A_{ysb}$', ]
-                            # mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart], [mesh_cart_sgt], [mesh_cart],
-                            #                           [mesh_cart_sgt], [mesh_cart_sgt],
-                            #                           [mesh_cart], [mesh_cart_sgt], [mesh_cart_sgt], [mesh_cart], [mesh_cart_sgt],
-                            #                           [mesh_cart_sgt], [mesh_cart], [mesh_cart_sgt], [mesh_cart_sgt],
-                            #                           [mesh_cart], [mesh_cart_sgt], [mesh_cart_sgt], ]
-
-                            # plot_obs_list = [["D"], ["Dint"], ["Dsb"]]
-                            # obs_name_grouped_list = ["D", "Dint", "Dsb"]
-                            # obs_labels_grouped_list = [r'$D$', r'$\int D$', r'$D_{sb}$']
-                            # mesh_cart_grouped_list = [[mesh_cart], [mesh_cart_sgt], [mesh_cart_sgt],]
-
-                            # # spins
-                            # plot_obs_list = [["D", "AXX", "AYY", "A", "AY"]]
-                            # obs_name_grouped_list = ["spins"]
-                            # obs_labels_grouped_list = [r'$X_{pqik}$']
-
-                            # # ALLOBS for energy input spaces
-                            # plot_obs_list = [["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]]
-                            # obs_name_grouped_list = ["ALLOBS"]
-                            # obs_labels_grouped_list = [r'Obs.']
-
-                            # # ALLOBS for angle input spaces
-                            # plot_obs_list = [["DSG", "D", "AXX", "AYY", "A", "AY"]]
-                            # obs_name_grouped_list = ["ALLOBS"]
-                            # obs_labels_grouped_list = [r'Obs.']
-
-                            # # SGT, DSG, spins, ALLOBS for energy input spaces
-                            # plot_obs_list = [["SGT"], ["DSG"], ["D", "AXX", "AYY", "A", "AY"],
-                            #                  ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]]
-                            # obs_name_grouped_list = ["SGT", "DSG", "spins", "ALLOBS"]
-                            # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$', r'$X_{pqik}$',
-                            #                            r'Obs.']
-
-                            # # DSG and spins
-                            # plot_obs_list = [["DSG"], ["D", "AXX", "AYY", "A", "AY"]]
-                            # obs_name_grouped_list = ["DSG", "spins"]
-                            # obs_labels_grouped_list = [r'$\displaystyle\frac{d\sigma}{d\Omega}$',
-                            #                            r'$X_{pqik}$']
-
-                            # # EACHOBS for energy input spaces
-                            # plot_obs_list = [["SGT"], ["DSG"], ["D"], ["AXX"], ["AYY"], ["A"], ["AY"]]
-                            # obs_name_grouped_list = ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]
-                            # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$',
-                            #                            r'$D$', r'$A_{xx}$', r'$A_{yy}$', r'$A$', r'$A_{y}$']
-                            # mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart], [mesh_cart], [mesh_cart], [mesh_cart],
-                            #                           [mesh_cart], [mesh_cart]]
-
-                            # EACHOBS and ALLOBS for energy input spaces
-                            plot_obs_list = [["SGT"], ["DSG"], ["D"], ["AXX"], ["AYY"], ["A"], ["AY"],
-                                             ["DSG", "D", "AXX", "AYY", "A", "AY"]]
-                            obs_name_grouped_list = ["SGT", "DSG", "D", "AXX", "AYY", "A", "AY", "ALLOBS"]
-                            obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$',
-                                                       r'$D$', r'$A_{xx}$', r'$A_{yy}$', r'$A$', r'$A_{y}$', r'$\Pi$Obs.']
-                            mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart], [mesh_cart], [mesh_cart],
-                                                      [mesh_cart], [mesh_cart], [mesh_cart],
-                                                      [mesh_cart, mesh_cart, mesh_cart,
-                                                      mesh_cart, mesh_cart, mesh_cart]]
-
-                            # # ALLOBS for energy input spaces
-                            # plot_obs_list = [["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]]
-                            # obs_name_grouped_list = ["ALLOBS"]
-                            # obs_labels_grouped_list = [r'Obs.']
-
-                            # # # EACHOBS and ALLOBS for angle input spaces
-                            # plot_obs_list = [["DSG"], ["D"], ["AXX"], ["AYY"], ["A"], ["AY"],
-                            #                  ["DSG", "D", "AXX", "AYY", "A", "AY"]]
-                            # obs_name_grouped_list = ["DSG", "D", "AXX", "AYY", "A", "AY", "ALLOBS"]
-                            # obs_labels_grouped_list = [r'$\displaystyle\frac{d\sigma}{d\Omega}$',
-                            #                            r'$D$', r'$A_{xx}$', r'$A_{yy}$', r'$A$', r'$A_{y}$',
-                            #                            r'Obs.']
-                            # mesh_cart_grouped_list = [[mesh_cart_q], [mesh_cart_q], [mesh_cart_q],
-                            #                           [mesh_cart_q], [mesh_cart_q], [mesh_cart_q],
-                            #                           [mesh_cart_q, mesh_cart_q, mesh_cart_q, mesh_cart_q,
-                            #                           mesh_cart_q, mesh_cart_q]]
-
-                            # # # ALLOBS for angle input spaces
-                            # plot_obs_list = [["DSG", "D", "AXX", "AYY", "A", "AY"]]
-                            # obs_name_grouped_list = ["ALLOBS"]
-                            # obs_labels_grouped_list = [r'Obs.']
-                            # mesh_cart_grouped_list = [[mesh_cart_q, mesh_cart_q, mesh_cart_q, mesh_cart_q,
-                            #                            mesh_cart_q, mesh_cart_q]]
-
-                            # # # EACHOBS and ALLOBS for angle input spaces
-                            # plot_obs_list = [["DSG"],
-                            #                  ["D"], ["AXX"], ["AYY"], ["A"], ["AY"]]
-                            # obs_name_grouped_list = ["DSG", "D", "AXX", "AYY", "A", "AY"]
-                            # obs_labels_grouped_list = [r'$\displaystyle\frac{d\sigma}{d\Omega}$',
-                            #                            r'$D$', r'$A_{xx}$', r'$A_{yy}$', r'$A$', r'$A_{y}$']
-
-                            # # EACHOBS for energy input spaces
-                            # plot_obs_list = [["SGT"], ["DSG"],
-                            #                  ["DSG30"], ["DSG60"], ["DSG90"], ["DSG120"], ["DSG150"],
-                            #                  ["DSG30", "DSG60", "DSG90", "DSG120", "DSG150"],
-                            #                  ["DSG5"], ["DSG21"], ["DSG48"], ["DSG85"], ["DSG133"],
-                            #                  ["DSG5", "DSG21", "DSG48", "DSG85", "DSG133"],
-                            #                  ]
-                            # obs_name_grouped_list = ["SGT", "DSG",
-                            #                          "DSG30", "DSG60", "DSG90", "DSG120", "DSG150", "DSGESUM",
-                            #                          "DSG5", "DSG21", "DSG48", "DSG85", "DSG133", "DSGTHETASUM", ]
-                            # obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$',
-                            #                            r'$\displaystyle\frac{d\sigma}{d\Omega}(E, \Theta = 30^{\circ})$',
-                            #                            r'$\displaystyle\frac{d\sigma}{d\Omega}(E, \Theta = 60^{\circ})$',
-                            #                            r'$\displaystyle\frac{d\sigma}{d\Omega}(E, \Theta = 90^{\circ})$',
-                            #                            r'$\displaystyle\frac{d\sigma}{d\Omega}(E, \Theta = 120^{\circ})$',
-                            #                            r'$\displaystyle\frac{d\sigma}{d\Omega}(E, \Theta = 150^{\circ})$',
-                            #                            r'$\displaystyle\Pi\frac{d\sigma}{d\Omega}(E)$',
-                            #                            r'$\displaystyle\frac{d\sigma}{d\Omega}(\Theta, p = 50\,\mathrm{MeV})$',
-                            #                            r'$\displaystyle\frac{d\sigma}{d\Omega}(\Theta, p = 100\,\mathrm{MeV})$',
-                            #                            r'$\displaystyle\frac{d\sigma}{d\Omega}(\Theta, p = 150\,\mathrm{MeV})$',
-                            #                            r'$\displaystyle\frac{d\sigma}{d\Omega}(\Theta, p = 200\,\mathrm{MeV})$',
-                            #                            r'$\displaystyle\frac{d\sigma}{d\Omega}(\Theta, p = 250\,\mathrm{MeV})$',
-                            #                            r'$\displaystyle\Pi\frac{d\sigma}{d\Omega}(\Theta)$'
-                            #                            ]
-                            # mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart],
-                            #                           [mesh_cart_sgt], [mesh_cart_sgt], [mesh_cart_sgt],
-                            #                           [mesh_cart_sgt], [mesh_cart_sgt],
-                            #                           [mesh_cart_sgt, mesh_cart_sgt, mesh_cart_sgt, mesh_cart_sgt, mesh_cart_sgt],
-                            #                           [mesh_cart_ang], [mesh_cart_ang], [mesh_cart_ang],
-                            #                           [mesh_cart_ang], [mesh_cart_ang],
-                            #                           [mesh_cart_ang, mesh_cart_ang, mesh_cart_ang, mesh_cart_ang,
-                            #                            mesh_cart_ang]
-                            #                           ]
-
                             obs_grouped_list = [
                                 [obs_dict[obs_name] for obs_name in obs_sublist] for
                                 obs_sublist in plot_obs_list]
@@ -1709,7 +1378,7 @@ def generate_posteriors(
                                 )
                             )
 
-                            if plot_lambdapost_curvewise_bool:
+                            if plot_posterior_curvewise_bool:
                                 plot_posteriors_curvewise(
                                     # order stuff
                                     light_colors = Orders.lightcolors_array,
@@ -1769,7 +1438,7 @@ def generate_posteriors(
                                     degrees_train_pts=degrees_train_pts,
                                     InputSpaceDeg=VsQuantityPosteriorDeg,
                                     LsDeg=LengthScaleDegInput,
-                                    variables_array=variables_array,
+                                    variables_array=variables_array_curvewise,
 
                                     mom_fn=E_to_p,
                                     mom_fn_kwargs={"interaction" : "np"},
@@ -1799,18 +1468,18 @@ def generate_posteriors(
                                     # log_likelihood_fn = log_likelihood_const,
                                     # log_likelihood_fn_kwargs = {},
 
-                                    orders=1,
+                                    orders=orders_from_ho,
 
                                     FileName = FileName,
 
-                                    whether_plot_posteriors=True,
-                                    whether_plot_corner=True,
+                                    whether_plot_posteriors=plot_posterior_curvewise_bool,
+                                    whether_plot_corner=plot_corner_curvewise_bool,
 
-                                    whether_use_data=True,
-                                    whether_save_data=True,
-                                    whether_save_plots=save_lambdapost_curvewise_bool,
+                                    whether_use_data=use_data_curvewise_bool,
+                                    whether_save_data=save_data_curvewise_bool,
+                                    whether_save_plots=save_posterior_curvewise_bool,
                                 )
-                            if plot_lambdapost_pointwise_bool:
+                            if plot_posterior_pointwise_bool:
                                 plot_posteriors_pointwise(
                                     # order stuff
                                     light_colors=Orders.lightcolors_array,
@@ -1861,7 +1530,7 @@ def generate_posteriors(
                                     degrees=degrees,
                                     degrees_train_pts=degrees_train_pts,
                                     InputSpaceDeg=VsQuantityPosteriorDeg,
-                                    variables_array=np.array([LambdabVariable]),
+                                    variables_array=variables_array_pointwise,
 
                                     mom_fn_tlab=E_to_p,
                                     mom_fn_tlab_kwargs={"interaction": "np"},
@@ -1879,11 +1548,11 @@ def generate_posteriors(
                                         "m_pi": m_pi_eff,
                                     },
 
-                                    orders=3,
+                                    orders=orders_from_ho,
 
                                     FileName=FileName,
 
-                                    whether_save_plots=save_lambdapost_pointwise_bool,
+                                    whether_save_plots=save_posterior_pointwise_bool,
                                 )
 
     # except:

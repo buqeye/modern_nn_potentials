@@ -838,6 +838,7 @@ generate_posteriors(
     #     [15, 31, 50, 90, 130, 149, 165]
     # ),  # evensin
     # degrees_train_pts=np.array([40, 60, 80, 100, 120, 140]), # 1704
+    orders_from_ho=1,
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
@@ -847,9 +848,14 @@ generate_posteriors(
     Lambdab=480,
     print_all_classes=False,
     savefile_type="png",
-    plot_lambdapost_pointwise_bool=True,
-    plot_lambdapost_curvewise_bool=True,
-    save_lambdapost_pointwise_bool=True,
-    save_lambdapost_curvewise_bool=True,
+    plot_posterior_pointwise_bool=False,
+    plot_posterior_curvewise_bool=True,
+
+    plot_corner_curvewise_bool=True,
+    use_data_curvewise_bool=True,
+    save_data_curvewise_bool=True,
+
+    save_posterior_pointwise_bool=False,
+    save_posterior_curvewise_bool=True,
     filename_addendum="_cluster_1",
 )
