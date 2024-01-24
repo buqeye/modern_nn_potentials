@@ -696,6 +696,12 @@ class GSUMDiagnostics:
         self.pred, self.std = self.gp.predict(self.X, return_std=True)
         self.underlying_std = np.sqrt(self.gp.cov_factor_)
 
+        self.underlying_std = np.sqrt(self.gp.cov_factor_)
+        print("self.pred has shape " + str(np.shape(self.pred)))
+        print("self.pred = " + str(self.pred))
+        print("self.std has shape " + str(np.shape(self.std)))
+        print("self.std = " + str(self.std))
+
         # plots the coefficients against the given input space
         if ax is None:
             fig, ax = plt.subplots(figsize=(3.2, 2.2))
@@ -735,6 +741,21 @@ class GSUMDiagnostics:
             loc = 'best',
             title = self.title_coeffs).set_zorder(5 * i)
 
+        # # takes constraint into account, if applicable
+        # if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
+        #     dX = np.array([[self.x[i]] for i in self.constraint[0]])
+        #     # std_interp = np.sqrt(np.diag(
+        #     #     self.gp.cov(self.X) -
+        #     #     self.gp.cov(self.X, dX) @ np.linalg.solve(self.gp.cov(dX, dX), self.gp.cov(dX, self.X))
+        #     # ))
+        #     _, std_interp = self.gp.predict(self.X,
+        #                                     Xc=dX,
+        #                                     y=np.array(self.constraint[1]),
+        #                                     return_std=True)
+        #
+        #     ax.plot(self.x, 2 * std_interp, color='gray', ls='--', zorder=-10, lw=1)
+        #     ax.plot(self.x, -2 * std_interp, color='gray', ls='--', zorder=-10, lw=1)
+
         # takes constraint into account, if applicable
         if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
             dX = np.array([[self.x[i]] for i in self.constraint[0]])
@@ -746,7 +767,6 @@ class GSUMDiagnostics:
                                             Xc=dX,
                                             y=np.array(self.constraint[1]),
                                             return_std=True)
-
             ax.plot(self.x, 2 * std_interp, color='gray', ls='--', zorder=-10, lw=1)
             ax.plot(self.x, -2 * std_interp, color='gray', ls='--', zorder=-10, lw=1)
 
@@ -1116,7 +1136,7 @@ class GSUMDiagnostics:
             # creates fig with two columns of axes
             fig, axes = plt.subplots(
                 int(np.ceil(len(self.nn_orders_full[self.mask_restricted]) / 2)),
-                2, sharex=False, sharey=False, figsize=(6, 7))
+                2, sharex=True, sharey=False, figsize=(3.2, 4))
             # deletes extraneous axes to suit number of evaluated orders
             if 2 * np.ceil(len(self.nn_orders_full[self.mask_restricted]) / 2) > len(
                     self.nn_orders_full[self.mask_restricted]):
@@ -1142,7 +1162,7 @@ class GSUMDiagnostics:
 
                     # number of standard deviations around the dotted line to plot
                     # Why does this correspond to 67% confidence intervals?
-                    std_coverage = 0.5
+                    std_coverage = 1
 
                     if residual_plot:
                         # calculates and plots the residuals
@@ -1196,18 +1216,19 @@ class GSUMDiagnostics:
                     ax.plot(self.x, data_true, color=softblack, lw=1, ls='--')
 
                 # formats x-axis labels and tick marks
-                ax.set_xlabel(self.caption_coeffs)
+                # ax.set_xlabel(self.caption_coeffs)
                 ax.set_xticks([int(min(self.x) + (max(self.x) - min(self.x)) / 3),
                                int(min(self.x) + (max(self.x) - min(self.x)) / 3 * 2)])
                 ax.set_xticks([tick for tick in self.x_test], minor=True)
+            fig.supxlabel(self.caption_coeffs)
             plt.show()
 
             # saves
             if 'fig' in locals() and whether_save:
-                fig.suptitle(r'$\mathrm{' + self.observable_name + '\,(' + str(self.fixed_quantity_value) + '\,' + str(
-                    self.fixed_quantity_units) + ')\,' + \
-                             '\,for\,' + self.scheme + '\,' + self.scale + '}' + '\,(Q_{\mathrm{' + self.Q_param + \
-                             '}},\,\mathrm{' + self.p_param + '},\,\mathrm{' + self.vs_what + '})$', size=20)
+                # fig.suptitle(r'$\mathrm{' + self.observable_name + '\,(' + str(self.fixed_quantity_value) + '\,' + str(
+                #     self.fixed_quantity_units) + ')\,' + \
+                #              '\,for\,' + self.scheme + '\,' + self.scale + '}' + '\,(Q_{\mathrm{' + self.Q_param + \
+                #              '}},\,\mathrm{' + self.p_param + '},\,\mathrm{' + self.vs_what + '})$', size=20)
                 fig.tight_layout()
 
                 if self.constraint is None:
