@@ -162,11 +162,10 @@ mesh_cart_ang = np.delete(mesh_cart, 2, 1)
 #                           mesh_cart, mesh_cart, mesh_cart]]
 
 # EACHOBS and ALLOBS for energy input spaces
-plot_obs_list = [["SGT"], ["DSG", "D", "AXX", "AYY", "A", "AY"]]
-obs_name_grouped_list = ["SGT", "ALLOBS"]
-obs_labels_grouped_list = [r'$\sigma$', r'$\Pi$Obs.']
-mesh_cart_grouped_list = [[mesh_cart_sgt],
-                          [mesh_cart, mesh_cart, mesh_cart,
+plot_obs_list = [["DSG", "D", "AXX", "AYY", "A", "AY"]]
+obs_name_grouped_list = ["ALLOBS"]
+obs_labels_grouped_list = [r'$\Pi$Obs.']
+mesh_cart_grouped_list = [[mesh_cart, mesh_cart, mesh_cart,
                            mesh_cart, mesh_cart, mesh_cart]]
 
 # # ALLOBS for energy input spaces
@@ -329,14 +328,23 @@ generate_posteriors(
     Lambdab=480,
     print_all_classes=False,
     savefile_type="png",
-    plot_posterior_pointwise_bool=False,
-    plot_posterior_curvewise_bool=True,
 
+    plot_posterior_curvewise_bool=True,
     plot_corner_curvewise_bool=True,
     use_data_curvewise_bool=True,
-    save_data_curvewise_bool=False,
-
-    save_posterior_pointwise_bool=False,
+    save_data_curvewise_bool=True,
     save_posterior_curvewise_bool=True,
+
+    plot_obs_list=plot_obs_list,
+    obs_name_grouped_list=obs_name_grouped_list,
+    obs_labels_grouped_list=obs_labels_grouped_list,
+    mesh_cart_grouped_list=mesh_cart_grouped_list,
+    variables_array_curvewise=variables_array,
+
+    plot_posterior_pointwise_bool=False,
+    save_posterior_pointwise_bool=False,
+
+    variables_array_pointwise=np.array([LambdabVariable]),
+
     filename_addendum="_cluster_3",
 )

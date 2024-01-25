@@ -1,7 +1,7 @@
 from generator_fns import *
 
 # sets the meshes for the random variable arrays
-mpi_vals = np.linspace(100, 450, 150, dtype=np.dtype('f4'))
+mpi_vals = np.linspace(1, 350, 150, dtype=np.dtype('f4'))
 # mpi_vals = 200 * np.array([0.9999, 1.0001])
 ls_deg_vals = np.linspace(0.01, 4, 150, dtype=np.dtype('f4'))
 ls_tlab_vals = np.linspace(1, 150, 150, dtype=np.dtype('f4'))
@@ -302,7 +302,7 @@ variables_array = np.array([LambdabVariable, LsDegVariable, LsTlabVariable, Mpie
 generate_posteriors(
     nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
-    Q_param_method_array=["sum"],
+    Q_param_method_array=["smax"],
     p_param_method_array=["pprel"],
     input_space_deg=["cos"],
     input_space_tlab=["prel"],
@@ -330,14 +330,23 @@ generate_posteriors(
     Lambdab=480,
     print_all_classes=False,
     savefile_type="png",
-    plot_posterior_pointwise_bool=False,
-    plot_posterior_curvewise_bool=True,
 
+    plot_posterior_curvewise_bool=True,
     plot_corner_curvewise_bool=True,
     use_data_curvewise_bool=True,
-    save_data_curvewise_bool=False,
-
-    save_posterior_pointwise_bool=False,
+    save_data_curvewise_bool=True,
     save_posterior_curvewise_bool=True,
-    filename_addendum="_cluster_1",
+
+    plot_obs_list=plot_obs_list,
+    obs_name_grouped_list=obs_name_grouped_list,
+    obs_labels_grouped_list=obs_labels_grouped_list,
+    mesh_cart_grouped_list=mesh_cart_grouped_list,
+    variables_array_curvewise=variables_array,
+
+    plot_posterior_pointwise_bool=False,
+    save_posterior_pointwise_bool=False,
+
+    variables_array_pointwise=np.array([LambdabVariable]),
+
+    filename_addendum="_cluster_2",
 )
