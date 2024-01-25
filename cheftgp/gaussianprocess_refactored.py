@@ -1161,7 +1161,7 @@ class GSUMDiagnostics:
                     ax = axes.ravel()[j]
 
                     # number of standard deviations around the dotted line to plot
-                    # Why does this correspond to 67% confidence intervals?
+                    # 0.5 corresponds to 68% confidence intervals, and 1 to 95%
                     std_coverage = 1
 
                     if residual_plot:
@@ -1273,13 +1273,14 @@ class GSUMDiagnostics:
             # creates the empirical coverage plot
             self.gr_dgn_wp.credible_interval(
                 np.linspace(1e-5, 1, 100), band_perc=[0.68, 0.95], ax=ax,
-                title="Empirical coverage (PWA93)\n" +
-                      r'$\mathrm{' + self.observable_name + '\,(' + str(self.fixed_quantity_value) + '\,' + str(
-                    self.fixed_quantity_units) + ')\,' + \
-                      '\,for\,' + self.scheme + '\,' + self.scale + '}' + '\,(Q_{\mathrm{' + self.Q_param + \
-                      '}},\,\mathrm{' + self.p_param + '},\,\mathrm{' + self.vs_what + '})$',
+                # title="Empirical coverage (PWA93)\n" +
+                #       r'$\mathrm{' + self.observable_name + '\,(' + str(self.fixed_quantity_value) + '\,' + str(
+                #     self.fixed_quantity_units) + ')\,' + \
+                #       '\,for\,' + self.scheme + '\,' + self.scale + '}' + '\,(Q_{\mathrm{' + self.Q_param + \
+                #       '}},\,\mathrm{' + self.p_param + '},\,\mathrm{' + self.vs_what + '})$',
                 xlabel=r'Credible Interval ($100\alpha\%$)',
-                ylabel=r'Empirical Coverage ($\%$)\,(N = ' + str(len(self.X_test)) + r')')
+                # ylabel=r'Empirical Coverage ($\%$)\,(N = ' + str(len(self.X_test)) + r')')
+                ylabel=r'Empirical Coverage ($\%$)')
 
             ax.set_xticks([0, 0.2, 0.4, 0.6, 0.8, 1])
             ax.set_xticklabels([0, 20, 40, 60, 80, 100])

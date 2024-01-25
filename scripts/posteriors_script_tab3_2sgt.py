@@ -1,11 +1,11 @@
 from generator_fns import *
 
 # sets the meshes for the random variable arrays
-mpi_vals = np.linspace(1, 350, 150, dtype=np.dtype('f4'))
+mpi_vals = np.linspace(100, 450, 150, dtype=np.dtype('f4'))
 # mpi_vals = 200 * np.array([0.9999, 1.0001])
 ls_deg_vals = np.linspace(0.01, 4, 150, dtype=np.dtype('f4'))
 ls_tlab_vals = np.linspace(1, 150, 150, dtype=np.dtype('f4'))
-lambda_vals = np.linspace(200, 900, 150, dtype=np.dtype('f4'))
+lambda_vals = np.linspace(450, 1150, 150, dtype=np.dtype('f4'))
 # lambda_vals = 600 * np.array([0.9999, 1.0001])
 
 mesh_cart = gm.cartesian(lambda_vals, np.log(ls_deg_vals), np.log(ls_tlab_vals), mpi_vals)
@@ -13,11 +13,11 @@ mesh_cart_sgt = np.delete(mesh_cart, 1, 1)
 mesh_cart_ang = np.delete(mesh_cart, 2, 1)
 # print(mesh_cart_ang)
 
-# # just SGT
-# plot_obs_list = [["SGT"]]
-# obs_name_grouped_list = ["SGT"]
-# obs_labels_grouped_list = [r'$\sigma$']
-# mesh_cart_grouped_list = [[mesh_cart_sgt]]
+# just SGT
+plot_obs_list = [["SGT"]]
+obs_name_grouped_list = ["SGT"]
+obs_labels_grouped_list = [r'$\sigma$']
+mesh_cart_grouped_list = [[mesh_cart_sgt]]
 
 # just DSG
 # plot_obs_list = [["DSG"]]
@@ -161,13 +161,13 @@ mesh_cart_ang = np.delete(mesh_cart, 2, 1)
 #                           [mesh_cart, mesh_cart, mesh_cart,
 #                           mesh_cart, mesh_cart, mesh_cart]]
 
-# EACHOBS and ALLOBS for energy input spaces
-plot_obs_list = [["SGT"], ["DSG", "D", "AXX", "AYY", "A", "AY"]]
-obs_name_grouped_list = ["SGT", "ALLOBS"]
-obs_labels_grouped_list = [r'$\sigma$', r'$\Pi$Obs.']
-mesh_cart_grouped_list = [[mesh_cart_sgt],
-                          [mesh_cart, mesh_cart, mesh_cart,
-                           mesh_cart, mesh_cart, mesh_cart]]
+# # EACHOBS and ALLOBS for energy input spaces
+# plot_obs_list = [["SGT"], ["DSG", "D", "AXX", "AYY", "A", "AY"]]
+# obs_name_grouped_list = ["SGT", "ALLOBS"]
+# obs_labels_grouped_list = [r'$\sigma$', r'$\Pi$Obs.']
+# mesh_cart_grouped_list = [[mesh_cart_sgt],
+#                           [mesh_cart, mesh_cart, mesh_cart,
+#                            mesh_cart, mesh_cart, mesh_cart]]
 
 # # ALLOBS for energy input spaces
 # plot_obs_list = [["SGT", "DSG", "D", "AXX", "AYY", "A", "AY"]]
@@ -302,8 +302,8 @@ variables_array = np.array([LambdabVariable, LsDegVariable, LsTlabVariable, Mpie
 generate_posteriors(
     nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
-    Q_param_method_array=["sum"],
-    p_param_method_array=["psmax"],
+    Q_param_method_array=["smax"],
+    p_param_method_array=["pprel"],
     input_space_deg=["cos"],
     input_space_tlab=["prel"],
     t_lab_train_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]),  # set0 / refactor
@@ -339,5 +339,5 @@ generate_posteriors(
 
     save_posterior_pointwise_bool=False,
     save_posterior_curvewise_bool=True,
-    filename_addendum="_cluster_5",
+    filename_addendum="_cluster_2",
 )

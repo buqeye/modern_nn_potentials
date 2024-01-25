@@ -298,8 +298,6 @@ variables_array = np.array([LambdabVariable, LsDegVariable, LsTlabVariable, Mpie
 #                                marg_bool=False)
 # variables_array = np.array([QVariable, LsDegVariable])
 
-
-
 generate_posteriors(
     nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
