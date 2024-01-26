@@ -161,8 +161,6 @@ def sin_thing(deg_input, **kwargs):
     """
     return 0.6 * (1.6 + np.arctanh(np.radians(deg_input - 90) / 1.7))
 
-
-
 def softmax_mom(p, q, n=5):
     """
     Two-place softmax function.

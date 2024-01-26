@@ -78,8 +78,8 @@ def generate_diagnostics(
         must be treated differently since it is not evaluated at one energy at
         a time.
     May be any integer x such that 1 <= x <= 350
-    Must be [0] for SGT
-    If no evaluation at fixed lab energy is desired, set equal to [0]
+    Must be [] for SGT
+    If no evaluation at fixed lab energy is desired, set equal to []
     Default: [150]
 
     deg_input_array (int list): angles in degrees for evaluation.
@@ -149,6 +149,10 @@ def generate_diagnostics(
 
     Lambdab (float): breakdown scale for the theory (in MeV).
     Default: 600
+
+    print_all_classes (bool): prints out all instances of potential, observable, Q parametrization, input space,
+        train/test split, and length scale objects
+    Default: False
 
     savefile_type (str): string for specifying the type of file to be saved.
     Default: 'png'
@@ -814,6 +818,10 @@ def generate_posteriors(
         another function.
     Default: []
 
+    orders_from_ho (int): number of orders, including the highest order, for which the
+        posterior will be evaluated.
+    Default: 1
+
     orders_excluded (int list): list of *coefficient* orders to be excluded from
         the fitting procedure. 2 corresponds to c2, 3 to c3, etc.
     Default: []
@@ -846,8 +854,38 @@ def generate_posteriors(
     Lambdab (float): breakdown scale for the theory (in MeV).
     Default: 600
 
+    print_all_classes (bool): prints out all instances of potential, observable, Q parametrization, input space,
+        train/test split, and length scale objects
+    Default: False
+
     savefile_type (str): string for specifying the type of file to be saved.
     Default: 'png'
+
+    plot_obs_list (str list): list of strings corresponding to observables in obs_dict, grouped by
+        whether they will be combined.
+    For instance, [["SGT"], ["DSG"], ["SGT", "DSG"]] means that SGT and DSG will have their log-
+        likelihoods calculated separately, and then they will be calculated again and summed.
+    Default: [None]
+
+    obs_name_grouped_list (str list): list of strings for naming the observables in filenames.
+    Default: [None]
+
+    obs_labels_grouped_list (str list): list of strings for labeling the observables in figures.
+    Default: [None]
+
+    mesh_cart_grouped_list (array list): list of arrays generated from the random-variable meshes,
+        using GSUM's cartesian function.
+    Order matters here, and is determined by ratio_fn and log_likelihood_fn.
+    Default: [None]
+
+    variables_array_curvewise (RandomVariable array): NumPy array of random variables.
+    Order matters here, and is determined by ratio_fn and log_likelihood_fn.
+    Default: [None]
+
+    variables_array_pointwise (RandomVariable array): NumPy array of random variables.
+    Order matters here, and is determined by ratio_fn and log_likelihood_fn.
+    Should, in all likelihood, just be np.array([LambdabVariable]).
+    Default: [None]
 
     plot_..._bool (bool): boolean for whether to plot different figures
     Default: True
@@ -896,31 +934,9 @@ def generate_posteriors(
         DSGBunch = ObservableBunch(
             "DSG",
             DSG,
-            # np.reshape(DSG[:, np.isin(t_lab, E_slice_Q), :], (np.shape(DSG)[0], len(degrees))),
             [],
             [],
             "d \sigma / d \Omega",
-            "dimensionful",
-        )
-        radians = degrees * np.pi / 180
-        SGTnosine = 2 * np.pi * np.trapz(DSG, x=radians, axis=2)
-        SGTnosineBunch = ObservableBunch(
-            "SGTnosine",
-            SGTnosine,
-            [],
-            [],
-            "\Sigma_{\mathrm{tot}}",
-            "dimensionful",
-        )
-        radians_tiled = np.tile(radians, (len(t_lab), 1))
-        radians_tiled = np.tile(radians_tiled, (np.shape(SGT)[0], 1, 1))
-        DSGsine = DSG * np.sin(radians_tiled * radians_tiled)
-        DSGsineBunch = ObservableBunch(
-            "DSGsine",
-            DSGsine,
-            [],
-            [],
-            "d \sigma / d \Omega \mathrm{sin}(\Theta)",
             "dimensionful",
         )
         AYBunch = ObservableBunch(
@@ -933,174 +949,44 @@ def generate_posteriors(
             "dimensionless",
             constraint=[[0, -1], [0, 0], "angle"],
         )
-        AYint = 2 * np.pi * np.trapz(AY, x=radians, axis=2)
-        # print("AYint = " + str(AYint))
-        AYintBunch = ObservableBunch(
-            "AYint",
-            AYint,
-            [],
-            [],
-            "\int A_{y}",
-            "dimensionless",
-            constraint=[[0], [0], "angle"],
-        )
         ABunch = ObservableBunch(
             "A",
             A,
-            # np.reshape(A[:, np.isin(t_lab, E_slice_Q), :], (np.shape(A)[0], len(degrees))),
             [],
             [],
             "A",
-            "dimensionless",
-            constraint=[[0], [0], "angle"],
-        )
-        Aint = 2 * np.pi * np.trapz(A, x=radians, axis=2)
-        # print("Aint = " + str(Aint))
-        AintBunch = ObservableBunch(
-            "Aint",
-            Aint,
-            [],
-            [],
-            "\int A",
             "dimensionless",
             constraint=[[0], [0], "angle"],
         )
         DBunch = ObservableBunch(
             "D",
             D,
-            # np.reshape(D[:, np.isin(t_lab, E_slice_Q), :], (np.shape(D)[0], len(degrees))),
             [], [], "D", "dimensionless"
         )
+        # version of DBunch that treats D as dimensionful for the purposes of Fig. 22
         DBunch_dimensionful = ObservableBunch(
             "D_dimensionful", D, [], [], "D", "dimensionful"
-        )
-        Dint = 2 * np.pi * np.trapz(D, x=radians, axis=2)
-        # print("Dint = " + str(Dint))
-        DintBunch = ObservableBunch(
-            "Dint", Dint, [], [], "\int D", "dimensionless"
         )
         AXXBunch = ObservableBunch(
             "AXX",
             AXX,
-            # np.reshape(AXX[:, np.isin(t_lab, E_slice_Q), :], (np.shape(AXX)[0], len(degrees))),
             [], [], "A_{xx}", "dimensionless"
-        )
-        AXXint = 2 * np.pi * np.trapz(AXX, x=radians, axis=2)
-        # print("AXXint = " + str(AXXint))
-        AXXintBunch = ObservableBunch(
-            "AXXint", AXXint, [], [], "\int A_{xx}", "dimensionless"
         )
         AYYBunch = ObservableBunch(
             "AYY",
             AYY,
-            # np.reshape(AYY[:, np.isin(t_lab, E_slice_Q), :], (np.shape(AYY)[0], len(degrees))),
             [], [], "A_{yy}", "dimensionless"
         )
-        AYYint = 2 * np.pi * np.trapz(AYY, x=radians, axis=2)
-        # print("AYYint = " + str(AYYint))
-        AYYintBunch = ObservableBunch(
-            "AYYint", AYYint, [], [], "\int A_{yy}", "dimensionless"
-        )
-
-        DSG30Bunch = ObservableBunch(
-            "DSG30",
-            np.reshape(DSG[:, :, np.isin(degrees, 30)], (np.shape(DSG)[0], len(t_lab))),
-            [],
-            [],
-            "d \sigma / d \Omega",
-            "dimensionful",
-        )
-        DSG60Bunch = ObservableBunch(
-            "DSG60",
-            np.reshape(DSG[:, :, np.isin(degrees, 60)], (np.shape(DSG)[0], len(t_lab))),
-            [],
-            [],
-            "d \sigma / d \Omega",
-            "dimensionful",
-        )
-        DSG90Bunch = ObservableBunch(
-            "DSG90",
-            np.reshape(DSG[:, :, np.isin(degrees, 90)], (np.shape(DSG)[0], len(t_lab))),
-            [],
-            [],
-            "d \sigma / d \Omega",
-            "dimensionful",
-        )
-        DSG120Bunch = ObservableBunch(
-            "DSG120",
-            np.reshape(DSG[:, :, np.isin(degrees, 120)], (np.shape(DSG)[0], len(t_lab))),
-            [],
-            [],
-            "d \sigma / d \Omega",
-            "dimensionful",
-        )
-        DSG150Bunch = ObservableBunch(
-            "DSG150",
-            np.reshape(DSG[:, :, np.isin(degrees, 150)], (np.shape(DSG)[0], len(t_lab))),
-            [],
-            [],
-            "d \sigma / d \Omega",
-            "dimensionful",
-        )
-
-        DSG5Bunch = ObservableBunch(
-            "DSG5",
-            np.reshape(DSG[:, np.isin(t_lab, 5), :], (np.shape(DSG)[0], len(degrees))),
-            [],
-            [],
-            "d \sigma / d \Omega",
-            "dimensionful",
-        )
-        DSG21Bunch = ObservableBunch(
-            "DSG21",
-            np.reshape(DSG[:, np.isin(t_lab, 21), :], (np.shape(DSG)[0], len(degrees))),
-            [],
-            [],
-            "d \sigma / d \Omega",
-            "dimensionful",
-        )
-        DSG48Bunch = ObservableBunch(
-            "DSG48",
-            np.reshape(DSG[:, np.isin(t_lab, 48), :], (np.shape(DSG)[0], len(degrees))),
-            [],
-            [],
-            "d \sigma / d \Omega",
-            "dimensionful",
-        )
-        DSG85Bunch = ObservableBunch(
-            "DSG85",
-            np.reshape(DSG[:, np.isin(t_lab, 85), :], (np.shape(DSG)[0], len(degrees))),
-            [],
-            [],
-            "d \sigma / d \Omega",
-            "dimensionful",
-        )
-        DSG133Bunch = ObservableBunch(
-            "DSG133",
-            np.reshape(DSG[:, np.isin(t_lab, 133), :], (np.shape(DSG)[0], len(degrees))),
-            [],
-            [],
-            "d \sigma / d \Omega",
-            "dimensionful",
-        )
-
 
         observable_array = [
             SGTBunch,
-            SGTnosineBunch,
             DSGBunch,
-            DSGsineBunch,
             AYBunch,
             ABunch,
-            AYintBunch,
-            AintBunch,
             DBunch,
             DBunch_dimensionful,
-            DintBunch,
             AXXBunch,
             AYYBunch,
-            AXXintBunch,
-            AYYintBunch,
         ]
         # runs through the parametrizations of p in Q(p)
         for p, PParamMethod in enumerate(p_param_method_array):
@@ -1285,74 +1171,9 @@ def generate_posteriors(
                                 m_pi=m_pi_eff,
                             )
 
-                            # # turn into coefficients
-                            # Dsb_coeffs = gm.coefficients(np.reshape(D, (np.shape(D)[0], np.shape(D)[1] * np.shape(D)[2])).T,
-                            #                 ratio=np.reshape(ratio_sb_2d, np.shape(ratio_sb_2d)[0] * np.shape(ratio_sb_2d)[1]),
-                            #                 ref=1,
-                            #                 orders=Orders.orders_full).T
-                            # # integrate
-                            # Dsb_coeffs = np.reshape(Dsb_coeffs, np.shape(D))
-                            # Dsb_coeffs_int = 2 * np.pi * np.trapz(Dsb_coeffs, x = radians, axis = 2)
-                            # # put back into observables
-                            # Dsb = gm.partials(
-                            #     coeffs=np.reshape(Dsb_coeffs_int, (len(Orders.orders_full), len(t_lab))).T,
-                            #     ratio=np.reshape(ratio_sb_1d, (len(t_lab))),
-                            #     ref=1,
-                            #     orders=Orders.orders_full).T
-                            # # make ObservableBunch
-                            # DsbBunch = ObservableBunch(
-                            #     "Dsb", Dsb, [], [], "D_{sb}", "dimensionless"
-                            # )
-
-                            OBSsb_list = []
-                            for OBS in [DSG, D, AXX, AYY, A, AY]:
-                                # turn into coefficients
-                                OBSsb_coeffs = gm.coefficients(
-                                    np.reshape(OBS, (np.shape(OBS)[0], np.shape(OBS)[1] * np.shape(OBS)[2])).T,
-                                    ratio=np.reshape(ratio_sb_2d, np.shape(ratio_sb_2d)[0] * np.shape(ratio_sb_2d)[1]),
-                                    ref=1,
-                                    orders=Orders.orders_full).T
-                                # integrate
-                                OBSsb_coeffs = np.reshape(OBSsb_coeffs, np.shape(OBS))
-                                OBSsb_coeffs_int = 2 * np.pi * np.trapz(OBSsb_coeffs, x=radians, axis=2)
-                                # put back into observables
-                                OBSsb = gm.partials(
-                                    coeffs=np.reshape(OBSsb_coeffs_int, (len(Orders.orders_full), len(t_lab))).T,
-                                    ratio=np.reshape(ratio_sb_1d, (len(t_lab))),
-                                    ref=1,
-                                    orders=Orders.orders_full).T
-                                OBSsb_list.append(OBSsb)
-
-                            # make ObservableBunch
-                            DSGsbBunch = ObservableBunch(
-                                "DSGsb", OBSsb_list[0], [], [], "DSG_{sb}", "dimensionful"
-                            )
-                            DsbBunch = ObservableBunch(
-                                "Dsb", OBSsb_list[1], [], [], "D_{sb}", "dimensionless"
-                            )
-                            AXXsbBunch = ObservableBunch(
-                                "AXXsb", OBSsb_list[2], [], [], "A_{xxsb}", "dimensionless"
-                            )
-                            AYYsbBunch = ObservableBunch(
-                                "AYYsb", OBSsb_list[3], [], [], "A_{yysb}", "dimensionless"
-                            )
-                            AsbBunch = ObservableBunch(
-                                "Asb", OBSsb_list[4], [], [], "A_{sb}", "dimensionless"
-                            )
-                            AYsbBunch = ObservableBunch(
-                                "AYsb", OBSsb_list[5], [], [], "A_{ysb}", "dimensionless"
-                            )
-
                             obs_dict = {"SGT": SGTBunch, "DSG": DSGBunch, "D": DBunch, "AXX": AXXBunch,
-                                        "AYY": AYYBunch, "A": ABunch, "AY": AYBunch, "SGTnosine": SGTnosineBunch,
-                                        "DSGsine": DSGsineBunch, "Dint": DintBunch, "AXXint": AXXintBunch,
-                                        "AYYint": AYYintBunch, "Aint": AintBunch, "AYint": AYintBunch,
-                                        "Dsb": DsbBunch, "DSGsb": DSGsbBunch, "AXXsb": AXXsbBunch, "AYYsb": AYYsbBunch,
-                                        "AYsb": AYsbBunch, "Asb": AsbBunch,
-                                        "DSG30": DSG30Bunch, "DSG60": DSG60Bunch, "DSG90": DSG90Bunch,
-                                        "DSG120": DSG120Bunch, "DSG150": DSG150Bunch,
-                                        "DSG5": DSG5Bunch, "DSG21": DSG21Bunch, "DSG48": DSG48Bunch,
-                                        "DSG85": DSG85Bunch, "DSG133": DSG133Bunch,
+                                        "AYY": AYYBunch, "A": ABunch, "AY": AYBunch,
+                                        "Ddimensional": DBunch_dimensionful,
                                         }
 
                             obs_grouped_list = [
@@ -1392,8 +1213,6 @@ def generate_posteriors(
                                                         4: 'N3LO', 3: 'N2LO',
                                                         2: 'NLO'},
                                     # strings
-                                    # p_param = PParamMethod,
-                                    # Q_param = QParamMethod,
                                     nn_interaction = nn_interaction,
                                     # hyperparameters
                                     center = center,
@@ -1407,31 +1226,6 @@ def generate_posteriors(
                                     mesh_cart_grouped_list = mesh_cart_grouped_list,
                                     t_lab=t_lab,
                                     t_lab_train_pts=t_lab_train_pts,
-                                    # t_lab_pts=np.array([5, 21, 48, 85, 133, 192]),
-                                    # t_lab_pts=np.array([5, 21, 48, 85, 133, 192, 261]),
-                                    # t_lab_train_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]), # set0 / refactor
-                                    # t_lab_pts=np.array([25, 75, 125, 175, 225, 275, 325]), # set1
-                                    # t_lab_pts=np.array([1, 10, 28, 55, 90, 133, 185]), # set2
-                                    # t_lab_pts=np.array([1, 9, 23, 45, 73, 108, 150]), # set3
-                                    # t_lab_pts=np.array([1, 8, 19, 36, 58, 85, 118]),  # set4
-                                    # t_lab_pts=np.array([1, 11, 31, 61, 100, 150]),  # set5
-                                    # t_lab_pts=np.array([1, 6, 15, 28, 45, 65, 90, 118, 150]),  # set6
-                                    # t_lab_train_pts=np.array([36, 58, 85, 118, 155, 198, 246, 300]),  # set7
-                                    # t_lab_pts=np.array([1, 12, 33, 65]),
-                                    # t_lab_pts=np.array([108, 161, 225, 300]),
-                                    # t_lab_pts=np.array([1, 5, 12, 21]),
-                                    # t_lab_pts=np.array([33, 48, 65, 85]),
-                                    # t_lab_pts=np.array([108, 133, 161, 192]),
-                                    # t_lab_pts=np.array([42, 65, 94, 128, 167, 211, 261]),
-
-                                    # t_lab_pts=np.array([50, 100, 150, 200, 250, 300]),
-                                    # t_lab_pts=np.array([1, 5, 12, 21, 33, 48]),
-                                    # t_lab_pts=np.array([1, 10, 25, 48]),                                        # t_lab_pts=np.array([1, 10, 25]),
-                                    # t_lab_pts=np.array([65, 85, 108, 133, 161, 192]),
-                                    # t_lab_pts=np.array([65, 100, 143, 192]),
-                                    # t_lab_pts=np.array([100, 143, 192]),
-                                    # t_lab_train_pts=np.array([4, 20, 47, 81, 129, 188, 249]),
-                                    # t_lab_test_pts=np.array([4, 20, 47, 81, 129, 188, 249]),
                                     InputSpaceTlab=VsQuantityPosteriorTlab,
                                     LsTlab=LengthScaleTlabInput,
                                     degrees=degrees,
@@ -1489,43 +1283,13 @@ def generate_posteriors(
                                     orders_labels_dict={6: r'N$^{4}$LO$^{+}$', 5: r'N$^{4}$LO',
                                                         4: r'N$^{3}$LO', 3: r'N$^{2}$LO',
                                                         2: r'NLO'},
-                                    # orders_names_dict={6: 'N4LO+', 5: 'N4LO',
-                                    #                    4: 'N3LO', 3: 'N2LO',
-                                    #                    2: 'NLO'},
                                     # strings
-                                    # p_param=PParamMethod,
-                                    # Q_param=QParamMethod,
                                     # filename stuff
                                     obs_data_grouped_list=obs_grouped_list,
                                     obs_name_grouped_list=obs_name_grouped_list,
                                     obs_labels_grouped_list=obs_labels_grouped_list,
                                     t_lab=t_lab,
                                     t_lab_train_pts=t_lab_train_pts,
-                                    # t_lab_pts=np.array([5, 21, 48, 85, 133, 192]),
-                                    # t_lab_pts=np.array([5, 21, 48, 85, 133, 192, 261]),
-                                    # t_lab_train_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]), # set0 / refactor
-                                    # t_lab_pts=np.array([25, 75, 125, 175, 225, 275, 325]), # set1
-                                    # t_lab_pts=np.array([1, 10, 28, 55, 90, 133, 185]), # set2
-                                    # t_lab_pts=np.array([1, 9, 23, 45, 73, 108, 150]), # set3
-                                    # t_lab_pts=np.array([1, 8, 19, 36, 58, 85, 118]),  # set4
-                                    # t_lab_pts=np.array([1, 11, 31, 61, 100, 150]),  # set5
-                                    # t_lab_pts=np.array([1, 6, 15, 28, 45, 65, 90, 118, 150]),  # set6
-                                    # t_lab_train_pts=np.array([36, 58, 85, 118, 155, 198, 246, 300]),  # set7
-                                    # t_lab_pts=np.array([1, 12, 33, 65]),
-                                    # t_lab_pts=np.array([108, 161, 225, 300]),
-                                    # t_lab_pts=np.array([1, 5, 12, 21]),
-                                    # t_lab_pts=np.array([33, 48, 65, 85]),
-                                    # t_lab_pts=np.array([108, 133, 161, 192]),
-                                    # t_lab_pts=np.array([42, 65, 94, 128, 167, 211, 261]),
-
-                                    # t_lab_pts=np.array([50, 100, 150, 200, 250, 300]),
-                                    # t_lab_pts=np.array([1, 5, 12, 21, 33, 48]),
-                                    # t_lab_pts=np.array([1, 10, 25, 48]),                                        # t_lab_pts=np.array([1, 10, 25]),
-                                    # t_lab_pts=np.array([65, 85, 108, 133, 161, 192]),
-                                    # t_lab_pts=np.array([65, 100, 143, 192]),
-                                    # t_lab_pts=np.array([100, 143, 192]),
-                                    # t_lab_train_pts=np.array([4, 20, 47, 81, 129, 188, 249]),
-                                    # t_lab_test_pts=np.array([4, 20, 47, 81, 129, 188, 249]),
                                     InputSpaceTlab=VsQuantityPosteriorTlab,
                                     degrees=degrees,
                                     degrees_train_pts=degrees_train_pts,
