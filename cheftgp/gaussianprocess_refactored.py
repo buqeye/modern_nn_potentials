@@ -2,60 +2,20 @@ import os.path
 
 import numpy as np
 from scipy.interpolate import interp1d, interpn
-from .utils import versatile_train_test_split, compute_posterior_intervals, sig_figs, correlation_coefficient, \
-    round_to_same_digits, mean_and_stddev
+from .utils import versatile_train_test_split, compute_posterior_intervals
 from .scattering import E_to_p
-from .graphs import draw_summary_statistics, corner_plot, offset_xlabel, joint_plot, setup_rc_params, plot_marg_posteriors, \
+from .graphs import offset_xlabel, joint_plot, setup_rc_params, plot_marg_posteriors, \
     plot_corner_posteriors, softblack, gray, edgewidth, text_bbox
-from .eft import Q_approx, Lb_logprior, mpieff_logprior, p_approx
+from .eft import Q_approx, p_approx
 import h5py
 import ray
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
 import gsum as gm
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel
 import itertools
-import time
 
-# softblack = 'k'  # Looks better when printed on tex file
-# gray = '0.7'
-# edgewidth = 0.6
-#
-# mpl.rcParams['figure.dpi'] = 180
-# mpl.rcParams['font.size'] = 9
-# mpl.rcParams['text.usetex'] = True
-# mpl.rcParams['font.family'] = 'serif'
-#
-# mpl.rcParams['axes.labelsize'] = 14 # 9
-# mpl.rcParams['axes.edgecolor'] = softblack
-# mpl.rcParams['axes.xmargin'] = 0
-# mpl.rcParams['axes.labelcolor'] = softblack
-# mpl.rcParams['axes.linewidth']
-#
-# mpl.rcParams['ytick.direction'] = 'in'
-# mpl.rcParams['xtick.direction'] = 'in'
-# mpl.rcParams['xtick.labelsize'] = 11 # 9
-# mpl.rcParams['ytick.labelsize'] = 11 # 9
-# mpl.rcParams['xtick.color'] = softblack
-# mpl.rcParams['ytick.color'] = softblack
-# mpl.rcParams['xtick.minor.size'] = 2.4
-# mpl.rcParams['ytick.minor.size'] = 2.4
-#
-# mpl.rcParams['legend.title_fontsize'] = 9
-# mpl.rcParams['legend.fontsize'] = 14 # 9
-# mpl.rcParams['legend.edgecolor'] = 'inherit'  # inherits from axes.edgecolor, to match
-# mpl.rcParams['legend.facecolor'] = (1, 1, 1, 0.6)  # Set facecolor with its own alpha, so edgecolor is unaffected
-# mpl.rcParams['legend.fancybox'] = True
-# mpl.rcParams['legend.borderaxespad'] = 0.8
-# mpl.rcParams['legend.framealpha'] = None  # Do not set overall alpha (affects edgecolor). Handled by facecolor above
-# mpl.rcParams['patch.linewidth'] = 0.8  # This is for legend edgewidth, since it does not have its own option
-#
-# mpl.rcParams['lines.markersize'] = 10
-#
-# text_bbox = dict(boxstyle='round', fc=(1, 1, 1, 0.6), ec=softblack, lw=0.8)
-# mpl.rc('savefig', transparent=False, bbox='tight', pad_inches=0.05, dpi=300, format='pdf')
 setup_rc_params()
 
 class GPHyperparameters:
@@ -171,7 +131,7 @@ class OrderInfo:
         orders_names_dict (dict): dictionary method linking the numerical indices (int)
             of EFT orders and their corresponding abbreviations (str)
             default : None
-        orders_names_dict (dict): dictionary method linking the numerical indices (int)
+        orders_labels_dict (dict): dictionary method linking the numerical indices (int)
             of EFT orders and their corresponding math-mode-formatted labels (str)
             default: None
         """
@@ -687,20 +647,11 @@ class GSUMDiagnostics:
         # length scale
         self.gp.fit(self.X_train, self.coeffs_train)
         self.ls_true = np.exp(self.gp.kernel_.theta)
-        # X_constraint = [self.x[i] for i in self.constraint[0]]
-        # mask_constraint = np.reshape(~ np.isin(self.X_train, X_constraint), len(self.X_train))
-        # self.pred, self.std = self.gp.predict(self.X,
-        #                                 Xc = self.X_train[mask_constraint],
-        #                                 y = self.coeffs_train[mask_constraint, :],
-        #                                 return_std = True)
+
         self.pred, self.std = self.gp.predict(self.X, return_std=True)
         self.underlying_std = np.sqrt(self.gp.cov_factor_)
 
         self.underlying_std = np.sqrt(self.gp.cov_factor_)
-        print("self.pred has shape " + str(np.shape(self.pred)))
-        print("self.pred = " + str(self.pred))
-        print("self.std has shape " + str(np.shape(self.std)))
-        print("self.std = " + str(self.std))
 
         # plots the coefficients against the given input space
         if ax is None:
@@ -740,21 +691,6 @@ class GSUMDiagnostics:
             borderaxespad=0.6,
             loc = 'best',
             title = self.title_coeffs).set_zorder(5 * i)
-
-        # # takes constraint into account, if applicable
-        # if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
-        #     dX = np.array([[self.x[i]] for i in self.constraint[0]])
-        #     # std_interp = np.sqrt(np.diag(
-        #     #     self.gp.cov(self.X) -
-        #     #     self.gp.cov(self.X, dX) @ np.linalg.solve(self.gp.cov(dX, dX), self.gp.cov(dX, self.X))
-        #     # ))
-        #     _, std_interp = self.gp.predict(self.X,
-        #                                     Xc=dX,
-        #                                     y=np.array(self.constraint[1]),
-        #                                     return_std=True)
-        #
-        #     ax.plot(self.x, 2 * std_interp, color='gray', ls='--', zorder=-10, lw=1)
-        #     ax.plot(self.x, -2 * std_interp, color='gray', ls='--', zorder=-10, lw=1)
 
         # takes constraint into account, if applicable
         if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
@@ -972,6 +908,7 @@ class GSUMDiagnostics:
         -------
         Figure with plot.
         """
+        # this is deprecated
 
         # functions for interpolating the ratio and reference scale in the TruncationGP
         def lambda_interp_f_ref(x_):
@@ -1081,6 +1018,9 @@ class GSUMDiagnostics:
     def plot_truncation_errors(self, online_data, residual_plot=True,
                                whether_save=True):
         """
+        Plots the experimental vs. theoretical (with error bars) observable values, or the residuals of these two
+        quantities; and the corresponding empirical coverage ("weather") plot.
+
         Parameters
         ----------
         online_data : array
@@ -1463,6 +1403,8 @@ def ratio_fn_curvewise(X, p_grid_train, p_param, p_shape, Q_param, mpi_var, lamb
         Can be "smoothmax", "max", or "sum".
     mpi_var (float) : value of the (effective) pion mass (in MeV) for calculating the ratio.
     lambda_var (float) : value of the breakdown scale (in MeV) for calculating the ratio.
+    single_expansion (bool) : if True, then mpi_var is set to 0 within Q_approx
+        Default : False
     """
     p = np.array([])
     for pt in p_grid_train:
@@ -1499,8 +1441,9 @@ def make_likelihood_filename(FileNameObj,
 
     Parameters
     ----------
-    self (GSUMObj) : GSUM object with information on naming files.
+    FileNameObj (FileNaming) : FileNaming object with information on naming files.
     folder (str) : folder name.
+    observable_name (str) : observable name.
     order_name (str) : abbreviation for the highest calculated order.
     logpriors_names (str list) : list of names for the log-priors added to the likelihood.
     random_vars_array (RandomVariable list) : list of RandomVariable objects.
@@ -1530,15 +1473,6 @@ def make_likelihood_filename(FileNameObj,
             + str(FileNameObj.vs_what)
     )
 
-    # for logprior in logpriors_names:
-    #     filename += "_" + str(logprior)
-    # for random_var in random_vars_array:
-    #     filename += (
-    #             "_"
-    #             + str(random_var.name)
-    #             + str(len(random_var.var))
-    #             + "pts"
-    #     )
     for (logprior, random_var) in zip(logpriors_names, random_vars_array):
         filename += "_" + str(random_var.name) + "_" + str(logprior) + '_' + str(len(random_var.var)) + "pts"
 
@@ -1570,12 +1504,7 @@ def calc_loglike_ray(mesh_cart,
     for i in range(0, len(mesh_cart), batch_size):
         batch = mesh_cart[i: i + batch_size]
         log_like_ids.append(log_likelihood.remote(gp_post,
-                                                  # input_space,
-                                                  # mom_pts,
                                                   batch,
-                                                  # p_param,
-                                                  # p_shape,
-                                                  # Q_param
                                                   log_likelihood_fn_kwargs,
                                                   ))
     log_like = list(itertools.chain(*ray.get(log_like_ids)))
@@ -1610,9 +1539,8 @@ def marginalize_likelihoods(variables_array, like_list):
 
     Parameters
     ----------
-    variables_array (RandomVariable list) : list of RandomVariable objects.
+    variables_array (RandomVariable NumPu array) : list of RandomVariable objects.
     like_list (array) : list of likelihoods.
-    order_num (int) : total number of orders in the evaluation.
 
     Returns
     ----------
@@ -1625,19 +1553,24 @@ def marginalize_likelihoods(variables_array, like_list):
     for like_idx, like in enumerate(like_list):
         # creates the normalized fully marginalized posteriors
         for v, var in enumerate(variables_array):
+            # creates an array of indices for marginalization
             var_idx_array = np.arange(0, np.shape(variables_array)[0], 1, dtype=int)
             var_idx_array = var_idx_array[var_idx_array != v]
             var_idx_array = np.flip(var_idx_array)
 
             marg_post = np.copy(like)
 
+            # marginalizes by integrating over all indices but one
             for idx in var_idx_array:
                 marg_post = np.trapz(marg_post, x=variables_array[idx].var, axis=idx)
 
+            # normalizes the marginalized distributions
             marg_post /= np.trapz(marg_post, x=variables_array[v].var, axis=0)
 
+            # adds marginalized and normalized posterior to list
             marg_post_list.append(list(marg_post))
 
+        # creates an array of arrays of indices over which to marginalize for the joint posteriors
         if np.shape(variables_array)[0] > 1:
             comb_array = []
             for ca in range(1, np.shape(variables_array)[0]):
@@ -1647,6 +1580,7 @@ def marginalize_likelihoods(variables_array, like_list):
         else:
             comb_array = np.array([0, 0])
 
+        # marginalizes and normalizes the joint posteriors
         for (v_norm, v_marg) in zip(comb_array,
                                     np.flip(np.array([np.arange(0, np.shape(variables_array)[0], 1, dtype=int)[
                                                           ~np.isin(
@@ -1668,8 +1602,10 @@ def marginalize_likelihoods(variables_array, like_list):
             else:
                 joint_post = like
 
+            # appends the result to a list
             joint_post_list.append(joint_post)
 
+    # reshapes the fully marginalized posterior list
     marg_post_array = np.reshape(marg_post_list, (len(variables_array), np.shape(like_list)[0]) + np.shape(marg_post_list)[1:], order='F')
 
     joint_post_array = np.array(joint_post_list)
@@ -1705,7 +1641,7 @@ def log_likelihood_const(gp_fitted,
                    ):
     """
     Function for interpolating calculating the log-likelihood for a fitted TrunctionTP object.
-    Specifically, this is for cases with random variables (Q, ell_degrees, ell_tlab).
+    Specifically, this is for cases with random variables (Q, ell_degrees).
     Parameters
     ----------
     gp_fitted (TruncationTP) : Student t-distribution object from GSUM.
@@ -1821,13 +1757,13 @@ def plot_posteriors_curvewise(
 
     whether_plot_posteriors (bool) : whether to plot posteriors.
         Default : True
-    whether_plot_corner : whether to plot corner plot.
+    whether_plot_corner (bool) : whether to plot corner plot.
         Default : True
-    whether_use_data : whether to use already saved data for plotting.
+    whether_use_data (bool) : whether to use already saved data for plotting.
         Default : True
-    whether_save_data : whether to save data.
+    whether_save_data (bool) : whether to save data.
         Default : True
-    whether_save_plots : whether to save plots.
+    whether_save_plots (bool) : whether to save plots.
         Default : True
     """
 
@@ -1843,6 +1779,7 @@ def plot_posteriors_curvewise(
     ray.shutdown()
     ray.init()
 
+    # batch size for Ray
     BATCH_SIZE = 100
 
     # list for appending log-likelihoods
@@ -2105,13 +2042,6 @@ def plot_posteriors_curvewise(
                         elif yref_type == "dimensionless":
                             yref = np.ones((len(degrees_train_pts) * len(t_lab_train_pts)))
 
-                        # # DELETE ASAP
-                        # obs_data_train_ugly = np.swapaxes(np.swapaxes(np.tile(obs_data_grouped_list[0][0].data, (179, 1, 1)), 0, 1), 1, 2)
-                        # obs_data_train_ugly = np.reshape(
-                        #     obs_data_train_ugly[:, np.isin(t_lab, t_lab_train_pts)][..., np.isin(degrees, degrees_train_pts)],
-                        #     (len(nn_orders_full_array), -1))
-                        # yref = obs_data_train_ugly[-1] * (4 * np.pi)
-
                         # creates and fits the TruncationTP object
                         gp_post_obs = gm.TruncationTP(kernel_posterior,
                                                       ref=yref,
@@ -2133,29 +2063,7 @@ def plot_posteriors_curvewise(
                                         # orders=self.nn_orders_full[:order])
                                         orders = nn_orders_full_array[:order])
 
-                        # # takes account for the constraint, if applicable
-                        # if obs_object.constraint is not None:
-                        #     if obs_object.constraint[2] == 'angle':
-                        #         print("We're invoking the constraint.")
-                        #         gp_post_obs.fit(grid_train,
-                        #                         (obs_data_train[:order, :]).T,
-                        #                         orders=nn_orders_full_array[:order],
-                        #                         dX=np.array([[degrees_input[i]] for i in obs_object.constraint[0]]),
-                        #                         dy=[j for j in obs_object.constraint[1]])
-                        #     # elif obs_object.constraint[2] == 'energy':
-                        #     #     gp_post_obs.fit(grid_train,
-                        #     #                     (obs_data_train[:order, :]).T,
-                        #     #                     orders=nn_orders_full_array[:order],
-                        #     #                     dX=np.array([[self.x[i]] for i in obs_object.constraint[0]]),
-                        #     #                     dy=[j for j in obs_object.constraint[1]])
-                        # else:
-                        #     # fits the TP to data
-                        #     gp_post_obs.fit(grid_train,
-                        #                     (obs_data_train[:order, :]).T,
-                        #                     # orders=self.nn_orders_full[:order])
-                        #                     orders=nn_orders_full_array[:order])
-
-                        # # puts important objects into ray objects
+                        # puts important objects into ray objects
                         gp_post_ray = ray.put(gp_post_obs)
 
                         # calculates the posterior using ray
