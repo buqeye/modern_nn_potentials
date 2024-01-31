@@ -1,4 +1,4 @@
-from cheftgp.gaussianprocess_refactored import TrainTestSplit
+from cheftgp.gaussianprocess import TrainTestSplit
 
 # creates the training and testing masks for observables plotted against angle
 

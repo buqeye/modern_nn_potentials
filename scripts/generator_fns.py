@@ -2,7 +2,7 @@ import gc
 
 from cheftgp.constants import *
 from cheftgp.eft import *
-from cheftgp.gaussianprocess_refactored import *
+from cheftgp.gaussianprocess import *
 from cheftgp.graphs import *
 from cheftgp.scattering import *
 from cheftgp.utils import *
@@ -199,6 +199,7 @@ def generate_diagnostics(
             deg_input_array,
             "\sigma_{\mathrm{tot}}",
             "dimensionful",
+            unit_string = "mb",
         )
         DSGBunch = ObservableBunch(
             "DSG",
@@ -207,6 +208,7 @@ def generate_diagnostics(
             deg_input_array,
             "d \sigma / d \Omega",
             "dimensionful",
+            unit_string="mb",
         )
         AYBunch = ObservableBunch(
             "AY",

@@ -2,7 +2,7 @@ import gc
 
 from cheftgp.constants import *
 from cheftgp.eft import *
-from cheftgp.gaussianprocess_refactored import *
+from cheftgp.gaussianprocess import *
 from cheftgp.graphs import *
 from cheftgp.scattering import *
 from cheftgp.utils import *
