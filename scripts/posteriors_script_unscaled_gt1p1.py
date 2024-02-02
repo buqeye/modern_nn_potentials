@@ -4,7 +4,7 @@ from generator_fns import *
 mpi_vals = np.linspace(1, 350, 150, dtype=np.dtype('f4'))
 ls_deg_vals = np.linspace(0.01, 4, 150, dtype=np.dtype('f4'))
 ls_tlab_vals = np.linspace(1, 150, 150, dtype=np.dtype('f4'))
-lambda_vals = np.linspace(200, 900, 150, dtype=np.dtype('f4'))
+lambda_vals = np.linspace(450, 1150, 150, dtype=np.dtype('f4'))
 
 mesh_cart = gm.cartesian(lambda_vals, np.log(ls_deg_vals), np.log(ls_tlab_vals), mpi_vals)
 mesh_cart_sgt = np.delete(mesh_cart, 1, 1)
