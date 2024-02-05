@@ -69,7 +69,7 @@ RKE550MeV = ScaleSchemeBunch(
 )
 
 EMN450MeV = ScaleSchemeBunch(
-    "../observables_data/observable_data/scattering_observables_EM-450MeV.h5",
+    "../observables_data/scattering_observables_EM-450MeV.h5",
     np.array([0, 2, 3, 4, 5]),
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds"]],
     "EMN",
