@@ -12,9 +12,6 @@ from cheftgp.traintestsplits import *
 # sets rcParams for plotting
 setup_rc_params()
 
-# gets observables data from NN Online ("true" values for those observables)
-online_data_dict = get_nn_online_data()
-
 def generate_diagnostics(
     nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
@@ -693,6 +690,8 @@ def generate_diagnostics(
                                         whether_save=save_pdf_bool
                                     )
                                 if plot_trunc_bool:
+                                    # gets observables data from NN Online ("true" values for those observables)
+                                    online_data_dict = get_nn_online_data()
                                     get_nn_online_data()
 
                                     MyPlot.plot_truncation_errors(
