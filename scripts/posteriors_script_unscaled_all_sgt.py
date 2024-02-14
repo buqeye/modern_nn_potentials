@@ -1,10 +1,10 @@
 from generator_fns import *
 
 # sets the meshes for the random variable arrays
-mpi_vals = np.linspace(100, 550, 300, dtype=np.dtype('f4'))
+mpi_vals = np.linspace(100, 650, 300, dtype=np.dtype('f4'))
 ls_deg_vals = np.linspace(0.01, 4, 3, dtype=np.dtype('f4'))
 ls_tlab_vals = np.linspace(1, 150, 150, dtype=np.dtype('f4'))
-lambda_vals = np.linspace(600, 1400, 300, dtype=np.dtype('f4'))
+lambda_vals = np.linspace(400, 2600, 300, dtype=np.dtype('f4'))
 
 mesh_cart = gm.cartesian(lambda_vals, np.log(ls_deg_vals), np.log(ls_tlab_vals), mpi_vals)
 mesh_cart_sgt = np.delete(mesh_cart, 1, 1)

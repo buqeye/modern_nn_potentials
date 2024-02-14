@@ -217,6 +217,9 @@ def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_
     # Plot each posterior and its summary statistics
     fig, ax = plt.subplots(1, 1, figsize=(3.4, 3.4 * order_num))
 
+    # array of stats (MAP, mean, and stddev)
+    stats = np.array([])
+
     for i, posterior_raw in enumerate(result):
         # scales the posteriors so they're all the same height
         posterior = posterior_raw / (1.2 * np.max(posterior_raw))
@@ -247,13 +250,15 @@ def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_
 
         print("Observable " + str(y_label[i % len(y_label)]) +
               # ", order " + str(orders_labels_dict[nn_orders[i % order_num]]) +
-              ", variable " + str(variable.name) + ": mean = " + str(dist_mean))
-        print("Observable " + str(y_label[i % len(y_label)]) +
-              # ", order " + str(orders_labels_dict[nn_orders[i % order_num]]) +
               ", variable " + str(variable.name) + ": MAP value = " + str(MAP[0]))
         print("Observable " + str(y_label[i % len(y_label)]) +
               # ", order " + str(orders_labels_dict[nn_orders[i % order_num]]) +
+              ", variable " + str(variable.name) + ": mean = " + str(dist_mean))
+        print("Observable " + str(y_label[i % len(y_label)]) +
+              # ", order " + str(orders_labels_dict[nn_orders[i % order_num]]) +
               ", variable " + str(variable.name) + ": std. dev. = " + str(dist_stddev))
+
+        stats = np.append(stats, np.array([MAP[0], dist_mean, dist_stddev]))
 
     # Plot formatting
     ax.set_yticks(-1 * (order_num * np.arange(len(y_label)) + (order_num - 2)))
@@ -276,7 +281,7 @@ def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_
 
     fig.tight_layout()
 
-    return fig
+    return fig, stats
 
 def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_array,
                            joint_post_array, GP, obs_name_corner, whether_save_plots,

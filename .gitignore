@@ -135,8 +135,8 @@ dmypy.json
 scripts/data/
 # figures
 scripts/figures/
-# observables data
-observables_data/
+## observables data
+#observables_data/
 # figures from tests
 tests/figures/
 # figures from tests

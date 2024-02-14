@@ -736,8 +736,6 @@ def generate_diagnostics(
         print("Available length scales: " + str(lengthscale_current_list))
         print("************************************")
 
-# 1, 5, 12, 21, 33, 48, 65, 85, 108, 133, 161, 192, 225, 261, 300, 341
-E_slice_Q = 341
 def generate_posteriors(
     nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
@@ -745,6 +743,8 @@ def generate_posteriors(
     p_param_method_array=["Qofprel"],
     input_space_deg=["cos"],
     input_space_tlab=["prel"],
+    Elab_slice = None,
+    deg_slice = None,
     t_lab_train_pts = np.array([]),
     degrees_train_pts = np.array([]),
     orders_from_ho = 1,
@@ -762,12 +762,19 @@ def generate_posteriors(
     obs_labels_grouped_list = [None],
     mesh_cart_grouped_list = [None],
     variables_array_curvewise = [None],
+    ratio_fn_posterior = None,
+    ratio_fn_kwargs_posterior = None,
+    log_likelihood_fn_posterior = None,
+    log_likelihood_fn_kwargs_posterior = None,
+
     variables_array_pointwise = [None],
     plot_posterior_pointwise_bool=False,
+
     plot_posterior_curvewise_bool=False,
     plot_corner_curvewise_bool=False,
     use_data_curvewise_bool=False,
     save_data_curvewise_bool=False,
+
     save_posterior_pointwise_bool=False,
     save_posterior_curvewise_bool=False,
     filename_addendum="",
@@ -809,6 +816,16 @@ def generate_posteriors(
         pdf for the breakdown scale, effective soft scale, length scales, etc.
     Built-in options: "Elab", "prel"
     Default: "prel"
+
+    Elab_slice (int): lab energy (in MeV) at which to slice the observables for the purposes
+        of calculating posteriors.
+    If None, every observable is left as is.
+    Default : None
+
+    deg_slice (int): scattering angle (in degrees) at which to slice the observables for the
+        purposes of calculating posteriors.
+    If None, every observable is left as is.
+    Default : None
 
     t_lab_train_pts (float NumPy array): lab energies (in MeV) where the TruncationTP
         object will be trained. Will be converted to input_space_tlab by another function.
@@ -883,6 +900,20 @@ def generate_posteriors(
     Order matters here, and is determined by ratio_fn and log_likelihood_fn.
     Default: [None]
 
+    ratio_fn_posterior (function): function that maps momentum and scale values (from
+        variables_array_curvewise) onto values of the ratio Q.
+    Default: None
+
+    ratio_fn_kwargs_posterior (dict): keyword arguments for ratio_fn_posterior.
+    Default: None
+
+    log_likelihood_fn_posterior (function): function that maps values of the random variables
+        onto a log-likelihood value.
+    Default: None
+
+    log_likelihood_fn_kwargs_posterior (dict): keyword arguments for log_likelihood_fn_posterior.
+    Default: None
+
     variables_array_pointwise (RandomVariable array): NumPy array of random variables.
     Order matters here, and is determined by ratio_fn and log_likelihood_fn.
     Should, in all likelihood, just be np.array([LambdabVariable]).
@@ -908,6 +939,10 @@ def generate_posteriors(
         format=savefile_type,
     )
 
+    # array for the MAP values, means, and standard deviations of the 1D pdfs
+    stats_array_curvewise = np.array([])
+    stats_array_pointwise = np.array([])
+
     # try:
     # runs through the potentials
     for o, ScaleScheme in enumerate(scale_scheme_bunch_array):
@@ -923,7 +958,7 @@ def generate_posteriors(
         t_lab = ScaleScheme.get_data("t_lab")
         degrees = ScaleScheme.get_data("degrees")
 
-        # creates the bunch for each observable to be plotted against angle
+        # creates the bunch for each observable to be plotted
         SGTBunch = ObservableBunch(
             "SGT",
             SGT,
@@ -932,52 +967,156 @@ def generate_posteriors(
             "\sigma_{\mathrm{tot}}",
             "dimensionful",
         )
-        DSGBunch = ObservableBunch(
-            "DSG",
-            DSG,
-            [],
-            [],
-            "d \sigma / d \Omega",
-            "dimensionful",
-        )
-        AYBunch = ObservableBunch(
-            "AY",
-            AY,
-            # np.reshape(AY[:, np.isin(t_lab, E_slice_Q), :], (np.shape(AY)[0], len(degrees))),
-            [],
-            [],
-            "A_{y}",
-            "dimensionless",
-            constraint=[[0, -1], [0, 0], "angle"],
-        )
-        ABunch = ObservableBunch(
-            "A",
-            A,
-            [],
-            [],
-            "A",
-            "dimensionless",
-            constraint=[[0], [0], "angle"],
-        )
-        DBunch = ObservableBunch(
-            "D",
-            D,
-            [], [], "D", "dimensionless"
-        )
-        # version of DBunch that treats D as dimensionful for the purposes of Fig. 22
-        DBunch_dimensionful = ObservableBunch(
-            "D_dimensionful", D, [], [], "D", "dimensionful"
-        )
-        AXXBunch = ObservableBunch(
-            "AXX",
-            AXX,
-            [], [], "A_{xx}", "dimensionless"
-        )
-        AYYBunch = ObservableBunch(
-            "AYY",
-            AYY,
-            [], [], "A_{yy}", "dimensionless"
-        )
+
+        # no slicing; normal procedure.
+        if (Elab_slice is None) and (deg_slice is None):
+            DSGBunch = ObservableBunch(
+                "DSG",
+                DSG,
+                [],
+                [],
+                "d \sigma / d \Omega",
+                "dimensionful",
+            )
+            AYBunch = ObservableBunch(
+                "AY",
+                AY,
+                # np.reshape(AY[:, np.isin(t_lab, E_slice_Q), :], (np.shape(AY)[0], len(degrees))),
+                [],
+                [],
+                "A_{y}",
+                "dimensionless",
+                constraint=[[0, -1], [0, 0], "angle"],
+            )
+            ABunch = ObservableBunch(
+                "A",
+                A,
+                [],
+                [],
+                "A",
+                "dimensionless",
+                constraint=[[0], [0], "angle"],
+            )
+            DBunch = ObservableBunch(
+                "D",
+                D,
+                [], [], "D", "dimensionless"
+            )
+            # version of DBunch that treats D as dimensionful for the purposes of Fig. 22
+            DBunch_dimensionful = ObservableBunch(
+                "D_dimensionful", D, [], [], "D", "dimensionful"
+            )
+            AXXBunch = ObservableBunch(
+                "AXX",
+                AXX,
+                [], [], "A_{xx}", "dimensionless"
+            )
+            AYYBunch = ObservableBunch(
+                "AYY",
+                AYY,
+                [], [], "A_{yy}", "dimensionless"
+            )
+        # sliced in energy; used for calculations with constant Q.
+        elif (Elab_slice is not None) and (deg_slice is None):
+            DSGBunch = ObservableBunch(
+                "DSG",
+                np.reshape(DSG[:, np.isin(t_lab, Elab_slice), :], (np.shape(DSG)[0], len(degrees))),
+                [],
+                [],
+                "d \sigma / d \Omega",
+                "dimensionful",
+            )
+            AYBunch = ObservableBunch(
+                "AY",
+                # AY,
+                np.reshape(AY[:, np.isin(t_lab, Elab_slice), :], (np.shape(AY)[0], len(degrees))),
+                # np.reshape(AY[:, np.isin(t_lab, E_slice_Q), :], (np.shape(AY)[0], len(degrees))),
+                [],
+                [],
+                "A_{y}",
+                "dimensionless",
+                constraint=[[0, -1], [0, 0], "angle"],
+            )
+            ABunch = ObservableBunch(
+                "A",
+                np.reshape(A[:, np.isin(t_lab, Elab_slice), :], (np.shape(A)[0], len(degrees))),
+                [],
+                [],
+                "A",
+                "dimensionless",
+                constraint=[[0], [0], "angle"],
+            )
+            DBunch = ObservableBunch(
+                "D",
+                np.reshape(D[:, np.isin(t_lab, Elab_slice), :], (np.shape(D)[0], len(degrees))),
+                [], [], "D", "dimensionless"
+            )
+            # version of DBunch that treats D as dimensionful for the purposes of Fig. 22
+            DBunch_dimensionful = ObservableBunch(
+                "D_dimensionful",
+                np.reshape(D[:, np.isin(t_lab, Elab_slice), :], (np.shape(D)[0], len(degrees))), [], [], "D", "dimensionful"
+            )
+            AXXBunch = ObservableBunch(
+                "AXX",
+                np.reshape(AXX[:, np.isin(t_lab, Elab_slice), :], (np.shape(AXX)[0], len(degrees))),
+                [], [], "A_{xx}", "dimensionless"
+            )
+            AYYBunch = ObservableBunch(
+                "AYY",
+                np.reshape(AYY[:, np.isin(t_lab, Elab_slice), :], (np.shape(AYY)[0], len(degrees))),
+                [], [], "A_{yy}", "dimensionless"
+            )
+        # sliced in angle; not used for anything.
+        elif (Elab_slice is None) and (deg_slice is not None):
+            DSGBunch = ObservableBunch(
+                "DSG",
+                np.reshape(DSG[:, :, np.isin(degrees, deg_slice)], (np.shape(DSG)[0], len(t_lab))),
+                [],
+                [],
+                "d \sigma / d \Omega",
+                "dimensionful",
+            )
+            AYBunch = ObservableBunch(
+                "AY",
+                # AY,
+                np.reshape(AY[:, :, np.isin(degrees, deg_slice)], (np.shape(AY)[0], len(t_lab))),
+                # np.reshape(AY[:, np.isin(t_lab, E_slice_Q), :], (np.shape(AY)[0], len(degrees))),
+                [],
+                [],
+                "A_{y}",
+                "dimensionless",
+                constraint=[[0, -1], [0, 0], "angle"],
+            )
+            ABunch = ObservableBunch(
+                "A",
+                np.reshape(A[:, :, np.isin(degrees, deg_slice)], (np.shape(A)[0], len(t_lab))),
+                [],
+                [],
+                "A",
+                "dimensionless",
+                constraint=[[0], [0], "angle"],
+            )
+            DBunch = ObservableBunch(
+                "D",
+                np.reshape(D[:, :, np.isin(degrees, deg_slice)], (np.shape(D)[0], len(t_lab))),
+                [], [], "D", "dimensionless"
+            )
+            # version of DBunch that treats D as dimensionful for the purposes of Fig. 22
+            DBunch_dimensionful = ObservableBunch(
+                "D_dimensionful",
+                np.reshape(D[:, :, np.isin(degrees, deg_slice)], (np.shape(D)[0], len(t_lab))), [], [], "D",
+                "dimensionful"
+            )
+            AXXBunch = ObservableBunch(
+                "AXX",
+                np.reshape(AXX[:, :, np.isin(degrees, deg_slice)], (np.shape(AXX)[0], len(t_lab))),
+                [], [], "A_{xx}", "dimensionless"
+            )
+            AYYBunch = ObservableBunch(
+                "AYY",
+                np.reshape(AYY[:, :, np.isin(degrees, deg_slice)], (np.shape(AYY)[0], len(t_lab))),
+                [], [], "A_{yy}", "dimensionless"
+            )
 
         observable_array = [
             SGTBunch,
@@ -1201,7 +1340,7 @@ def generate_posteriors(
                             )
 
                             if plot_posterior_curvewise_bool:
-                                plot_posteriors_curvewise(
+                                stats_array_curvewise = np.append(stats_array_curvewise, plot_posteriors_curvewise(
                                     # order stuff
                                     light_colors = Orders.lightcolors_array,
                                     nn_orders_array = Orders.orders_restricted,
@@ -1241,20 +1380,25 @@ def generate_posteriors(
                                     scaling_fn=scaling_fn,
                                     scaling_fn_kwargs={},
 
-                                    ratio_fn=ratio_fn_curvewise,
-                                    ratio_fn_kwargs={
-                                        "p_param": PParamMethod,
-                                        "Q_param": QParamMethod,
-                                        "mpi_var": m_pi_eff,
-                                        "lambda_var": Lambdab,
-                                        "single_expansion": False,
-                                    },
-                                    log_likelihood_fn=log_likelihood,
-                                    log_likelihood_fn_kwargs={
-                                        "p_param": PParamMethod,
-                                        "Q_param": QParamMethod,
-                                        "single_expansion": False,
-                                    },
+                                    ratio_fn=ratio_fn_posterior,
+                                    ratio_fn_kwargs=ratio_fn_kwargs_posterior,
+                                    log_likelihood_fn=log_likelihood_fn_posterior,
+                                    log_likelihood_fn_kwargs=log_likelihood_fn_kwargs_posterior,
+
+                                    # ratio_fn=ratio_fn_curvewise,
+                                    # ratio_fn_kwargs={
+                                    #     "p_param": PParamMethod,
+                                    #     "Q_param": QParamMethod,
+                                    #     "mpi_var": m_pi_eff,
+                                    #     "lambda_var": Lambdab,
+                                    #     "single_expansion": False,
+                                    # },
+                                    # log_likelihood_fn=log_likelihood,
+                                    # log_likelihood_fn_kwargs={
+                                    #     "p_param": PParamMethod,
+                                    #     "Q_param": QParamMethod,
+                                    #     "single_expansion": False,
+                                    # },
 
                                     # ratio_fn = ratio_fn_posterior_const,
                                     # ratio_fn_kwargs = {
@@ -1273,9 +1417,9 @@ def generate_posteriors(
                                     whether_use_data=use_data_curvewise_bool,
                                     whether_save_data=save_data_curvewise_bool,
                                     whether_save_plots=save_posterior_curvewise_bool,
-                                )
+                                ))
                             if plot_posterior_pointwise_bool:
-                                plot_posteriors_pointwise(
+                                stats_array_pointwise = np.append(stats_array_pointwise, plot_posteriors_pointwise(
                                     # order stuff
                                     light_colors=Orders.lightcolors_array,
                                     nn_orders_array=Orders.orders_restricted,
@@ -1318,7 +1462,7 @@ def generate_posteriors(
                                     FileName=FileName,
 
                                     whether_save_plots=save_posterior_pointwise_bool,
-                                )
+                                ))
 
     # except:
     #     print("Error encountered in running loop.")
@@ -1352,3 +1496,5 @@ def generate_posteriors(
         print("Available train/test splits: " + str(traintest_current_list))
         print("Available length scales: " + str(lengthscale_current_list))
         print("************************************")
+
+    return stats_array_curvewise, stats_array_pointwise

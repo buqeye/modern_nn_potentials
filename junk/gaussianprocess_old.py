@@ -2,12 +2,12 @@ import os.path
 
 import numpy as np
 from scipy.interpolate import interp1d, interpn
-from .utils import versatile_train_test_split, compute_posterior_intervals, sig_figs, correlation_coefficient, \
+from cheftgp.utils import versatile_train_test_split, compute_posterior_intervals, sig_figs, correlation_coefficient, \
     round_to_same_digits, mean_and_stddev
-from .scattering import E_to_p
-from .graphs import draw_summary_statistics, corner_plot, offset_xlabel, joint_plot, setup_rc_params, plot_marg_posteriors, \
+from cheftgp.scattering import E_to_p
+from cheftgp.graphs import draw_summary_statistics, corner_plot, offset_xlabel, joint_plot, setup_rc_params, plot_marg_posteriors, \
     plot_corner_posteriors, softblack, gray, edgewidth, text_bbox
-from .eft import Q_approx, Lb_logprior, mpieff_logprior, p_approx
+from cheftgp.eft import Q_approx, Lb_logprior, mpieff_logprior, p_approx
 import h5py
 import ray
 import matplotlib as mpl

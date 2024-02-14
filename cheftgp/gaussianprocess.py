@@ -1173,8 +1173,8 @@ class GSUMDiagnostics:
                 # ax.set_xlabel(self.caption_coeffs)
                 ax.set_xticks([int(tick) for tick in self.x_train])
                 ax.set_xticks([tick for tick in self.x_test], minor=True)
-            fig.supxlabel(self.caption_coeffs, fontsize = 16)
-            fig.supylabel(r"$[" + self.observable_label + "]_{\mathrm{res}}$ (" + self.observable_units + ")", fontsize=16)
+            fig.supxlabel(self.caption_coeffs, fontsize = 12)
+            fig.supylabel(r"$[" + self.observable_label + "]_{\mathrm{res}}$ (" + self.observable_units + ")", fontsize=12)
             plt.show()
 
             # saves
@@ -2130,12 +2130,17 @@ def plot_posteriors_curvewise(
         # calculates all joint and fully marginalized posterior pdfs
         marg_post_array, joint_post_array = marginalize_likelihoods(variables_array[marg_bool_array], like_list)
 
+    # array of stats (MAP, mean, and stddev)
+    fit_stats_array = np.array([])
+
     if whether_plot_posteriors:
         # plots and saves all fully marginalized posterior pdfs
         for (variable, result) in zip(variables_array[marg_bool_array], marg_post_array):
-            fig = plot_marg_posteriors(variable, result, obs_labels_grouped_list, Lb_colors, order_num,
+            fig, fit_stats = plot_marg_posteriors(variable, result, obs_labels_grouped_list, Lb_colors, order_num,
                                        # self.nn_orders, self.orders_labels_dict, self, whether_save_plots, obs_name_grouped_list)
                                     nn_orders_array, orders_labels_dict)
+
+            fit_stats_array = np.append(fit_stats_array, fit_stats)
 
             if whether_save_plots:
                 # saves
@@ -2161,15 +2166,7 @@ def plot_posteriors_curvewise(
                                          nn_orders_array,
                                          orders_labels_dict)
 
-    # # creates a list of the values of the random variables corresponding to the
-    # # point of highest probability in the posterior
-    # indices_opt = np.where(like_list[-1] == np.amax(like_list[-1]))
-    opt_vals_list = []
-    # for idx, var in zip(indices_opt, [variable.var for variable in variables_array[marg_bool_array]]):
-    #     opt_vals_list.append((var[idx])[0])
-    # print("opt_vals_list = " + str(opt_vals_list))
-
-    return opt_vals_list
+    return fit_stats_array
 
 def plot_posteriors_pointwise(
         light_colors,
@@ -2393,11 +2390,16 @@ def plot_posteriors_pointwise(
     # adds an extra dimension to comport with structure of existing code
     marg_post_list = marg_post_list[None, :]
 
+    # array of stats (MAP, mean, and stddev)
+    fit_stats_array = np.array([])
+
     if whether_plot_posteriors:
         for (variable, result) in zip(variables_array, marg_post_list):
             # generates plots of posteriors for multiple observables and orders
-            fig = plot_marg_posteriors(variable, result, obs_labels_grouped_list, Lb_colors, order_num,
+            fig, fit_stats = plot_marg_posteriors(variable, result, obs_labels_grouped_list, Lb_colors, order_num,
                                        nn_orders_array, orders_labels_dict)
+
+            fit_stats_array = np.append(fit_stats_array, fit_stats)
 
             # saves
             obs_name_corner_concat = ''.join(obs_name_grouped_list)
@@ -2416,7 +2418,7 @@ def plot_posteriors_pointwise(
             opt_vals_list.append((var[idx])[0])
 
         print("opt_vals_list = " + str(opt_vals_list))
-    return opt_vals_list
+    return fit_stats_array
 
 def scaling_fn(pts_array):
     try:
