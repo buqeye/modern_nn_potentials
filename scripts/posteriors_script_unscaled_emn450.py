@@ -55,6 +55,21 @@ MpieffVariable = RandomVariable(var=mpi_vals,
                                 marg_bool = True)
 variables_array = np.array([LambdabVariable, LsDegVariable, LsTlabVariable, MpieffVariable])
 
+ratio_fn=ratio_fn_curvewise
+ratio_fn_kwargs={
+    "p_param": "pprel",
+    "Q_param": "sum",
+    "mpi_var": 138,
+    "lambda_var": 570,
+    "single_expansion": False,
+}
+log_likelihood_fn=log_likelihood
+log_likelihood_fn_kwargs={
+    "p_param": "pprel",
+    "Q_param": "sum",
+    "single_expansion": False,
+}
+
 generate_posteriors(
     nn_interaction="np",
     scale_scheme_bunch_array=[EMN450MeV],
@@ -64,7 +79,7 @@ generate_posteriors(
     input_space_tlab=["prel"],
     t_lab_train_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]),
     degrees_train_pts=np.array([41, 60, 76, 90, 104, 120, 139]),
-    orders_from_ho=1,
+    orders_from_ho=3,
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
@@ -86,6 +101,11 @@ generate_posteriors(
     obs_labels_grouped_list=obs_labels_grouped_list,
     mesh_cart_grouped_list=mesh_cart_grouped_list,
     variables_array_curvewise=variables_array,
+
+    ratio_fn_posterior=ratio_fn,
+    ratio_fn_kwargs_posterior=ratio_fn_kwargs,
+    log_likelihood_fn_posterior=log_likelihood_fn,
+    log_likelihood_fn_kwargs_posterior=log_likelihood_fn_kwargs,
 
     plot_posterior_pointwise_bool=False,
     save_posterior_pointwise_bool=False,
