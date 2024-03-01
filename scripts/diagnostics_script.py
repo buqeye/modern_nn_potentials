@@ -3,8 +3,8 @@ from generator_fns import *
 generate_diagnostics(
     nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
-    observable_input=["A"],
-    E_input_array=[50],
+    observable_input=["DSG"],
+    E_input_array=[1],
     deg_input_array=[],
     Q_param_method_array=["sum"],
     p_param_method_array=["pprel"],

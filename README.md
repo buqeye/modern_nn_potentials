@@ -3,7 +3,7 @@
 # Accompanying works
 
 This repository contains all code and data necessary to generate the results in
-*Fission fragment 1* (arXiv link here) and *Fission fragment 2* (arXiv link here).
+*Fission fragment 1* (https://arxiv.org/abs/2402.13165) and *Fission fragment 2* (arXiv link here).
 
 ## Installation
 
