@@ -2,7 +2,7 @@ import os.path
 
 import numpy as np
 from scipy.interpolate import interp1d, interpn
-from .utils import versatile_train_test_split, compute_posterior_intervals
+from .utils import versatile_train_test_split, versatile_train_test_split_nd, compute_posterior_intervals
 from .scattering import E_to_p
 from .graphs import offset_xlabel, joint_plot, setup_rc_params, plot_marg_posteriors, \
     plot_corner_posteriors, softblack, gray, edgewidth, text_bbox
@@ -42,10 +42,15 @@ class GPHyperparameters:
         sd (float) : fixed standard deviation for fitting procedure.
             default : None (i.e., it will calculate one afresh using the fitting algorithm)
         """
-        self.ls = ls_class.ls_guess
-        self.ls_lower = ls_class.ls_bound_lower
-        self.ls_upper = ls_class.ls_bound_upper
-        self.whether_fit = ls_class.whether_fit
+        self.ls_array = np.array([])
+        self.ls_lower_array = np.array([])
+        self.ls_upper_array = np.array([])
+        self.whether_fit_array = np.array([])
+        for lsc in ls_class:
+            self.ls_array = np.append(self.ls_array, lsc.ls_guess)
+            self.ls_lower_array = np.append(self.ls_lower_array, lsc.ls_bound_lower)
+            self.ls_upper_array = np.append(self.ls_upper_array, lsc.ls_bound_upper)
+            self.whether_fit_array = np.append(self.whether_fit_array, lsc.whether_fit)
         self.center = center
         self.ratio = ratio
         self.nugget = nugget
@@ -173,7 +178,7 @@ class InputSpaceBunch:
 
 
 class ObservableBunch:
-    def __init__(self, name, data, energies, angles, title, ref_type, unit_string = None, constraint=None):
+    def __init__(self, name, data, x_array, title, ref_type, unit_string = None, constraint=None):
         """
         Class for an observable
         name (string) : (abbreviated) name for the observable
@@ -194,8 +199,9 @@ class ObservableBunch:
         """
         self.name = name
         self.data = data
-        self.energies = energies
-        self.angles = angles
+        # self.energies = energies
+        # self.angles = angles
+        self.x_array = x_array
         self.title = title
         self.ref_type = ref_type
         self.unit_string = unit_string
@@ -215,7 +221,8 @@ class Interpolation:
         self.x = x
         self.y = y
         self.kind = kind
-        self.f_interp = interp1d(self.x, self.y, kind=self.kind)
+        # self.f_interp = interp1d(self.x, self.y, kind=self.kind)
+        self.f_interp = interpn(self.x, self.y)
 
 
 class TrainTestSplit:
@@ -285,6 +292,8 @@ class TrainTestSplit:
         self.x = x
         self.y = y
 
+        print(np.shape(self.x))
+        print(np.shape(self.y))
         # calculates the actual value for each offset, xmin, and xmax
         self.offset_train_min = self.offset_train_min_factor \
                                 * (np.max(self.x) - np.min(self.x))
@@ -292,8 +301,10 @@ class TrainTestSplit:
                                 * (np.max(self.x) - np.min(self.x))
         self.xmin_train = np.min(self.x) + self.xmin_train_factor * \
                           (np.max(self.x) - np.min(self.x))
+        print(self.xmin_train)
         self.xmax_train = np.min(self.x) + self.xmax_train_factor * \
                           (np.max(self.x) - np.min(self.x))
+        print(self.xmax_train)
         self.offset_test_min = self.offset_test_min_factor \
                                * (np.max(self.x) - np.min(self.x))
         self.offset_test_max = self.offset_test_max_factor \
@@ -320,6 +331,124 @@ class TrainTestSplit:
 
         return self.x_train, self.x_test, self.y_train, self.y_test
 
+class TTSND:
+    def __init__(self, name, n_train, n_test_inter, isclose_factor=0.01,
+                 offset_train_min_factor=0, offset_train_max_factor=0,
+                 xmin_train_factor=0, xmax_train_factor=1,
+                 offset_test_min_factor=0, offset_test_max_factor=0,
+                 xmin_test_factor=0, xmax_test_factor=1,
+                 train_at_ends=True, test_at_ends=False):
+        """
+        Class for an input space (i.e., x-coordinate)
+
+        name (str) : (abbreviated) name for the combination of training and testing masks
+        n_train (int) : number of intervals into which to split x, with training points at the
+            edges of each interval
+        n_test_inter (int) : number of subintervals into which to split the intervals between
+            training points, with testing points at the edges of each subinterval
+        isclose_factor (float) : fraction of the total input space for the tolerance of making
+            sure that training and testing points don't coincide
+        offset_train_min_factor (float) : fraction above the minimum of the input space where
+            the first potential training point ought to go
+        offset_train_max_factor (float) : fraction below the maximum of the input space where
+            the last potential training point ought to go
+        xmin_train_factor (float) : fraction of the input space below which there ought not to
+            be training points
+        xmax_train_factor (float) : fraction of the input space above which there ought not to
+            be training points
+        offset_test_min_factor (float) : fraction above the minimum of the input space where
+            the first potential testing point ought to go
+        offset_test_max_factor (float) : fraction below the maximum of the input space where
+            the last potential testing point ought to go
+        xmin_test_factor (float) : fraction of the input space below which there ought not to
+            be testing points
+        xmax_test_factor (float) : fraction of the input space above which there ought not to
+            be testing points
+        train_at_ends (bool) : whether training points should be allowed at or near the
+            endpoints of x
+        test_at_ends (bool) : whether testing points should be allowed at or near the endpoints
+            of x
+        """
+        self.name = name
+        self.n_train = n_train
+        self.n_test_inter = n_test_inter
+
+
+        self.isclose_factor = isclose_factor * np.ones(len(self.n_train))
+        self.offset_train_min_factor = offset_train_min_factor * np.ones(len(self.n_train))
+        self.offset_train_max_factor = offset_train_max_factor * np.ones(len(self.n_train))
+        self.xmin_train_factor = xmin_train_factor * np.ones(len(self.n_train))
+        self.xmax_train_factor = xmax_train_factor * np.ones(len(self.n_train))
+        self.offset_test_min_factor = offset_test_min_factor * np.ones(len(self.n_train))
+        self.offset_test_max_factor = offset_test_max_factor * np.ones(len(self.n_train))
+        self.xmin_test_factor = xmin_test_factor * np.ones(len(self.n_train))
+        self.xmax_test_factor = xmax_test_factor * np.ones(len(self.n_train))
+        self.train_at_ends = train_at_ends * np.ones(len(self.n_train), dtype = bool)
+        self.test_at_ends = test_at_ends * np.ones(len(self.n_train), dtype = bool)
+
+    def make_masks(self, x, y):
+        """Returns the training and testing points in the input space and the corresponding
+        (interpolated) data values after calculating the actual values for xmin, xmax, and
+        offsets using the corresponding factors and the input space
+
+        Parameters
+        ----------
+        x (1D array) : input space
+        y (ND array) : data points at each input space value, with N>1 dimensions for N
+            orders
+        """
+        self.x = x
+        self.y = y
+
+        print(np.shape(self.x))
+        print(np.shape(self.y))
+        # calculates the actual value for each offset, xmin, and xmax
+        # print(self.offset_train_min_factor)
+        # print(np.amax(self.x, axis = tuple(range(self.x.ndim - 1))))
+        self.offset_train_min = self.offset_train_min_factor \
+                                * (np.amax(self.x, axis = tuple(range(self.x.ndim - 1))) - np.amin(self.x, axis = tuple(range(self.x.ndim - 1))))
+        # print(np.shape(self.offset_train_min))
+        print(self.offset_train_min)
+        self.offset_train_max = self.offset_train_max_factor \
+                                * (np.amax(self.x, axis = tuple(range(self.x.ndim - 1))) - np.amin(self.x, axis = tuple(range(self.x.ndim - 1))))
+        print(self.offset_train_max)
+        self.xmin_train = np.amin(self.x, axis = tuple(range(self.x.ndim - 1))) + self.xmin_train_factor * \
+                          (np.amax(self.x, axis = tuple(range(self.x.ndim - 1))) - np.amin(self.x, axis = tuple(range(self.x.ndim - 1))))
+        print(self.xmin_train)
+        self.xmax_train = np.amin(self.x, axis = tuple(range(self.x.ndim - 1))) + self.xmax_train_factor * \
+                          (np.amax(self.x, axis = tuple(range(self.x.ndim - 1))) - np.amin(self.x, axis = tuple(range(self.x.ndim - 1))))
+        print(self.xmax_train)
+        self.offset_test_min = self.offset_test_min_factor \
+                               * (np.amax(self.x, axis = tuple(range(self.x.ndim - 1))) - np.amin(self.x, axis = tuple(range(self.x.ndim - 1))))
+        print(self.offset_test_min)
+        self.offset_test_max = self.offset_test_max_factor \
+                               * (np.amax(self.x, axis = tuple(range(self.x.ndim - 1))) - np.amin(self.x, axis = tuple(range(self.x.ndim - 1))))
+        print(self.offset_test_max)
+        self.xmin_test = np.amin(self.x, axis = tuple(range(self.x.ndim - 1))) + self.xmin_test_factor * \
+                         (np.amax(self.x, axis = tuple(range(self.x.ndim - 1))) - np.amin(self.x, axis = tuple(range(self.x.ndim - 1))))
+        print(self.xmin_test)
+        self.xmax_test = np.amin(self.x, axis = tuple(range(self.x.ndim - 1))) + self.xmax_test_factor * \
+                         (np.amax(self.x, axis = tuple(range(self.x.ndim - 1))) - np.amin(self.x, axis = tuple(range(self.x.ndim - 1))))
+        print(self.xmax_test)
+
+        # self.interp_obj = Interpolation(self.x, self.y)
+
+        # creates the x and y training and testing points
+        # self.x_train, self.x_test, self.y_train, self.y_test = \
+        #     versatile_train_test_split_nd(self.x, self.y,
+        #                                self.n_train, n_test_inter=self.n_test_inter,
+        #                                isclose_factor=self.isclose_factor,
+        #                                offset_train_min=self.offset_train_min,
+        #                                offset_train_max=self.offset_train_max,
+        #                                xmin_train=self.xmin_train, xmax_train=self.xmax_train,
+        #                                offset_test_min=self.offset_test_min,
+        #                                offset_test_max=self.offset_test_max,
+        #                                xmin_test=self.xmin_test, xmax_test=self.xmax_test,
+        #                                train_at_ends=self.train_at_ends, test_at_ends=self.test_at_ends)
+        self.x_train, self.x_test, self.y_train, self.y_test = \
+            versatile_train_test_split_nd(self)
+
+        return self.x_train, self.x_test, self.y_train, self.y_test
 
 class ScaleSchemeBunch:
     # os.path.join(os.path.abspath(__file__), os.pardir)
@@ -656,7 +785,7 @@ class GSUMDiagnostics:
         self.pred, self.std = self.gp.predict(self.X, return_std=True)
         self.underlying_std = np.sqrt(self.gp.cov_factor_)
 
-        self.underlying_std = np.sqrt(self.gp.cov_factor_)
+        # self.underlying_std = np.sqrt(self.gp.cov_factor_)
 
         # plots the coefficients against the given input space
         if ax is None:

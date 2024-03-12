@@ -3,6 +3,7 @@ import decimal
 import gsum as gm
 import urllib
 import tables
+import scipy
 
 def correlation_coefficient(x, y, pdf):
     """
@@ -315,6 +316,226 @@ def versatile_train_test_split(interp_obj, n_train, n_test_inter=1, isclose_fact
                 y_test = y_test[:, :, :-1]
             elif y_test.ndim == 2:
                 y_test = y_test[:, :-1]
+
+    return x_train, x_test, y_train, y_test
+
+# def versatile_train_test_split_nd(x, y, n_train, n_test_inter=1, isclose_factor=0.01, \
+#                                offset_train_min=0, offset_train_max=0, xmin_train=None, xmax_train=None, \
+#                                offset_test_min=0, offset_test_max=0, xmin_test=None, xmax_test=None, \
+#                                train_at_ends=True, test_at_ends=False):
+def versatile_train_test_split_nd(tts):
+    """
+    Returns the training and testing points in the input space and the corresponding
+    (interpolated) data values
+
+    Parameters
+    ----------
+    interp_obj (InterpObj) : function generated with scipy.interpolate.interp1d(x, y), plus
+        x and y
+    n_train (int) : number of intervals into which to split x, with training points at the
+        edges of each interval
+    n_test_inter (int) : number of subintervals into which to split the intervals between
+        training points, with testing points at the edges of each subinterval
+    isclose_factor (float) : fraction of the total input space for the tolerance of making
+        sure that training and testing points don't coincide
+    offset_train_min (float) : value above the minimum of the input space where the first
+        potential training point ought to go
+    offset_train_max (float) : value below the maximum of the input space where the last
+        potential training point ought to go
+    xmin_train (float) : minimum value within the input space below which there ought not to
+        be training points
+    xmax_train (float) : maximum value within the input space above which there ought not to
+        be training points
+    offset_test_min (float) : value above the minimum of the input space where the first
+        potential testing point ought to go
+    offset_test_max (float) : value below the maximum of the input space where the last
+        potential testing point ought to go
+    xmin_test (float) : minimum value within the input space below which there ought not to
+        be testing points
+    xmax_test (float) : maximum value within the input space above which there ought not to
+        be testing points
+    train_at_ends (bool) : whether training points should be allowed at or near the
+        endpoints of x
+    test_at_ends (bool) : whether testing points should be allowed at or near the endpoints
+        of x
+    """
+    # # gets information from the InterpObj
+    # x = interp_obj.x
+    # y = interp_obj.y
+    # kind_interp = interp_obj.kind
+    # f_interp = interp_obj.f_interp
+    # print("Proof this works: " + str(tts.x))
+
+    # creates initial sets of training and testing x points
+    # x_train = np.meshgrid(np.linspace(np.amin(tts.x, axis = tuple(range(tts.x.ndim - 1))) + tts.offset_train_min,
+    #                       np.amax(tts.x, axis = tuple(range(tts.x.ndim - 1))) - tts.offset_train_max,
+    #                       np.prod(tts.n_train) + np.sum(tts.n_train) + 1))
+    x_train = gm.cartesian(*[np.linspace(np.amin(tts.x, axis = tuple(range(tts.x.ndim - 1)))[idx] + tts.offset_train_min[idx],
+                          np.amax(tts.x, axis = tuple(range(tts.x.ndim - 1)))[idx] - tts.offset_train_max[idx],
+                          tts.n_train[idx] + 1) for idx in range(tts.y.ndim - 1)])
+    # print("x_train has shape " + str(np.shape(x_train)))
+    # print("x_train = " + str(x_train))
+    x_train = np.reshape(x_train, tuple(tts.n_train + np.ones(len(tts.n_train), dtype = int)) + (len(tts.n_train), ))
+    # print("x_train has shape " + str(np.shape(x_train)))
+    # print("x_train = " + str(x_train))
+    # x_test = np.linspace(np.amin(tts.x, axis = tuple(range(tts.x.ndim - 1))) + tts.offset_test_min,
+    #                      np.amax(tts.x, axis = tuple(range(tts.x.ndim - 1))) - tts.offset_test_max,
+    #                      tts.n_train * tts.n_test_inter + 1)
+    x_test = gm.cartesian(
+        *[np.linspace(np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)))[idx] + tts.offset_test_min[idx],
+                      np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1)))[idx] - tts.offset_test_max[idx],
+                      tts.n_train[idx] * tts.n_test_inter[idx] + 1) for idx in range(tts.y.ndim - 1)])
+    # print("x_test has shape " + str(np.shape(x_test)))
+    # print("x_test = " + str(x_test))
+    x_test = np.reshape(x_test, tuple([a * b for a, b in zip(tts.n_train, tts.n_test_inter)] + np.ones(len(tts.n_test_inter), dtype=int)) + (len(tts.n_test_inter),))
+    # print("x_test has shape " + str(np.shape(x_test)))
+    # print("Before masking, x_test = " + str(x_test))
+
+    # # sets the xmin and xmax values to the minima and maxima, respectively, of the
+    # # input space if no other value is given
+    # if tts.xmin_train == None: tts.xmin_train = np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)));
+    # if tts.xmax_train == None: tts.xmax_train = np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1)));
+    # if tts.xmin_test == None: tts.xmin_test = np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)));
+    # if tts.xmax_test == None: tts.xmax_test = np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1)));
+
+    # eliminates, using a mask, all values for the training and testing x points outside of
+    # x
+    # print(np.less( x_train, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1))) ))
+    # print(np.greater( x_train, np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))) ))
+    # print(x_train[np.prod(np.invert(np.less( x_train, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1))) ) + \
+    #       np.greater( x_train, np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))) )), axis = -1)])
+    # x_train = x_train[np.prod(np.invert(np.less( x_train, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1))) ) + \
+    #       np.greater( x_train, np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))) )), axis = -1)]
+    x_train = x_train[np.prod(np.invert(np.less(x_train, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)))) + \
+                                        np.greater(x_train, np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))))),
+                              axis=-1).astype(bool)]
+    print("x_train has shape " + str(np.shape(x_train)))
+    # x_test = x_test[np.invert([(x_test[i] < np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1))) or x_test[i] > np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1)))) \
+    #                            for i in range(len(x_test))])]
+    # mfmask = np.moveaxis(np.tile(np.prod(np.invert(np.less(x_test, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)))) + \
+    #                                     np.greater(x_test, np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))))),
+    #                           axis=-1), (2, 1, 1)), 0, -1) * np.ones(np.shape(x_test), dtype = bool)
+    # mfmask = np.prod(np.invert(np.less(x_test, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)))) + \
+    #                                                np.greater(x_test,
+    #                                                           np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))))),
+    #                                      axis=-1)
+    # print(mfmask)
+    # print("The mask has shape " + str(np.shape(mfmask)))
+    # print("The mask is of type " + str(mfmask.dtype))
+    # mfmask = mfmask.astype(bool)
+    # print("The mask is of type " + str(mfmask.dtype))
+    # print("x_test has shape " + str(np.shape(x_test)))
+    # x_test = x_test[np.prod(np.invert(np.less(x_test, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)))) + \
+    #                                     np.greater(x_test, np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))))),
+    #                           axis=-1)]
+    # x_test = x_test[np.moveaxis(np.tile(np.prod(np.invert(np.less(x_test, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)))) + \
+    #                                     np.greater(x_test, np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))))),
+    #                           axis=-1), (2, 1, 1)), 0, -1) * np.ones(np.shape(x_test), dtype = bool)]
+    x_test = x_test[np.prod(np.invert(np.less(x_test, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)))) + \
+                                                   np.greater(x_test,
+                                                              np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))))),
+                                         axis=-1).astype(bool)]
+    # for op in np.reshape(x_test, (np.prod(list(np.shape(x_test)[0:-1])), ) + (np.shape(x_test)[-1], )):
+    #     print(op)
+    print("x_test has shape " + str(np.shape(x_test)))
+    # print("x_test = " + str(x_test))
+
+
+    # eliminates, using a mask, all values for the training and testing x points outside of
+    # the bounds specified by xmin and xmax
+    # x_train = x_train[np.invert([(x_train[i] < xmin_train or x_train[i] > xmax_train) \
+    #                              for i in range(len(x_train))])]
+    # x_test = x_test[np.invert([(x_test[i] < xmin_test or x_test[i] > xmax_test) \
+    #                            for i in range(len(x_test))])]
+    x_train = x_train[np.prod(np.invert(np.less(x_train, tts.xmin_train) + \
+                                        np.greater(x_train, tts.xmax_train)),
+                              axis=-1).astype(bool)]
+    x_test = x_test[np.prod(np.invert(np.less(x_test, tts.xmin_test) + \
+                                      np.greater(x_test, tts.xmax_test)),
+                            axis=-1).astype(bool)]
+    print("x_train has shape " + str(np.shape(x_train)))
+    print("x_test has shape " + str(np.shape(x_test)))
+    # print("x_test = " + str(x_test))
+
+    # eliminates, using a mask, all values in the testing x points that are close enough
+    # (within some tolerance) to any value in the training x points
+    # print(np.shape(x_test))
+    # print(np.reshape(x_test, tuple(np.prod(list(np.shape(x_test)[0:-1])), ) + x_test.shape[-1]))
+    # print(np.reshape(x_train, -1))
+    mask_filter_array = np.array([[np.isclose(x_test_tuple, x_train_tuple,
+                                     rtol=tts.isclose_factor)
+                          for x_test_tuple in x_test]
+                         for x_train_tuple in x_train])
+    print(np.shape(mask_filter_array))
+    print(mask_filter_array.dtype)
+    # print(mask_filter_array)
+    mask_filter_array = np.invert(mask_filter_array)
+    print(np.shape(mask_filter_array))
+    print(mask_filter_array.dtype)
+    mask_filter_array = np.prod(mask_filter_array, axis=0, dtype=bool)
+    print(np.shape(mask_filter_array))
+    print(mask_filter_array)
+    mask_filter_array = np.sum(mask_filter_array, axis=-1, dtype=bool)
+    x_test = x_test[mask_filter_array]
+    print("x_test has shape " + str(np.shape(x_test)))
+
+    # evaluates the interpolater at the training and testing x points
+    print("x has shape " + str(np.shape(tts.x)))
+    print("y has shape " + str(np.shape(tts.y)))
+    print("x_train has shape " + str(np.shape(x_train)))
+    print("x_test has shape " + str(np.shape(x_test)))
+    y_train = np.array([])
+    y_test = np.array([])
+    for norder in tts.y:
+        y_train = np.append(y_train, scipy.interpolate.griddata(
+                                             np.reshape(tts.x, (np.prod(np.shape(tts.x)[0:-1]), ) + (np.shape(tts.x)[-1], )),
+                                             np.reshape(norder, np.prod(np.shape(norder))),
+                                             x_train)
+                            )
+        y_test = np.append(y_test, scipy.interpolate.griddata(
+            np.reshape(tts.x, (np.prod(np.shape(tts.x)[0:-1]),) + (np.shape(tts.x)[-1],)),
+            np.reshape(norder, np.prod(np.shape(norder))),
+            x_test)
+                            )
+    print(np.shape(y_train))
+    print(y_train)
+    y_train = np.reshape(y_train, (np.shape(tts.y)[0], ) + (np.shape(x_train)[0], ))
+    print(np.shape(y_train))
+    print(y_train)
+
+    print(np.shape(y_test))
+    print(y_test)
+    y_test = np.reshape(y_test, (np.shape(tts.y)[0], ) + (np.shape(x_test)[0], ))
+    print(np.shape(y_test))
+    print(y_test)
+
+    # # eliminates training and/or testing points if they lie at the edges of the input space
+    # if not train_at_ends:
+    #     if np.isclose(x_train[0], x[0], atol=isclose_factor * (np.max(x) - np.min(x))):
+    #         x_train = x_train[1:]
+    #         if y_train.ndim == 3:
+    #             y_train = y_train[:, :, 1:]
+    #         elif y_train.ndim == 2:
+    #             y_train = y_train[:, 1:]
+    #     if np.isclose(x_train[-1], x[-1], atol=isclose_factor * (np.max(x) - np.min(x))):
+    #         x_train = x_train[:-1]
+    #         if y_train.ndim == 3:
+    #             y_train = y_train[:, :, :-1]
+    #         elif y_train.ndim == 2:
+    #             y_train = y_train[:, :-1]
+    # if not test_at_ends:
+    #     if np.isclose(x_test[0], x[0], atol=isclose_factor * (np.max(x) - np.min(x))):
+    #         x_test = x_test[1:]
+    #         if y_test.ndim == 3:
+    #             y_test = y_test[:, :, 1:]
+    #         elif y_test.ndim == 2:
+    #             y_test = y_test[:, 1:]
+    #     if np.isclose(x_test[-1], x[-1], atol=isclose_factor * (np.max(x) - np.min(x))):
+    #         x_test = x_test[:-1]
+    #         if y_test.ndim == 3:
+    #             y_test = y_test[:, :, :-1]
+    #         elif y_test.ndim == 2:
+    #             y_test = y_test[:, :-1]
 
     return x_train, x_test, y_train, y_test
 
