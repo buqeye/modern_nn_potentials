@@ -59,6 +59,7 @@ RKE500MeV = ScaleSchemeBunch(
     [plt.get_cmap(name) for name in ["Oranges", "Greens", "Blues", "Reds", "Purples"]],
     "SMS",
     "500MeV",
+    extra = ["Oranges", "Greens", "Blues", "Reds", "Purples"],
 )
 RKE550MeV = ScaleSchemeBunch(
     "../observables_data/scattering_observables_RKE_L-550MeV.h5",

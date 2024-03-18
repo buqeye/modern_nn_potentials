@@ -51,6 +51,12 @@ class GPHyperparameters:
             self.ls_lower_array = np.append(self.ls_lower_array, lsc.ls_bound_lower)
             self.ls_upper_array = np.append(self.ls_upper_array, lsc.ls_bound_upper)
             self.whether_fit_array = np.append(self.whether_fit_array, lsc.whether_fit)
+
+        # self.ls = ls_class.ls_guess
+        # self.ls_lower = ls_class.ls_bound_lower
+        # self.ls_upper = ls_class.ls_bound_upper
+        # self.whether_fit = ls_class.whether_fit
+
         self.center = center
         self.ratio = ratio
         self.nugget = nugget
@@ -178,7 +184,10 @@ class InputSpaceBunch:
 
 
 class ObservableBunch:
-    def __init__(self, name, data, x_array, title, ref_type, unit_string = None, constraint=None):
+    def __init__(self, name, data,
+                 x_array,
+                 # energies, angles,
+                 title, ref_type, unit_string = None, constraint=None):
         """
         Class for an observable
         name (string) : (abbreviated) name for the observable
@@ -222,7 +231,7 @@ class Interpolation:
         self.y = y
         self.kind = kind
         # self.f_interp = interp1d(self.x, self.y, kind=self.kind)
-        self.f_interp = interpn(self.x, self.y)
+        self.f_interp = interp1d(self.x, self.y)
 
 
 class TrainTestSplit:
@@ -453,7 +462,7 @@ class TTSND:
 class ScaleSchemeBunch:
     # os.path.join(os.path.abspath(__file__), os.pardir)
     def __init__(self, file_name, orders_full, cmaps, potential_string, cutoff_string,
-                 dir_path=""):
+                 dir_path="", extra = None):
         """
         Information relevant to a particular scheme (regulator choice) and scale (cutoff choice).
 
@@ -479,6 +488,8 @@ class ScaleSchemeBunch:
 
         self.colors = [cmap(0.55 - 0.1 * (i == 0)) for i, cmap in enumerate(self.cmaps)]
         self.light_colors = [cmap(0.35) for cmap in self.cmaps]
+
+        self.extra = extra
 
     def get_data(self, observable_string):
         """
@@ -791,14 +802,22 @@ class GSUMDiagnostics:
         if ax is None:
             fig, ax = plt.subplots(figsize=(3.2, 2.2))
 
+        print(self.nn_orders_full)
+        print(np.shape(self.pred))
+        print(np.shape(self.coeffs))
         for i, n in enumerate(self.nn_orders_full[self.mask_restricted]):
             ax.fill_between(self.x, self.pred[:, i] + 2 * self.std,
                             self.pred[:, i] - 2 * self.std,
                             facecolor=self.light_colors[i], edgecolor=self.colors[i],
                             lw=edgewidth, alpha=1, zorder=5 * i - 4)
-            ax.plot(self.x, self.pred[:, i], color=self.colors[i], ls='--', zorder=5 * i - 3)
-            ax.plot(self.x, self.coeffs[:, i], color=self.colors[i], zorder=5 * i - 2)
-            ax.plot(self.x_train, self.coeffs_train[:, i], color=self.colors[i],
+            ax.plot(self.x, self.pred[:, i],
+                    color=self.colors[i],
+                    ls='--', zorder=5 * i - 3)
+            ax.plot(self.x, self.coeffs[:, i],
+                    color=self.colors[i],
+                    zorder=5 * i - 2)
+            ax.plot(self.x_train, self.coeffs_train[:, i],
+                    color=self.colors[i],
                     ls='', marker='o',
                     # label=r'$c_{}$'.format(n),
                     zorder=5 * i - 1)
