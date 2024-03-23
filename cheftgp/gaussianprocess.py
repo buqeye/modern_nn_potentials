@@ -1,7 +1,7 @@
 import os.path
 
 import numpy as np
-from scipy.interpolate import interp1d, interpn
+from scipy.interpolate import interp1d, interpn, griddata
 from .utils import versatile_train_test_split, versatile_train_test_split_nd, compute_posterior_intervals
 from .scattering import E_to_p
 from .graphs import offset_xlabel, joint_plot, setup_rc_params, plot_marg_posteriors, \
@@ -15,6 +15,7 @@ from matplotlib.lines import Line2D
 import gsum as gm
 from sklearn.gaussian_process.kernels import RBF, WhiteKernel
 import itertools
+import functools
 
 setup_rc_params()
 
@@ -68,7 +69,11 @@ class GPHyperparameters:
 
 
 class FileNaming:
-    def __init__(self, scheme, scale, Q_param, p_param, input_space, filename_addendum=""):
+    def __init__(self,
+                 # scheme, scale,
+                 Q_param, p_param,
+                 # input_space,
+                 filename_addendum=""):
         """
         Information necessary to name files for output figures.
 
@@ -82,11 +87,11 @@ class FileNaming:
         filename_addendum (str) : optional extra string
             default : ""
         """
-        self.scheme = scheme
-        self.scale = scale
+        # self.scheme = scheme
+        # self.scale = scale
         self.Q_param = Q_param
         self.p_param = p_param
-        self.vs_what = input_space
+        # self.vs_what = input_space
         self.filename_addendum = filename_addendum
 
 
@@ -179,6 +184,7 @@ class InputSpaceBunch:
         Concatenates the entries of title_pieces into a plot title
         """
         self.title = ''
+        print(self.title_pieces)
         for piece in self.title_pieces: self.title += str(piece)
         return self.title
 
@@ -187,7 +193,7 @@ class ObservableBunch:
     def __init__(self, name, data,
                  x_array,
                  # energies, angles,
-                 title, ref_type, unit_string = None, constraint=None):
+                 title, ref_type, nn_interaction, unit_string = None, constraint=None):
         """
         Class for an observable
         name (string) : (abbreviated) name for the observable
@@ -200,6 +206,8 @@ class ObservableBunch:
         ref_type (string) : tells whether the reference scale (to be divided out of the coefficient
             values) has dimension (e.g., the case of the cross section) or not (e.g., the case of the
             spin observables). Can only be "dimensionless" or "dimensionful".
+        nn_interaction (str) : type of nucleon-nucleon interaction for which the observable is calculated.
+            Can be "np", "nn", or "pp".
         unit_string (string) : string for units of observable. Default is None, but it should not be None if
             ref_type == 'dimensionful'.
         constraint (array or None): constraint on the values of the observable, including the
@@ -213,6 +221,7 @@ class ObservableBunch:
         self.x_array = x_array
         self.title = title
         self.ref_type = ref_type
+        self.nn_interaction = nn_interaction
         self.unit_string = unit_string
         self.constraint = constraint
         if (ref_type != "dimensionless") and (ref_type != "dimensionful"):
@@ -234,113 +243,115 @@ class Interpolation:
         self.f_interp = interp1d(self.x, self.y)
 
 
+# class TrainTestSplit:
+#     def __init__(self, name, n_train, n_test_inter, isclose_factor=0.01,
+#                  offset_train_min_factor=0, offset_train_max_factor=0,
+#                  xmin_train_factor=0, xmax_train_factor=1,
+#                  offset_test_min_factor=0, offset_test_max_factor=0,
+#                  xmin_test_factor=0, xmax_test_factor=1,
+#                  train_at_ends=True, test_at_ends=False):
+#         """
+#         Class for an input space (i.e., x-coordinate)
+#
+#         name (str) : (abbreviated) name for the combination of training and testing masks
+#         n_train (int) : number of intervals into which to split x, with training points at the
+#             edges of each interval
+#         n_test_inter (int) : number of subintervals into which to split the intervals between
+#             training points, with testing points at the edges of each subinterval
+#         isclose_factor (float) : fraction of the total input space for the tolerance of making
+#             sure that training and testing points don't coincide
+#         offset_train_min_factor (float) : fraction above the minimum of the input space where
+#             the first potential training point ought to go
+#         offset_train_max_factor (float) : fraction below the maximum of the input space where
+#             the last potential training point ought to go
+#         xmin_train_factor (float) : fraction of the input space below which there ought not to
+#             be training points
+#         xmax_train_factor (float) : fraction of the input space above which there ought not to
+#             be training points
+#         offset_test_min_factor (float) : fraction above the minimum of the input space where
+#             the first potential testing point ought to go
+#         offset_test_max_factor (float) : fraction below the maximum of the input space where
+#             the last potential testing point ought to go
+#         xmin_test_factor (float) : fraction of the input space below which there ought not to
+#             be testing points
+#         xmax_test_factor (float) : fraction of the input space above which there ought not to
+#             be testing points
+#         train_at_ends (bool) : whether training points should be allowed at or near the
+#             endpoints of x
+#         test_at_ends (bool) : whether testing points should be allowed at or near the endpoints
+#             of x
+#         """
+#         self.name = name
+#         self.n_train = n_train
+#         self.n_test_inter = n_test_inter
+#         self.isclose_factor = isclose_factor
+#         self.offset_train_min_factor = offset_train_min_factor
+#         self.offset_train_max_factor = offset_train_max_factor
+#         self.xmin_train_factor = xmin_train_factor
+#         self.xmax_train_factor = xmax_train_factor
+#         self.offset_test_min_factor = offset_test_min_factor
+#         self.offset_test_max_factor = offset_test_max_factor
+#         self.xmin_test_factor = xmin_test_factor
+#         self.xmax_test_factor = xmax_test_factor
+#         self.train_at_ends = train_at_ends
+#         self.test_at_ends = test_at_ends
+#
+#     def make_masks(self, x, y):
+#         """Returns the training and testing points in the input space and the corresponding
+#         (interpolated) data values after calculating the actual values for xmin, xmax, and
+#         offsets using the corresponding factors and the input space
+#
+#         Parameters
+#         ----------
+#         x (1D array) : input space
+#         y (ND array) : data points at each input space value, with N>1 dimensions for N
+#             orders
+#         """
+#         self.x = x
+#         self.y = y
+#
+#         print(np.shape(self.x))
+#         print(np.shape(self.y))
+#         # calculates the actual value for each offset, xmin, and xmax
+#         self.offset_train_min = self.offset_train_min_factor \
+#                                 * (np.max(self.x) - np.min(self.x))
+#         self.offset_train_max = self.offset_train_max_factor \
+#                                 * (np.max(self.x) - np.min(self.x))
+#         print(self.xmin_train_factor)
+#         print(np.max(self.x) - np.min(self.x))
+#         self.xmin_train = np.min(self.x) + np.array(self.xmin_train_factor) * \
+#                           (np.max(self.x) - np.min(self.x))
+#         print(self.xmin_train)
+#         self.xmax_train = np.min(self.x) + np.array(self.xmax_train_factor) * \
+#                           (np.max(self.x) - np.min(self.x))
+#         print(self.xmax_train)
+#         self.offset_test_min = self.offset_test_min_factor \
+#                                * (np.max(self.x) - np.min(self.x))
+#         self.offset_test_max = self.offset_test_max_factor \
+#                                * (np.max(self.x) - np.min(self.x))
+#         self.xmin_test = np.min(self.x) + np.array(self.xmin_test_factor) * \
+#                          (np.max(self.x) - np.min(self.x))
+#         self.xmax_test = np.min(self.x) + np.array(self.xmax_test_factor) * \
+#                          (np.max(self.x) - np.min(self.x))
+#
+#         self.interp_obj = Interpolation(self.x, self.y, kind='cubic')
+#
+#         # creates the x and y training and testing points
+#         self.x_train, self.x_test, self.y_train, self.y_test = \
+#             versatile_train_test_split(self.interp_obj,
+#                                        self.n_train, n_test_inter=self.n_test_inter,
+#                                        isclose_factor=self.isclose_factor,
+#                                        offset_train_min=self.offset_train_min,
+#                                        offset_train_max=self.offset_train_max,
+#                                        xmin_train=self.xmin_train, xmax_train=self.xmax_train,
+#                                        offset_test_min=self.offset_test_min,
+#                                        offset_test_max=self.offset_test_max,
+#                                        xmin_test=self.xmin_test, xmax_test=self.xmax_test,
+#                                        train_at_ends=self.train_at_ends, test_at_ends=self.test_at_ends)
+#
+#         return self.x_train, self.x_test, self.y_train, self.y_test
+
 class TrainTestSplit:
-    def __init__(self, name, n_train, n_test_inter, isclose_factor=0.01,
-                 offset_train_min_factor=0, offset_train_max_factor=0,
-                 xmin_train_factor=0, xmax_train_factor=1,
-                 offset_test_min_factor=0, offset_test_max_factor=0,
-                 xmin_test_factor=0, xmax_test_factor=1,
-                 train_at_ends=True, test_at_ends=False):
-        """
-        Class for an input space (i.e., x-coordinate)
-
-        name (str) : (abbreviated) name for the combination of training and testing masks
-        n_train (int) : number of intervals into which to split x, with training points at the
-            edges of each interval
-        n_test_inter (int) : number of subintervals into which to split the intervals between
-            training points, with testing points at the edges of each subinterval
-        isclose_factor (float) : fraction of the total input space for the tolerance of making
-            sure that training and testing points don't coincide
-        offset_train_min_factor (float) : fraction above the minimum of the input space where
-            the first potential training point ought to go
-        offset_train_max_factor (float) : fraction below the maximum of the input space where
-            the last potential training point ought to go
-        xmin_train_factor (float) : fraction of the input space below which there ought not to
-            be training points
-        xmax_train_factor (float) : fraction of the input space above which there ought not to
-            be training points
-        offset_test_min_factor (float) : fraction above the minimum of the input space where
-            the first potential testing point ought to go
-        offset_test_max_factor (float) : fraction below the maximum of the input space where
-            the last potential testing point ought to go
-        xmin_test_factor (float) : fraction of the input space below which there ought not to
-            be testing points
-        xmax_test_factor (float) : fraction of the input space above which there ought not to
-            be testing points
-        train_at_ends (bool) : whether training points should be allowed at or near the
-            endpoints of x
-        test_at_ends (bool) : whether testing points should be allowed at or near the endpoints
-            of x
-        """
-        self.name = name
-        self.n_train = n_train
-        self.n_test_inter = n_test_inter
-        self.isclose_factor = isclose_factor
-        self.offset_train_min_factor = offset_train_min_factor
-        self.offset_train_max_factor = offset_train_max_factor
-        self.xmin_train_factor = xmin_train_factor
-        self.xmax_train_factor = xmax_train_factor
-        self.offset_test_min_factor = offset_test_min_factor
-        self.offset_test_max_factor = offset_test_max_factor
-        self.xmin_test_factor = xmin_test_factor
-        self.xmax_test_factor = xmax_test_factor
-        self.train_at_ends = train_at_ends
-        self.test_at_ends = test_at_ends
-
-    def make_masks(self, x, y):
-        """Returns the training and testing points in the input space and the corresponding
-        (interpolated) data values after calculating the actual values for xmin, xmax, and
-        offsets using the corresponding factors and the input space
-
-        Parameters
-        ----------
-        x (1D array) : input space
-        y (ND array) : data points at each input space value, with N>1 dimensions for N
-            orders
-        """
-        self.x = x
-        self.y = y
-
-        print(np.shape(self.x))
-        print(np.shape(self.y))
-        # calculates the actual value for each offset, xmin, and xmax
-        self.offset_train_min = self.offset_train_min_factor \
-                                * (np.max(self.x) - np.min(self.x))
-        self.offset_train_max = self.offset_train_max_factor \
-                                * (np.max(self.x) - np.min(self.x))
-        self.xmin_train = np.min(self.x) + self.xmin_train_factor * \
-                          (np.max(self.x) - np.min(self.x))
-        print(self.xmin_train)
-        self.xmax_train = np.min(self.x) + self.xmax_train_factor * \
-                          (np.max(self.x) - np.min(self.x))
-        print(self.xmax_train)
-        self.offset_test_min = self.offset_test_min_factor \
-                               * (np.max(self.x) - np.min(self.x))
-        self.offset_test_max = self.offset_test_max_factor \
-                               * (np.max(self.x) - np.min(self.x))
-        self.xmin_test = np.min(self.x) + self.xmin_test_factor * \
-                         (np.max(self.x) - np.min(self.x))
-        self.xmax_test = np.min(self.x) + self.xmax_test_factor * \
-                         (np.max(self.x) - np.min(self.x))
-
-        self.interp_obj = Interpolation(self.x, self.y, kind='cubic')
-
-        # creates the x and y training and testing points
-        self.x_train, self.x_test, self.y_train, self.y_test = \
-            versatile_train_test_split(self.interp_obj,
-                                       self.n_train, n_test_inter=self.n_test_inter,
-                                       isclose_factor=self.isclose_factor,
-                                       offset_train_min=self.offset_train_min,
-                                       offset_train_max=self.offset_train_max,
-                                       xmin_train=self.xmin_train, xmax_train=self.xmax_train,
-                                       offset_test_min=self.offset_test_min,
-                                       offset_test_max=self.offset_test_max,
-                                       xmin_test=self.xmin_test, xmax_test=self.xmax_test,
-                                       train_at_ends=self.train_at_ends, test_at_ends=self.test_at_ends)
-
-        return self.x_train, self.x_test, self.y_train, self.y_test
-
-class TTSND:
     def __init__(self, name, n_train, n_test_inter, isclose_factor=0.01,
                  offset_train_min_factor=0, offset_train_max_factor=0,
                  xmin_train_factor=0, xmax_train_factor=1,
@@ -461,8 +472,8 @@ class TTSND:
 
 class ScaleSchemeBunch:
     # os.path.join(os.path.abspath(__file__), os.pardir)
-    def __init__(self, file_name, orders_full, cmaps, potential_string, cutoff_string,
-                 dir_path="", extra = None):
+    def __init__(self, file_name, orders_full, cmaps_str, potential_string, cutoff_string,
+                 dir_path=""):
         """
         Information relevant to a particular scheme (regulator choice) and scale (cutoff choice).
 
@@ -478,18 +489,17 @@ class ScaleSchemeBunch:
         """
         self.file_name = file_name
         self.orders_full = orders_full
-        self.cmaps = cmaps
+        self.cmaps_str = cmaps_str
         self.potential_string = potential_string
         self.cutoff_string = cutoff_string
         self.name = self.potential_string + self.cutoff_string
         self.dir_path = dir_path
 
         self.full_path = self.dir_path + self.file_name
+        self.cmaps = [plt.get_cmap(name) for name in self.cmaps_str]
 
         self.colors = [cmap(0.55 - 0.1 * (i == 0)) for i, cmap in enumerate(self.cmaps)]
         self.light_colors = [cmap(0.35) for cmap in self.cmaps]
-
-        self.extra = extra
 
     def get_data(self, observable_string):
         """
@@ -548,11 +558,505 @@ class LengthScale:
             self.ls_bound_upper = self.ls_guess.copy()
 
 
+# class GSUMDiagnostics:
+#     def __init__(self, nn_interaction, observable, Lambda_b, inputspace, traintestsplit,
+#                  gphyperparameters, orderinfo, filenaming,
+#                  fixed_quantity=[None, None, None, None],
+#                  x_quantity=[None, None, None], posteriorgrid=None):
+#         """
+#         Class for everything involving Jordan Melendez's GSUM library for observables that
+#         can be plotted against angle.
+#
+#         Parameters
+#         ----------
+#         nn_interaction (str) : two-letter string for two nucleons interacting in observables.
+#         observable (ObservableBunch) : observable being plotted.
+#         Lambda_b (float) : breakdown scale (in MeV).
+#         inputspace (InputSpaceBunch) : input space against which the observable is plotted.
+#         traintestsplit (TrainTestSplit) : training and testing masks.
+#         gphyperparameters (GPHyperparameters) : parameters for fitted Gaussian process.
+#         orderinfo (OrderInfo) : information about the EFT orders and their colors.
+#         filenaming (FileNaming) : strings for naming the save files.
+#         fixed_quantity (list) : [fixed_quantity name (str), fixed_quantity value (float), fixed_quantity array (array), fixed_quantity units (str)]
+#         x_quantity (list) : [x_quantity name (str), x_quantity array (array), x_quantity units (str)]
+#         posteriorgrid (PosteriorBounds) : xy-grid over which to plot the Lambda-ell posterior pdf.
+#         """
+#         self.nn_interaction = nn_interaction
+#
+#         # information on the observable
+#         self.observable = observable
+#         self.observable_name = self.observable.name
+#         self.observable_label = self.observable.title
+#         self.data = self.observable.data
+#         self.ref_type = self.observable.ref_type
+#         self.observable_units = self.observable.unit_string
+#         self.constraint = self.observable.constraint
+#
+#         # cutoff scale
+#         self.Lambda_b = Lambda_b
+#
+#         # energy or angle at which the observable is evaluated, along with all
+#         # possible energies or angles for evaluation
+#         self.fixed_quantity_name = fixed_quantity[0]
+#         self.fixed_quantity_value = fixed_quantity[1]
+#         self.fixed_quantity_array = fixed_quantity[2]
+#         self.fixed_quantity_units = fixed_quantity[3]
+#
+#         # angle or energy mesh
+#         self.x_quantity_name = x_quantity[0]
+#         self.x_quantity_array = x_quantity[1]
+#         self.x_quantity_units = x_quantity[2]
+#
+#         # information on the input space
+#         self.inputspace = inputspace
+#         self.vs_what = self.inputspace.name
+#         self.x = self.inputspace.input_space(**{"deg_input": self.x_quantity_array,
+#                                                 "p_input": E_to_p(self.fixed_quantity_value,
+#                                                                   interaction=self.nn_interaction),
+#                                                 "E_lab": self.x_quantity_array,
+#                                                 "interaction": self.nn_interaction})
+#         self.X = self.x[:, None]
+#         self.caption_coeffs = self.inputspace.caption
+#         self.title_coeffs = self.inputspace.title
+#
+#         # information on the train/test split
+#         self.traintestsplit = traintestsplit
+#         self.train_pts_loc = self.traintestsplit.name
+#         self.x_train = self.traintestsplit.x_train
+#         self.n_train_pts = len(self.x_train)
+#         self.x_test = self.traintestsplit.x_test
+#         self.n_test_pts = len(self.x_test)
+#         self.y_train = self.traintestsplit.y_train
+#         self.y_test = self.traintestsplit.y_test
+#
+#         # information on the GP hyperparameters
+#         self.gphyperparameters = gphyperparameters
+#         self.ls = self.gphyperparameters.ls
+#         self.ls_lower = self.gphyperparameters.ls_lower
+#         self.ls_upper = self.gphyperparameters.ls_upper
+#         self.whether_fit = self.gphyperparameters.whether_fit
+#         self.center = self.gphyperparameters.center
+#         self.ratio = self.gphyperparameters.ratio
+#         self.nugget = self.gphyperparameters.nugget
+#         self.seed = self.gphyperparameters.seed
+#         self.df = self.gphyperparameters.df
+#         self.disp = self.gphyperparameters.disp
+#         self.std_est = self.gphyperparameters.scale
+#         self.sd = self.gphyperparameters.sd
+#
+#         # information on the orders at which the potential is evaluated
+#
+#         self.orderinfo = orderinfo
+#         self.nn_orders_full = self.orderinfo.orders_full
+#         self.excluded = self.orderinfo.excluded
+#         self.colors = self.orderinfo.colors_array
+#         self.light_colors = self.orderinfo.lightcolors_array
+#         self.mask_restricted = self.orderinfo.mask_restricted
+#         self.orders_restricted = self.orderinfo.orders_restricted
+#         self.mask_eval = self.orderinfo.mask_eval
+#
+#         if self.orderinfo.orders_names_dict is None:
+#             self.orders_names_dict = {
+#                 6: "N4LO+",
+#                 5: "N4LO",
+#                 4: "N3LO",
+#                 3: "N2LO",
+#                 2: "NLO",
+#             }
+#         else:
+#             self.orders_names_dict = self.orderinfo.orders_names_dict
+#         if self.orderinfo.orders_labels_dict is None:
+#             self.orders_labels_dict = {6: r'N$^{4}$LO$^{+}$', 5: r'N$^{4}$LO',
+#                                        4: r'N$^{3}$LO', 3: r'N$^{2}$LO',
+#                                        2: r'NLO'}
+#         else:
+#             self.orders_labels_dict = self.orderinfo.orders_labels_dict
+#
+#         # information for naming the file
+#         self.filenaming = filenaming
+#         self.scheme = self.filenaming.scheme
+#         self.scale = self.filenaming.scale
+#         self.Q_param = self.filenaming.Q_param
+#         self.p_param = self.filenaming.p_param
+#         self.filename_addendum = self.filenaming.filename_addendum
+#
+#         # posterior pdf bounds
+#         self.posteriorgrid = posteriorgrid
+#
+#         # for plotting observables at a fixed energy
+#         if self.fixed_quantity_name == "energy":
+#             self.fixed_idx = np.nonzero(self.fixed_quantity_array == self.fixed_quantity_value)[0][0]
+#
+#             self.data = self.data[:, self.fixed_idx, :].T
+#
+#             self.X_train = self.x_train[:, None]
+#             self.y_train = self.y_train[:, self.fixed_idx, :].T
+#             self.X_test = self.x_test[:, None]
+#             self.y_test = self.y_test[:, self.fixed_idx, :].T
+#
+#             # determines the reference scale for the truncation-error model, including for
+#             # training and testing
+#             if self.ref_type == "dimensionless":
+#                 self.ref = np.ones(len(self.x)) * 1
+#                 self.ref_train = np.ones(len(self.x_train)) * 1
+#                 self.ref_test = np.ones(len(self.x_test)) * 1
+#
+#             elif self.ref_type == "dimensionful":
+#                 self.ref = self.data[:, -1]
+#
+#                 self.interp_f_ref = interp1d(self.x, self.ref)
+#                 self.ref_train = self.interp_f_ref(self.x_train)
+#                 self.ref_test = self.interp_f_ref(self.x_test)
+#
+#         # for plotting observables at a fixed angle
+#         elif self.fixed_quantity_name == "angle":
+#             if self.fixed_quantity_value == 0:
+#                 self.X_train = self.x_train[:, None]
+#                 self.y_train = self.y_train.T
+#                 self.X_test = self.x_test[:, None]
+#                 self.y_test = self.y_test.T
+#             else:
+#                 self.fixed_idx = np.nonzero(self.fixed_quantity_array == self.fixed_quantity_value)[0][0]
+#
+#                 self.data = self.data[:, :, self.fixed_idx].T
+#
+#                 self.X_train = self.x_train[:, None]
+#                 self.y_train = self.y_train[:, self.fixed_idx, :].T
+#                 self.X_test = self.x_test[:, None]
+#                 self.y_test = self.y_test[:, self.fixed_idx, :].T
+#
+#             # determines the reference scale for the truncation-error model, including for
+#             # training and testing
+#             if self.ref_type == "dimensionless":
+#                 self.ref = np.ones(len(self.x)) * 1
+#                 self.ref_train = np.ones(len(self.x_train)) * 1
+#                 self.ref_test = np.ones(len(self.x_test)) * 1
+#             elif self.ref_type == "dimensionful":
+#                 if self.fixed_quantity_value == 0:
+#                     self.ref = self.data[-1]
+#                     self.data = self.data.T
+#                 else:
+#                     self.ref = self.data[:, -1]
+#
+#                 self.interp_f_ref = interp1d(self.x, self.ref)
+#                 self.ref_train = self.interp_f_ref(self.x_train)
+#                 self.ref_test = self.interp_f_ref(self.x_test)
+#
+#         # uses interpolation to find the proper reference scales
+#         self.interp_f_ref = interp1d(self.x, self.ref)
+#
+#         # Extract the coefficients and define kernel
+#         self.coeffs = gm.coefficients(self.data, ratio=self.ratio,
+#                                       ref=self.ref, orders=self.nn_orders_full)
+#
+#         # uses interpolation to find the proper ratios for training and testing
+#         self.interp_f_ratio = interp1d(self.x, self.ratio * np.ones(len(self.x)))
+#         self.ratio_train = self.interp_f_ratio(self.x_train)
+#         self.coeffs_train = gm.coefficients(self.y_train, ratio=self.ratio_train,
+#                                             ref=self.ref_train,
+#                                             orders=self.nn_orders_full)
+#         self.ratio_test = self.interp_f_ratio(self.x_test)
+#         self.coeffs_test = gm.coefficients(self.y_test, ratio=self.ratio_test,
+#                                            ref=self.ref_test,
+#                                            orders=self.nn_orders_full)
+#
+#         # defines the kernel
+#         if self.fixed_quantity_name == "energy" and \
+#                 self.fixed_quantity_value < 70.1 and \
+#                 self.fixed_quantity_value >= 1.:
+#             self.kernel = RBF(length_scale=self.ls,
+#                               length_scale_bounds=(self.ls_lower, self.ls_upper)) + \
+#                           WhiteKernel(1e-6, noise_level_bounds='fixed')
+#         else:
+#             self.kernel = RBF(length_scale=self.ls, \
+#                               length_scale_bounds=(self.ls_lower, self.ls_upper)) + \
+#                           WhiteKernel(1e-10, noise_level_bounds='fixed')
+#
+#         # Define the GP
+#         self.gp = gm.ConjugateGaussianProcess(
+#             self.kernel, center=self.center, disp=self.disp, df=self.df,
+#             scale=self.std_est, n_restarts_optimizer=50, random_state=self.seed,
+#             sd=self.sd)
+#
+#         # restricts coeffs and colors to only those orders desired for
+#         # evaluating statistical diagnostics
+#         self.nn_orders = self.orders_restricted
+#         self.coeffs = (self.coeffs.T[self.mask_restricted]).T
+#         self.coeffs_train = (self.coeffs_train.T[self.mask_restricted]).T
+#         self.coeffs_test = (self.coeffs_test.T[self.mask_restricted]).T
+#
+#     def plot_coefficients(self, ax=None, whether_save=True):
+#         """
+#         Parameters
+#         ----------
+#         ax : Axes, optional
+#             Axes object for plotting. The default is None.
+#         whether_save : bool, optional
+#             Whether to save the figure. The default is True.
+#
+#         Returns
+#         -------
+#         Figure with plot.
+#         """
+#         # optimizes the ConjugateGaussianProcess for the given parameters and extracts the
+#         # length scale
+#         self.gp.fit(self.X_train, self.coeffs_train)
+#         self.ls_true = np.exp(self.gp.kernel_.theta)
+#
+#         self.pred, self.std = self.gp.predict(self.X, return_std=True)
+#         self.underlying_std = np.sqrt(self.gp.cov_factor_)
+#
+#         # self.underlying_std = np.sqrt(self.gp.cov_factor_)
+#
+#         # plots the coefficients against the given input space
+#         if ax is None:
+#             fig, ax = plt.subplots(figsize=(3.2, 2.2))
+#
+#         print(self.nn_orders_full)
+#         print(np.shape(self.pred))
+#         print(np.shape(self.coeffs))
+#         for i, n in enumerate(self.nn_orders_full[self.mask_restricted]):
+#             ax.fill_between(self.x, self.pred[:, i] + 2 * self.std,
+#                             self.pred[:, i] - 2 * self.std,
+#                             facecolor=self.light_colors[i], edgecolor=self.colors[i],
+#                             lw=edgewidth, alpha=1, zorder=5 * i - 4)
+#             ax.plot(self.x, self.pred[:, i],
+#                     color=self.colors[i],
+#                     ls='--', zorder=5 * i - 3)
+#             ax.plot(self.x, self.coeffs[:, i],
+#                     color=self.colors[i],
+#                     zorder=5 * i - 2)
+#             ax.plot(self.x_train, self.coeffs_train[:, i],
+#                     color=self.colors[i],
+#                     ls='', marker='o',
+#                     # label=r'$c_{}$'.format(n),
+#                     zorder=5 * i - 1)
+#
+#         # Format
+#         ax.axhline(2 * self.underlying_std, 0, 1, color=gray, zorder=-10, lw=1)
+#         ax.axhline(-2 * self.underlying_std, 0, 1, color=gray, zorder=-10, lw=1)
+#         ax.axhline(0, 0, 1, color=softblack, zorder=-10, lw=1)
+#         if np.max(self.x) < 1.1:
+#             ax.set_xticks(self.x_test, minor=True)
+#             ax.set_xticks([round(xx, 1) for xx in self.x_train])
+#         else:
+#             ax.set_xticks(self.x_test, minor=True)
+#             ax.set_xticks([round(xx, 0) for xx in self.x_train])
+#         ax.tick_params(which='minor', bottom=True, top=False)
+#         ax.set_xlabel(self.caption_coeffs)
+#         ax.set_yticks(ticks=[-2 * self.underlying_std, 2 * self.underlying_std])
+#         ax.set_yticklabels(labels=['{:.1f}'.format(-2 * self.underlying_std), '{:.1f}'.format(2 * self.underlying_std)])
+#         ax.set_yticks([-1 * self.underlying_std, self.underlying_std], minor=True)
+#         ax.legend(
+#             # ncol=2,
+#             borderpad=0.4,
+#             # labelspacing=0.5, columnspacing=1.3,
+#             borderaxespad=0.6,
+#             loc = 'best',
+#             title = self.title_coeffs).set_zorder(5 * i)
+#
+#         # takes constraint into account, if applicable
+#         if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
+#             dX = np.array([[self.x[i]] for i in self.constraint[0]])
+#             # std_interp = np.sqrt(np.diag(
+#             #     self.gp.cov(self.X) -
+#             #     self.gp.cov(self.X, dX) @ np.linalg.solve(self.gp.cov(dX, dX), self.gp.cov(dX, self.X))
+#             # ))
+#             _, std_interp = self.gp.predict(self.X,
+#                                             Xc=dX,
+#                                             y=np.array(self.constraint[1]),
+#                                             return_std=True)
+#             ax.plot(self.x, 2 * std_interp, color='gray', ls='--', zorder=-10, lw=1)
+#             ax.plot(self.x, -2 * std_interp, color='gray', ls='--', zorder=-10, lw=1)
+#
+#         # draws length scales
+#         # ax.annotate("", xy=(np.min(self.x), -0.65 * 2 * self.underlying_std),
+#         #             xytext=(np.min(self.x) + self.ls, -0.65 * 2 * self.underlying_std),
+#         #             arrowprops=dict(arrowstyle="<->", capstyle='projecting', lw=1,
+#         #                             color='k', shrinkA = 0, shrinkB = 0), annotation_clip=False, zorder=5 * i)
+#         # ax.text(np.min(self.x) + self.ls + 0.2 * (np.max(self.x) - np.min(self.x)),
+#         #         -0.65 * 2 * self.underlying_std, r'$\ell_{\mathrm{guess}}$', fontsize=14,
+#         #         horizontalalignment='right', verticalalignment='center', zorder=5 * i)
+#
+#         ax.annotate("", xy=(np.min(self.x), -0.9 * 2 * self.underlying_std),
+#                     xytext=(np.min(self.x) + self.ls_true, -0.9 * 2 * self.underlying_std),
+#                     arrowprops=dict(arrowstyle="<->", capstyle='projecting', lw=1,
+#                                     color='k', shrinkA = 0, shrinkB = 0), annotation_clip=False, zorder=5 * i)
+#         ax.text(np.min(self.x) + self.ls_true + 0.2 * (np.max(self.x) - np.min(self.x)),
+#                 -0.9 * 2 * self.underlying_std, r'$\ell_{\mathrm{fit}}$', fontsize=14,
+#                 horizontalalignment='right', verticalalignment='center', zorder=5 * i)
+#
+#         # draws standard deviations
+#         # ax.annotate("", xy=(np.min(self.x) + 0.90 * (np.max(self.x) - np.min(self.x)), 0),
+#         #             xytext=(np.min(self.x) + 0.90 * (np.max(self.x) - np.min(self.x)),
+#         #                     -1. * self.std_est),
+#         #             arrowprops=dict(arrowstyle="<->", capstyle='projecting', lw=1,
+#         #                             color='k', shrinkA = 0, shrinkB = 0), annotation_clip=False, zorder=5 * i)
+#         # ax.text(np.min(self.x) + 0.90 * (np.max(self.x) - np.min(self.x)),
+#         #         -1.2 * self.std_est, r'$\sigma_{\mathrm{guess}}$', fontsize=14,
+#         #         horizontalalignment='center', verticalalignment='bottom', zorder=5 * i)
+#
+#         ax.annotate("", xy=(np.min(self.x) + 0.74 * (np.max(self.x) - np.min(self.x)), 0),
+#                     xytext=(np.min(self.x) + 0.74 * (np.max(self.x) - np.min(self.x)),
+#                             -1. * self.underlying_std),
+#                     arrowprops=dict(arrowstyle="<->", capstyle='projecting', lw=1,
+#                                     color='k', shrinkA = 0, shrinkB = 0), annotation_clip=False, zorder=5 * i)
+#         ax.text(np.min(self.x) + 0.74 * (np.max(self.x) - np.min(self.x)),
+#                 -1.2 * self.underlying_std, r'$\sigma_{\mathrm{fit}}$', fontsize=14,
+#                 horizontalalignment='center', verticalalignment='bottom', zorder=5 * i)
+#
+#         # saves figure
+#         if 'fig' in locals() and whether_save:
+#             fig.tight_layout()
+#
+#             fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' + self.observable_name + \
+#                          '_' + 'interp_and_underlying_processes' + '_' + str(self.fixed_quantity_value) + str(
+#                         self.fixed_quantity_units) + \
+#                          '_' + self.scheme + '_' + self.scale + '_Q' + self.Q_param + '_' + self.vs_what + \
+#                          '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' + \
+#                          self.train_pts_loc + '_' + self.p_param +
+#                          self.filename_addendum).replace('_0MeVlab_', '_'))
+#
+#     def plot_md(self, ax=None, whether_save=True):
+#         """
+#         Parameters
+#         ----------
+#         ax : Axes, optional
+#             Axes object for plotting. The default is None.
+#         whether_save : bool, optional
+#             Whether to save the figure. The default is True.
+#
+#         Returns
+#         -------
+#         Figure with plot.
+#         """
+#         try:
+#             # calculates and plots the squared Mahalanobis distance
+#             self.gp.kernel_
+#
+#             # takes into account a constraint, if applicable
+#             if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
+#                 dX = np.array([[self.x[i]] for i in self.constraint[0]])
+#                 self.mean, self.cov = self.gp.predict(self.X_test,
+#                                                       Xc=dX,
+#                                                       y=np.array(self.constraint[1]),
+#                                                       return_std=False,
+#                                                       return_cov=True)
+#             else:
+#                 self.mean = self.gp.mean(self.X_test)
+#                 self.cov = self.gp.cov(self.X_test)
+#             self.gr_dgn = gm.GraphicalDiagnostic(self.coeffs_test,
+#                                                  self.mean,
+#                                                  self.cov,
+#                                                  colors=self.colors,
+#                                                  gray=gray,
+#                                                  black=softblack)
+#
+#             if ax is None:
+#                 fig, ax = plt.subplots(figsize=(1.0, 2.2))
+#
+#             self.gr_dgn.md_squared(type='box', trim=False, title=None,
+#                                    xlabel=r'$\mathrm{D}_{\mathrm{MD}}^2$', ax=ax,
+#                                    **{"size": 10})
+#             offset_xlabel(ax)
+#             plt.show()
+#
+#             # saves figure
+#             if 'fig' in locals() and whether_save:
+#                 fig.tight_layout();
+#
+#                 fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' + self.observable_name + \
+#                              '_' + 'md' + '_' + str(self.fixed_quantity_value) + str(self.fixed_quantity_units) + '_' + \
+#                              self.scheme + '_' + self.scale + '_Q' + self.Q_param + '_' + self.vs_what + \
+#                              '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' + \
+#                              self.train_pts_loc + '_' + self.p_param +
+#                              self.filename_addendum).replace('_0MeVlab_', '_'))
+#
+#         except:
+#             print("Error in calculating or plotting the Mahalanobis distance.")
+#
+#     def plot_pc(self, ax=None, whether_save=True):
+#         """
+#         Parameters
+#         ----------
+#         ax : Axes, optional
+#             Axes object for plotting. The default is None.
+#         whether_save : bool, optional
+#             Whether to save the figure. The default is True.
+#
+#         Returns
+#         -------
+#         Figure with plot.
+#         """
+#         try:
+#             # calculates and plots the pivoted Cholesky decomposition
+#             self.gp.kernel_
+#
+#             # takes into account constraints, if applicable
+#             if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
+#                 dX = np.array([[self.x[i]] for i in self.constraint[0]])
+#                 self.mean, self.cov = self.gp.predict(self.X_test,
+#                                                       Xc=dX,
+#                                                       y=np.array(self.constraint[1]),
+#                                                       return_std=False,
+#                                                       return_cov=True)
+#             else:
+#                 self.mean = self.gp.mean(self.X_test)
+#                 self.cov = self.gp.cov(self.X_test)
+#             self.gr_dgn = gm.GraphicalDiagnostic(self.coeffs_test,
+#                                                  self.mean,
+#                                                  self.cov,
+#                                                  colors=self.colors,
+#                                                  gray=gray,
+#                                                  black=softblack)
+#
+#             with plt.rc_context({"text.usetex": True}):
+#                 if ax is None:
+#                     fig, ax = plt.subplots(figsize=(3.2, 2.2))
+#
+#                 self.gr_dgn.pivoted_cholesky_errors(ax=ax, title=None)
+#                 ax.set_xticks(np.arange(2, self.n_test_pts + 1, 2))
+#                 ax.set_xticks(np.arange(1, self.n_test_pts + 1, 2), minor=True)
+#                 ax.text(0.05, 0.95, r'$\mathrm{D}_{\mathrm{PC}}$', bbox=text_bbox,
+#                         transform=ax.transAxes, va='top', ha='left')
+#
+#                 # plots legend
+#                 legend_handles = []
+#                 for i, n in enumerate(self.nn_orders_full[self.mask_restricted]):
+#                     # legend_handles.append(Patch(color=self.colors[i], label=r'$c_{}$'.format(n)))
+#                     legend_handles.append(Line2D([0], [0], marker='o',
+#                                             color='w',
+#                                             label=r'$c_{}$'.format(n),
+#                                             markerfacecolor=self.colors[i],
+#                                             markersize=8))
+#                 ax.legend(handles=legend_handles,
+#                           loc='center left',
+#                           bbox_to_anchor=(1, 0.5),
+#                           handletextpad=0.02,
+#                           borderpad=0.2)
+#
+#                 fig.tight_layout()
+#                 plt.show()
+#
+#                 # saves figure
+#                 if 'fig' in locals() and whether_save:
+#                     fig.tight_layout()
+#
+#                     fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' + self.observable_name + \
+#                                  '_' + 'pc_vs_index' + '_' + str(self.fixed_quantity_value) + str(
+#                                 self.fixed_quantity_units) + '_' + \
+#                                  self.scheme + '_' + self.scale + '_Q' + self.Q_param + '_' + self.vs_what + \
+#                                  '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' + \
+#                                  self.train_pts_loc + '_' + self.p_param +
+#                                  self.filename_addendum).replace('_0MeVlab_', '_'))
+#
+#         except:
+#             print("Error in calculating or plotting the pivoted Cholesky decomposition.")
 class GSUMDiagnostics:
-    def __init__(self, nn_interaction, observable, Lambda_b, inputspace, traintestsplit,
+    def __init__(self, schemescale, observable, inputspace, traintestsplit,
                  gphyperparameters, orderinfo, filenaming,
-                 fixed_quantity=[None, None, None, None],
-                 x_quantity=[None, None, None], posteriorgrid=None):
+                 #                  fixed_quantity=[None, None, None, None],
+                 x_quantity=[None, None, None]):
         """
         Class for everything involving Jordan Melendez's GSUM library for observables that
         can be plotted against angle.
@@ -561,7 +1065,6 @@ class GSUMDiagnostics:
         ----------
         nn_interaction (str) : two-letter string for two nucleons interacting in observables.
         observable (ObservableBunch) : observable being plotted.
-        Lambda_b (float) : breakdown scale (in MeV).
         inputspace (InputSpaceBunch) : input space against which the observable is plotted.
         traintestsplit (TrainTestSplit) : training and testing masks.
         gphyperparameters (GPHyperparameters) : parameters for fitted Gaussian process.
@@ -569,62 +1072,160 @@ class GSUMDiagnostics:
         filenaming (FileNaming) : strings for naming the save files.
         fixed_quantity (list) : [fixed_quantity name (str), fixed_quantity value (float), fixed_quantity array (array), fixed_quantity units (str)]
         x_quantity (list) : [x_quantity name (str), x_quantity array (array), x_quantity units (str)]
-        posteriorgrid (PosteriorBounds) : xy-grid over which to plot the Lambda-ell posterior pdf.
         """
-        self.nn_interaction = nn_interaction
+        self.schemescale = schemescale
+        self.scheme = self.schemescale.potential_string
+        self.scale = self.schemescale.cutoff_string
 
         # information on the observable
         self.observable = observable
         self.observable_name = self.observable.name
         self.observable_label = self.observable.title
+        self.data_raw = self.observable.data
         self.data = self.observable.data
         self.ref_type = self.observable.ref_type
+        self.nn_interaction = self.observable.nn_interaction
         self.observable_units = self.observable.unit_string
         self.constraint = self.observable.constraint
 
-        # cutoff scale
-        self.Lambda_b = Lambda_b
-
-        # energy or angle at which the observable is evaluated, along with all
-        # possible energies or angles for evaluation
-        self.fixed_quantity_name = fixed_quantity[0]
-        self.fixed_quantity_value = fixed_quantity[1]
-        self.fixed_quantity_array = fixed_quantity[2]
-        self.fixed_quantity_units = fixed_quantity[3]
+        #         # energy or angle at which the observable is evaluated, along with all
+        #         # possible energies or angles for evaluation
+        #         self.fixed_quantity_name = []
+        #         self.fixed_quantity_value = []
+        #         self.fixed_quantity_array = []
+        #         self.fixed_quantity_units = []
+        #         for fq in fixed_quantity:
+        #             self.fixed_quantity_name.append(fq[0])
+        #             self.fixed_quantity_value.append(fq[1])
+        #             self.fixed_quantity_array.append(fq[2])
+        #             self.fixed_quantity_units.append(fq[3])
 
         # angle or energy mesh
-        self.x_quantity_name = x_quantity[0]
-        self.x_quantity_array = x_quantity[1]
-        self.x_quantity_units = x_quantity[2]
+        self.x_quantity_name = []
+        self.x_quantity_array = []
+        self.x_quantity_full = []
+        self.x_quantity_units = []
+        for xq in x_quantity:
+            self.x_quantity_name.append(xq[0])
+            self.x_quantity_array.append(xq[1])
+            self.x_quantity_full.append(xq[2])
+            print("full shape: " + str(np.shape(xq[2])))
+            self.x_quantity_units.append(xq[3])
+
+        self.x_quantity_num = 0
+        for xq in self.x_quantity_array:
+            if np.shape(xq)[0] != 1: self.x_quantity_num += 1;
 
         # information on the input space
-        self.inputspace = inputspace
-        self.vs_what = self.inputspace.name
-        self.x = self.inputspace.input_space(**{"deg_input": self.x_quantity_array,
-                                                "p_input": E_to_p(self.fixed_quantity_value,
-                                                                  interaction=self.nn_interaction),
-                                                "E_lab": self.x_quantity_array,
-                                                "interaction": self.nn_interaction})
-        self.X = self.x[:, None]
-        self.caption_coeffs = self.inputspace.caption
-        self.title_coeffs = self.inputspace.title
+        #         self.inputspace = inputspace
+        self.vs_what = np.array([])
+        self.x = np.array([])
+        self.X = np.array([])
+        self.caption_coeffs = np.array([])
+        self.title_coeffs = np.array([])
+        for isp_idx, isp in enumerate(inputspace):
+            self.vs_what = np.append(self.vs_what, isp.name)
+            self.caption_coeffs = np.append(self.caption_coeffs, isp.caption)
+            self.title_coeffs = np.append(self.title_coeffs, isp.title)
+        #         self.x = np.array(list(itertools.product(tuple(
+        #                     [isp.input_space(**{"deg_input": self.x_quantity_array[1],
+        #                                         "p_input": E_to_p(self.x_quantity_array[0],
+        #                                                           interaction=self.nn_interaction),
+        #                                         "E_lab": self.x_quantity_array[0],
+        #                                         "interaction": self.nn_interaction}) for isp in inputspace])
+        #                               )))
+        try:
+            self.x_full = gm.cartesian(*[isp.input_space(**{"deg_input": self.x_quantity_full[1],
+                                                              "p_input": E_to_p(self.x_quantity_full[0],
+                                                                                interaction=self.nn_interaction),
+                                                              "E_lab": self.x_quantity_full[0],
+                                                              "interaction": self.nn_interaction}) for isp in
+                                           inputspace])
+            print("self.x_full has shape " + str(np.shape(self.x_full)))
+            self.x = gm.cartesian(*[isp.input_space(**{"deg_input": self.x_quantity_array[1],
+                                                         "p_input": E_to_p(self.x_quantity_array[0],
+                                                                           interaction=self.nn_interaction),
+                                                         "E_lab": self.x_quantity_array[0],
+                                                         "interaction": self.nn_interaction}) for isp in
+                                      inputspace])
+        except:
+            self.x_full = gm.cartesian(*[isp.input_space(**{
+                "p_input": E_to_p(self.x_quantity_full[0],
+                                  interaction=self.nn_interaction),
+                "E_lab": self.x_quantity_full[0],
+                "interaction": self.nn_interaction}) for isp in inputspace])
+            print("self.x_full has shape " + str(np.shape(self.x_full)))
+            self.x = gm.cartesian(*[isp.input_space(**{
+                "p_input": E_to_p(self.x_quantity_array[0],
+                                  interaction=self.nn_interaction),
+                "E_lab": self.x_quantity_array[0],
+                "interaction": self.nn_interaction}) for isp in inputspace])
+        print("self.x has shape " + str(np.shape(self.x)))
+        print("self.x = " + str(self.x))
+        self.X = self.x[..., None]
+        print("self.X has shape " + str(np.shape(self.X)))
 
-        # information on the train/test split
+        #         print(tuple((np.shape(xq) for xq in self.x_quantity_array)))
+        #         print((len(self.x_quantity_array)))
+        self.x = np.reshape(self.x,
+                            tuple(len(xq) for xq in self.x_quantity_array if len(xq) > 1) + \
+                            (self.x_quantity_num,))
+        print("self.x has shape " + str(np.shape(self.x)))
+        print("self.x = " + str(self.x))
+        self.X = np.reshape(self.X,
+                            tuple(len(xq) for xq in self.x_quantity_array if len(xq) > 1) + \
+                            (self.x_quantity_num,) + (1,))
+        print("self.X has shape " + str(np.shape(self.X)))
+
+        #         information on the train/test split
         self.traintestsplit = traintestsplit
+        #         self.train_pts_loc = self.traintestsplit.name
+        #         self.x_train = self.traintestsplit.x_train
+        #         self.n_train_pts = len(self.x_train)
+        #         self.x_test = self.traintestsplit.x_test
+        #         self.n_test_pts = len(self.x_test)
+        #         self.y_train = self.traintestsplit.y_train
+        #         self.y_test = self.traintestsplit.y_test
+
+        # data
+        print("self.data has shape " + str(np.shape(self.data)))
+        mymask = functools.reduce(np.multiply,
+                                  np.ix_(*[np.isin(xqfull, xqval).astype(int) for (xqfull, xqval) in
+                                           zip(self.x_quantity_full, self.x_quantity_array)]))
+        print("mymask has shape " + str(np.shape(mymask)))
+        mymask_tiled = np.tile(mymask, (np.shape(self.data)[0],) +
+                               (1,) * (self.data.ndim - 1)
+                               )
+        print("mymask_tiled has shape " + str(np.shape(mymask_tiled)))
+        self.data = self.data[mymask_tiled.astype(bool)]
+        print("self.data has shape " + str(np.shape(self.data)))
+        self.data = np.reshape(self.data, (np.shape(mymask_tiled)[0],) +
+                               tuple([len(arr) for arr in self.x_quantity_array if len(arr) > 1]))
+        print("self.data has shape " + str(np.shape(self.data)))
+
         self.train_pts_loc = self.traintestsplit.name
+        self.traintestsplit.make_masks(self.x, self.data)
         self.x_train = self.traintestsplit.x_train
-        self.n_train_pts = len(self.x_train)
+        self.X_train = self.x_train
+        self.n_train_pts = np.shape(self.x_train)[0]
         self.x_test = self.traintestsplit.x_test
-        self.n_test_pts = len(self.x_test)
+        self.X_test = self.x_test
+        self.n_test_pts = np.shape(self.x_test)[0]
         self.y_train = self.traintestsplit.y_train
         self.y_test = self.traintestsplit.y_test
 
         # information on the GP hyperparameters
         self.gphyperparameters = gphyperparameters
-        self.ls = self.gphyperparameters.ls
-        self.ls_lower = self.gphyperparameters.ls_lower
-        self.ls_upper = self.gphyperparameters.ls_upper
-        self.whether_fit = self.gphyperparameters.whether_fit
+        self.ls_array = self.gphyperparameters.ls_array
+        self.ls_lower = self.gphyperparameters.ls_lower_array
+        self.ls_upper = self.gphyperparameters.ls_upper_array
+        #         for (lsv, lsl, lsu) in zip(gphyperparameters.ls,
+        #                                    gphyperparameters.ls_lower,
+        #                                    gphyperparameters.ls_upper):
+        #             self.ls.append(lsv)
+        #             self.ls_lower.append(lsl)
+        #             self.ls_upper.append(lsu)
+        self.whether_fit_array = self.gphyperparameters.whether_fit_array
         self.center = self.gphyperparameters.center
         self.ratio = self.gphyperparameters.ratio
         self.nugget = self.gphyperparameters.nugget
@@ -664,103 +1265,231 @@ class GSUMDiagnostics:
 
         # information for naming the file
         self.filenaming = filenaming
-        self.scheme = self.filenaming.scheme
-        self.scale = self.filenaming.scale
         self.Q_param = self.filenaming.Q_param
         self.p_param = self.filenaming.p_param
         self.filename_addendum = self.filenaming.filename_addendum
 
-        # posterior pdf bounds
-        self.posteriorgrid = posteriorgrid
+        #         # for plotting observables at a fixed energy
+        #         if self.fixed_quantity_name == "energy":
+        #             self.fixed_idx = np.nonzero(self.fixed_quantity_array == self.fixed_quantity_value)[0][0]
 
-        # for plotting observables at a fixed energy
-        if self.fixed_quantity_name == "energy":
-            self.fixed_idx = np.nonzero(self.fixed_quantity_array == self.fixed_quantity_value)[0][0]
+        #             self.data = self.data[:, self.fixed_idx, :].T
 
-            self.data = self.data[:, self.fixed_idx, :].T
+        #             self.X_train = self.x_train[:, None]
+        #             self.y_train = self.y_train[:, self.fixed_idx, :].T
+        #             self.X_test = self.x_test[:, None]
+        #             self.y_test = self.y_test[:, self.fixed_idx, :].T
 
-            self.X_train = self.x_train[:, None]
-            self.y_train = self.y_train[:, self.fixed_idx, :].T
-            self.X_test = self.x_test[:, None]
-            self.y_test = self.y_test[:, self.fixed_idx, :].T
+        #             # determines the reference scale for the truncation-error model, including for
+        #             # training and testing
+        #             if self.ref_type == "dimensionless":
+        #                 self.ref = np.ones(len(self.x)) * 1
+        #                 self.ref_train = np.ones(len(self.x_train)) * 1
+        #                 self.ref_test = np.ones(len(self.x_test)) * 1
 
-            # determines the reference scale for the truncation-error model, including for
-            # training and testing
-            if self.ref_type == "dimensionless":
-                self.ref = np.ones(len(self.x)) * 1
-                self.ref_train = np.ones(len(self.x_train)) * 1
-                self.ref_test = np.ones(len(self.x_test)) * 1
+        #             elif self.ref_type == "dimensionful":
+        #                 self.ref = self.data[:, -1]
 
-            elif self.ref_type == "dimensionful":
-                self.ref = self.data[:, -1]
+        #                 self.interp_f_ref = interp1d(self.x, self.ref)
+        #                 self.ref_train = self.interp_f_ref(self.x_train)
+        #                 self.ref_test = self.interp_f_ref(self.x_test)
 
-                self.interp_f_ref = interp1d(self.x, self.ref)
-                self.ref_train = self.interp_f_ref(self.x_train)
-                self.ref_test = self.interp_f_ref(self.x_test)
+        #         # for plotting observables at a fixed angle
+        #         elif self.fixed_quantity_name == "angle":
+        #             if self.fixed_quantity_value == 0:
+        #                 self.X_train = self.x_train[:, None]
+        #                 self.y_train = self.y_train.T
+        #                 self.X_test = self.x_test[:, None]
+        #                 self.y_test = self.y_test.T
+        #             else:
+        #                 self.fixed_idx = np.nonzero(self.fixed_quantity_array == self.fixed_quantity_value)[0][0]
 
-        # for plotting observables at a fixed angle
-        elif self.fixed_quantity_name == "angle":
-            if self.fixed_quantity_value == 0:
-                self.X_train = self.x_train[:, None]
-                self.y_train = self.y_train.T
-                self.X_test = self.x_test[:, None]
-                self.y_test = self.y_test.T
-            else:
-                self.fixed_idx = np.nonzero(self.fixed_quantity_array == self.fixed_quantity_value)[0][0]
+        #                 self.data = self.data[:, :, self.fixed_idx].T
 
-                self.data = self.data[:, :, self.fixed_idx].T
+        #                 self.X_train = self.x_train[:, None]
+        #                 self.y_train = self.y_train[:, self.fixed_idx, :].T
+        #                 self.X_test = self.x_test[:, None]
+        #                 self.y_test = self.y_test[:, self.fixed_idx, :].T
 
-                self.X_train = self.x_train[:, None]
-                self.y_train = self.y_train[:, self.fixed_idx, :].T
-                self.X_test = self.x_test[:, None]
-                self.y_test = self.y_test[:, self.fixed_idx, :].T
+        #             # determines the reference scale for the truncation-error model, including for
+        #             # training and testing
+        #             if self.ref_type == "dimensionless":
+        #                 self.ref = np.ones(len(self.x)) * 1
+        #                 self.ref_train = np.ones(len(self.x_train)) * 1
+        #                 self.ref_test = np.ones(len(self.x_test)) * 1
+        #             elif self.ref_type == "dimensionful":
+        #                 if self.fixed_quantity_value == 0:
+        #                     self.ref = self.data[-1]
+        #                     self.data = self.data.T
+        #                 else:
+        #                     self.ref = self.data[:, -1]
 
-            # determines the reference scale for the truncation-error model, including for
-            # training and testing
-            if self.ref_type == "dimensionless":
-                self.ref = np.ones(len(self.x)) * 1
-                self.ref_train = np.ones(len(self.x_train)) * 1
-                self.ref_test = np.ones(len(self.x_test)) * 1
-            elif self.ref_type == "dimensionful":
-                if self.fixed_quantity_value == 0:
-                    self.ref = self.data[-1]
-                    self.data = self.data.T
-                else:
-                    self.ref = self.data[:, -1]
+        #                 self.interp_f_ref = interp1d(self.x, self.ref)
+        #                 self.ref_train = self.interp_f_ref(self.x_train)
+        #                 self.ref_test = self.interp_f_ref(self.x_test)
 
-                self.interp_f_ref = interp1d(self.x, self.ref)
-                self.ref_train = self.interp_f_ref(self.x_train)
-                self.ref_test = self.interp_f_ref(self.x_test)
+        #         # uses interpolation to find the proper reference scales
+        #         self.interp_f_ref = interp1d(self.x, self.ref)
 
-        # uses interpolation to find the proper reference scales
-        self.interp_f_ref = interp1d(self.x, self.ref)
+        #         # data
+        #         print("self.data has shape " + str(np.shape(self.data)))
+        #         mymask = functools.reduce(np.multiply,
+        #                         np.ix_(*[np.isin(xqfull, xqval).astype(int) for (xqfull, xqval) in
+        #                                  zip(self.x_quantity_full, self.x_quantity_array)]))
+        #         print("mymask has shape " + str(np.shape(mymask)))
+        #         mymask_tiled = np.tile(mymask, (np.shape(self.data)[0], ) +
+        #                          (1, ) * (self.data.ndim - 1)
+        #                         )
+        #         print("mymask_tiled has shape " + str(np.shape(mymask_tiled)))
+        #         self.data = self.data[mymask_tiled.astype(bool)]
+        #         print("self.data has shape " + str(np.shape(self.data)))
+        #         self.data = np.reshape(self.data, (np.shape(mymask_tiled)[0], ) +
+        #                         tuple([len(arr) for arr in self.x_quantity_array]))
+        #         print("self.data has shape " + str(np.shape(self.data)))
 
+        # ref
+        if self.ref_type == "dimensionless":
+            self.ref = np.ones(np.shape(self.data)[1:])
+            print("self.ref has shape " + str(np.shape(self.ref)))
+
+            #             print(np.shape(self.x[mymask.astype(bool)]))
+            #             print(np.shape(np.reshape(self.ref, (np.prod(np.shape(self.ref)), ))))
+            #             print(np.shape(self.x_train))
+            self.ref_train = np.ones(np.shape(self.x_train)[0])
+            print("self.ref_train has shape " + str(np.shape(self.ref_train)))
+
+            self.ref_test = np.ones(np.shape(self.x_test)[0])
+            print("self.ref_test has shape " + str(np.shape(self.ref_test)))
+
+        elif self.ref_type == "dimensionful":
+            self.ref = self.data[-1, ...]
+            print("self.ref has shape " + str(np.shape(self.ref)))
+
+            #             print(np.shape(self.x[mymask.astype(bool)]))
+            #             print(np.shape(np.reshape(self.ref, (np.prod(np.shape(self.ref)), ))))
+            #             print(np.shape(self.x_train))
+            print(np.shape(mymask))
+            print(np.shape(self.x))
+            if mymask.ndim <= np.squeeze(self.x).ndim:
+                self.ref_train = np.squeeze(griddata(
+                    self.x[mymask.astype(bool)],
+                    np.reshape(self.ref, (np.prod(np.shape(self.ref)),)),
+                    self.x_train
+                ))
+                print("self.ref_train has shape " + str(np.shape(self.ref_train)))
+
+                self.ref_test = np.squeeze(griddata(
+                    self.x[mymask.astype(bool)],
+                    np.reshape(self.ref, (np.prod(np.shape(self.ref)),)),
+                    self.x_test
+                ))
+                print("self.ref_test has shape " + str(np.shape(self.ref_test)))
+
+            if mymask.ndim > np.squeeze(self.x).ndim:
+                self.ref_train = np.squeeze(griddata(
+                    self.x,
+                    np.reshape(self.ref, (np.prod(np.shape(self.ref)),)),
+                    self.x_train
+                ))
+                print("self.ref_train has shape " + str(np.shape(self.ref_train)))
+
+                self.ref_test = np.squeeze(griddata(
+                    self.x,
+                    np.reshape(self.ref, (np.prod(np.shape(self.ref)),)),
+                    self.x_test
+                ))
+                print("self.ref_test has shape " + str(np.shape(self.ref_test)))
+
+        # ratio
+        if mymask.ndim <= np.squeeze(self.x).ndim:
+            print("self.ratio has shape " + str(np.shape(self.ratio)))
+            self.ratio = np.reshape(self.ratio[mymask.astype(bool)], np.shape(self.data)[1:])
+            print("self.ratio has shape " + str(np.shape(self.ratio)))
+            self.ratio_train = np.squeeze(griddata(
+                self.x[mymask.astype(bool)],
+                np.reshape(self.ratio, (np.prod(np.shape(self.ratio)),)),
+                self.x_train
+            ))
+            print("self.ratio_train has shape " + str(np.shape(self.ratio_train)))
+
+            self.ratio_test = np.squeeze(griddata(
+                self.x[mymask.astype(bool)],
+                np.reshape(self.ratio, (np.prod(np.shape(self.ratio)),)),
+                self.x_test
+            ))
+            print("self.ratio_test has shape " + str(np.shape(self.ratio_test)))
+
+        elif mymask.ndim > np.squeeze(self.x).ndim:
+            print("self.ratio has shape " + str(np.shape(self.ratio)))
+            self.ratio = np.reshape(self.ratio, np.shape(self.data)[1:])
+            print("self.ratio has shape " + str(np.shape(self.ratio)))
+            self.ratio_train = np.squeeze(griddata(
+                self.x,
+                np.reshape(self.ratio, (np.prod(np.shape(self.ratio)),)),
+                self.x_train
+            ))
+            print("self.ratio_train has shape " + str(np.shape(self.ratio_train)))
+
+            self.ratio_test = np.squeeze(griddata(
+                self.x,
+                np.reshape(self.ratio, (np.prod(np.shape(self.ratio)),)),
+                self.x_test
+            ))
+            print("self.ratio_test has shape " + str(np.shape(self.ratio_test)))
+
+        print(np.shape(self.data))
+        print(np.shape(self.ratio))
+        print(np.shape(self.ref))
+        print(np.shape(self.nn_orders_full))
         # Extract the coefficients and define kernel
-        self.coeffs = gm.coefficients(self.data, ratio=self.ratio,
-                                      ref=self.ref, orders=self.nn_orders_full)
+        self.coeffs = gm.coefficients(np.reshape(self.data, (np.shape(self.data)[0],) +
+                                                 (np.prod(np.shape(self.data)[1:]),)).T,
+                                      ratio=np.reshape(self.ratio, (np.prod(np.shape(self.ratio)),)),
+                                      ref=np.reshape(self.ref, (np.prod(np.shape(self.ratio)),)),
+                                      orders=self.nn_orders_full)
+        print("self.coeffs has shape " + str(np.shape(self.coeffs)))
 
         # uses interpolation to find the proper ratios for training and testing
-        self.interp_f_ratio = interp1d(self.x, self.ratio * np.ones(len(self.x)))
-        self.ratio_train = self.interp_f_ratio(self.x_train)
-        self.coeffs_train = gm.coefficients(self.y_train, ratio=self.ratio_train,
+        #         self.interp_f_ratio = interp1d(self.x, self.ratio * np.ones(len(self.x)))
+        #         self.ratio_train = self.interp_f_ratio(self.x_train)
+        #         self.coeffs_train = gm.coefficients(self.y_train, ratio=self.ratio_train,
+        #                                             ref=self.ref_train,
+        #                                             orders=self.nn_orders_full)
+        #         self.ratio_test = self.interp_f_ratio(self.x_test)
+        #         self.coeffs_test = gm.coefficients(self.y_test, ratio=self.ratio_test,
+        #                                            ref=self.ref_test,
+        #                                            orders=self.nn_orders_full)
+
+        print(np.shape(self.y_train.T))
+        print(np.shape(self.ratio_train))
+        print(np.shape(self.ref_train))
+        print(np.shape(self.nn_orders_full))
+        self.coeffs_train = gm.coefficients(self.y_train.T,
+                                            ratio=self.ratio_train,
                                             ref=self.ref_train,
                                             orders=self.nn_orders_full)
-        self.ratio_test = self.interp_f_ratio(self.x_test)
-        self.coeffs_test = gm.coefficients(self.y_test, ratio=self.ratio_test,
+        print("self.coeffs_train has shape " + str(np.shape(self.coeffs_train)))
+        self.coeffs_test = gm.coefficients(self.y_test.T,
+                                           ratio=self.ratio_test,
                                            ref=self.ref_test,
                                            orders=self.nn_orders_full)
+        print("self.coeffs_test has shape " + str(np.shape(self.coeffs_test)))
 
         # defines the kernel
-        if self.fixed_quantity_name == "energy" and \
-                self.fixed_quantity_value < 70.1 and \
-                self.fixed_quantity_value >= 1.:
-            self.kernel = RBF(length_scale=self.ls,
-                              length_scale_bounds=(self.ls_lower, self.ls_upper)) + \
-                          WhiteKernel(1e-6, noise_level_bounds='fixed')
-        else:
-            self.kernel = RBF(length_scale=self.ls, \
-                              length_scale_bounds=(self.ls_lower, self.ls_upper)) + \
-                          WhiteKernel(1e-10, noise_level_bounds='fixed')
+        #         if self.fixed_quantity_name == "energy" and \
+        #                 self.fixed_quantity_value < 70.1 and \
+        #                 self.fixed_quantity_value >= 1.:
+        #             self.kernel = RBF(length_scale=self.ls,
+        #                               length_scale_bounds=(self.ls_lower, self.ls_upper)) + \
+        #                           WhiteKernel(1e-6, noise_level_bounds='fixed')
+        #         else:
+        #             self.kernel = RBF(length_scale=self.ls, \
+        #                               length_scale_bounds=(self.ls_lower, self.ls_upper)) + \
+        #                           WhiteKernel(1e-10, noise_level_bounds='fixed')
+        self.kernel = RBF(length_scale=self.ls_array,
+                          length_scale_bounds=np.array([[lsl, lsu]
+                                                        for (lsl, lsu) in zip(self.ls_lower, self.ls_upper)])) + \
+                      WhiteKernel(1e-6, noise_level_bounds='fixed')
 
         # Define the GP
         self.gp = gm.ConjugateGaussianProcess(
@@ -771,6 +1500,8 @@ class GSUMDiagnostics:
         # restricts coeffs and colors to only those orders desired for
         # evaluating statistical diagnostics
         self.nn_orders = self.orders_restricted
+        print(np.shape(self.coeffs))
+        print(np.shape(self.mask_restricted))
         self.coeffs = (self.coeffs.T[self.mask_restricted]).T
         self.coeffs_train = (self.coeffs_train.T[self.mask_restricted]).T
         self.coeffs_test = (self.coeffs_test.T[self.mask_restricted]).T
@@ -790,111 +1521,173 @@ class GSUMDiagnostics:
         """
         # optimizes the ConjugateGaussianProcess for the given parameters and extracts the
         # length scale
+        print("self.x_train has shape " + str(np.shape(self.x_train)))
+        print("self.X_train has shape " + str(np.shape(self.X_train)))
+        print("self.coeffs_train has shape " + str(np.shape(self.coeffs_train)))
         self.gp.fit(self.X_train, self.coeffs_train)
         self.ls_true = np.exp(self.gp.kernel_.theta)
+        print("self.ls_true = " + str(self.ls_true))
 
-        self.pred, self.std = self.gp.predict(self.X, return_std=True)
-        self.underlying_std = np.sqrt(self.gp.cov_factor_)
-
-        # self.underlying_std = np.sqrt(self.gp.cov_factor_)
-
-        # plots the coefficients against the given input space
-        if ax is None:
-            fig, ax = plt.subplots(figsize=(3.2, 2.2))
-
-        print(self.nn_orders_full)
-        print(np.shape(self.pred))
-        print(np.shape(self.coeffs))
-        for i, n in enumerate(self.nn_orders_full[self.mask_restricted]):
-            ax.fill_between(self.x, self.pred[:, i] + 2 * self.std,
-                            self.pred[:, i] - 2 * self.std,
-                            facecolor=self.light_colors[i], edgecolor=self.colors[i],
-                            lw=edgewidth, alpha=1, zorder=5 * i - 4)
-            ax.plot(self.x, self.pred[:, i],
-                    color=self.colors[i],
-                    ls='--', zorder=5 * i - 3)
-            ax.plot(self.x, self.coeffs[:, i],
-                    color=self.colors[i],
-                    zorder=5 * i - 2)
-            ax.plot(self.x_train, self.coeffs_train[:, i],
-                    color=self.colors[i],
-                    ls='', marker='o',
-                    # label=r'$c_{}$'.format(n),
-                    zorder=5 * i - 1)
-
-        # Format
-        ax.axhline(2 * self.underlying_std, 0, 1, color=gray, zorder=-10, lw=1)
-        ax.axhline(-2 * self.underlying_std, 0, 1, color=gray, zorder=-10, lw=1)
-        ax.axhline(0, 0, 1, color=softblack, zorder=-10, lw=1)
-        if np.max(self.x) < 1.1:
-            ax.set_xticks(self.x_test, minor=True)
-            ax.set_xticks([round(xx, 1) for xx in self.x_train])
+        # #         print("self.X has shape " + str(np.shape(self.X)))
+        #         self.pred, self.std = self.gp.predict(np.reshape(self.x,
+        #                                 (np.prod(np.shape(self.x)[:-1]), ) + (np.shape(self.x)[-1], )),
+        #                     return_std=True)
+        print("self.X_test has shape " + str(np.shape(self.X_test)))
+        if np.squeeze(self.x).ndim == 1:
+            self.pred, self.std = self.gp.predict(self.x,
+                                                  return_std=True)
         else:
-            ax.set_xticks(self.x_test, minor=True)
-            ax.set_xticks([round(xx, 0) for xx in self.x_train])
-        ax.tick_params(which='minor', bottom=True, top=False)
-        ax.set_xlabel(self.caption_coeffs)
-        ax.set_yticks(ticks=[-2 * self.underlying_std, 2 * self.underlying_std])
-        ax.set_yticklabels(labels=['{:.1f}'.format(-2 * self.underlying_std), '{:.1f}'.format(2 * self.underlying_std)])
-        ax.set_yticks([-1 * self.underlying_std, self.underlying_std], minor=True)
-        ax.legend(
-            # ncol=2,
-            borderpad=0.4,
-            # labelspacing=0.5, columnspacing=1.3,
-            borderaxespad=0.6,
-            loc = 'best',
-            title = self.title_coeffs).set_zorder(5 * i)
+            self.pred, self.std = self.gp.predict(self.X_test,
+                                                  return_std=True)
+        self.underlying_std = np.sqrt(self.gp.cov_factor_)
+        print("self.underlying_std = " + str(self.underlying_std))
 
-        # takes constraint into account, if applicable
-        if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
-            dX = np.array([[self.x[i]] for i in self.constraint[0]])
-            # std_interp = np.sqrt(np.diag(
-            #     self.gp.cov(self.X) -
-            #     self.gp.cov(self.X, dX) @ np.linalg.solve(self.gp.cov(dX, dX), self.gp.cov(dX, self.X))
-            # ))
-            _, std_interp = self.gp.predict(self.X,
-                                            Xc=dX,
-                                            y=np.array(self.constraint[1]),
-                                            return_std=True)
-            ax.plot(self.x, 2 * std_interp, color='gray', ls='--', zorder=-10, lw=1)
-            ax.plot(self.x, -2 * std_interp, color='gray', ls='--', zorder=-10, lw=1)
+        if np.shape(self.x)[-1] == 1:
+            # plots the coefficients against the given input space
+            if ax is None:
+                fig, ax = plt.subplots(figsize=(3.2, 2.2))
 
-        # draws length scales
-        # ax.annotate("", xy=(np.min(self.x), -0.65 * 2 * self.underlying_std),
-        #             xytext=(np.min(self.x) + self.ls, -0.65 * 2 * self.underlying_std),
-        #             arrowprops=dict(arrowstyle="<->", capstyle='projecting', lw=1,
-        #                             color='k', shrinkA = 0, shrinkB = 0), annotation_clip=False, zorder=5 * i)
-        # ax.text(np.min(self.x) + self.ls + 0.2 * (np.max(self.x) - np.min(self.x)),
-        #         -0.65 * 2 * self.underlying_std, r'$\ell_{\mathrm{guess}}$', fontsize=14,
-        #         horizontalalignment='right', verticalalignment='center', zorder=5 * i)
+            for i, n in enumerate(self.nn_orders_full[self.mask_restricted]):
+                print(np.shape(np.squeeze(self.x)))
+                print(np.shape(self.pred[:, i]))
+                print(np.shape(self.std))
+                ax.fill_between(np.squeeze(self.x), self.pred[:, i] + 2 * self.std,
+                                self.pred[:, i] - 2 * self.std,
+                                facecolor=self.light_colors[i], edgecolor=self.colors[i],
+                                lw=edgewidth, alpha=1, zorder=5 * i - 4)
+                ax.plot(np.squeeze(self.x), self.pred[:, i], color=self.colors[i], ls='--', zorder=5 * i - 3)
+                ax.plot(np.squeeze(self.x), self.coeffs[:, i], color=self.colors[i], zorder=5 * i - 2)
+                ax.plot(self.x_train, self.coeffs_train[:, i], color=self.colors[i],
+                        ls='', marker='o',
+                        # label=r'$c_{}$'.format(n),
+                        zorder=5 * i - 1)
 
-        ax.annotate("", xy=(np.min(self.x), -0.9 * 2 * self.underlying_std),
-                    xytext=(np.min(self.x) + self.ls_true, -0.9 * 2 * self.underlying_std),
-                    arrowprops=dict(arrowstyle="<->", capstyle='projecting', lw=1,
-                                    color='k', shrinkA = 0, shrinkB = 0), annotation_clip=False, zorder=5 * i)
-        ax.text(np.min(self.x) + self.ls_true + 0.2 * (np.max(self.x) - np.min(self.x)),
-                -0.9 * 2 * self.underlying_std, r'$\ell_{\mathrm{fit}}$', fontsize=14,
-                horizontalalignment='right', verticalalignment='center', zorder=5 * i)
+            # Format
+            ax.axhline(2 * self.underlying_std, 0, 1, color=gray, zorder=-10, lw=1)
+            ax.axhline(-2 * self.underlying_std, 0, 1, color=gray, zorder=-10, lw=1)
+            ax.axhline(0, 0, 1, color=softblack, zorder=-10, lw=1)
+            if np.max(np.squeeze(self.x)) < 1.1:
+                ax.set_xticks(np.squeeze(self.x_test), minor=True)
+                ax.set_xticks([round(xx, 1) for xx in np.squeeze(self.x_train)])
+            else:
+                ax.set_xticks(np.squeeze(self.x_test), minor=True)
+                ax.set_xticks([round(xx, 0) for xx in np.squeeze(self.x_train)])
+            ax.tick_params(which='minor', bottom=True, top=False)
+            ax.set_xlabel(self.caption_coeffs[0])
+            ax.set_yticks(ticks=[-2 * self.underlying_std, 2 * self.underlying_std])
+            ax.set_yticklabels(
+                labels=['{:.1f}'.format(-2 * self.underlying_std), '{:.1f}'.format(2 * self.underlying_std)])
+            ax.set_yticks([-1 * self.underlying_std, self.underlying_std], minor=True)
+            ax.legend(
+                # ncol=2,
+                borderpad=0.4,
+                # labelspacing=0.5, columnspacing=1.3,
+                borderaxespad=0.6,
+                loc='best',
+                title=self.title_coeffs[0]).set_zorder(5 * i)
 
-        # draws standard deviations
-        # ax.annotate("", xy=(np.min(self.x) + 0.90 * (np.max(self.x) - np.min(self.x)), 0),
-        #             xytext=(np.min(self.x) + 0.90 * (np.max(self.x) - np.min(self.x)),
-        #                     -1. * self.std_est),
-        #             arrowprops=dict(arrowstyle="<->", capstyle='projecting', lw=1,
-        #                             color='k', shrinkA = 0, shrinkB = 0), annotation_clip=False, zorder=5 * i)
-        # ax.text(np.min(self.x) + 0.90 * (np.max(self.x) - np.min(self.x)),
-        #         -1.2 * self.std_est, r'$\sigma_{\mathrm{guess}}$', fontsize=14,
-        #         horizontalalignment='center', verticalalignment='bottom', zorder=5 * i)
+            #             print(np.array([self.constraint[-1] == name for name in self.x_quantity_name]).astype(bool))
+            #             print(np.array(self.x_quantity_array)[np.array([self.constraint[-1] == name for name in self.x_quantity_name])])
+            #             print(np.shape(np.array(self.x_quantity_array)[np.array([self.constraint[-1] == name for name in self.x_quantity_name])][0]))
+            # takes constraint into account, if applicable
+            if self.constraint is not None and \
+                    np.any([self.constraint[-1] == name for name in self.x_quantity_name]) and \
+                    np.shape(np.array(self.x_quantity_array)[
+                                 np.array([self.constraint[-1] == name for name in self.x_quantity_name])][0])[
+                        0] != 1 and \
+                    np.shape(self.x)[-1] == 1:
+                dX = np.array([[np.squeeze(self.x)[i]] for i in self.constraint[0]])
+                # std_interp = np.sqrt(np.diag(
+                #     self.gp.cov(self.X) -
+                #     self.gp.cov(self.X, dX) @ np.linalg.solve(self.gp.cov(dX, dX), self.gp.cov(dX, self.X))
+                # ))
+                print(np.shape(self.x))
+                print(np.shape(dX))
+                print(np.shape(np.array(self.constraint[1])))
+                _, std_interp = self.gp.predict(self.x,
+                                                Xc=dX,
+                                                y=np.array(self.constraint[1]),
+                                                return_std=True)
+                ax.plot(np.squeeze(self.x), 2 * std_interp, color='gray', ls='--', zorder=-10, lw=1)
+                ax.plot(np.squeeze(self.x), -2 * std_interp, color='gray', ls='--', zorder=-10, lw=1)
 
-        ax.annotate("", xy=(np.min(self.x) + 0.74 * (np.max(self.x) - np.min(self.x)), 0),
-                    xytext=(np.min(self.x) + 0.74 * (np.max(self.x) - np.min(self.x)),
-                            -1. * self.underlying_std),
-                    arrowprops=dict(arrowstyle="<->", capstyle='projecting', lw=1,
-                                    color='k', shrinkA = 0, shrinkB = 0), annotation_clip=False, zorder=5 * i)
-        ax.text(np.min(self.x) + 0.74 * (np.max(self.x) - np.min(self.x)),
-                -1.2 * self.underlying_std, r'$\sigma_{\mathrm{fit}}$', fontsize=14,
-                horizontalalignment='center', verticalalignment='bottom', zorder=5 * i)
+            # draws length scales
+            # ax.annotate("", xy=(np.min(self.x), -0.65 * 2 * self.underlying_std),
+            #             xytext=(np.min(self.x) + self.ls, -0.65 * 2 * self.underlying_std),
+            #             arrowprops=dict(arrowstyle="<->", capstyle='projecting', lw=1,
+            #                             color='k', shrinkA = 0, shrinkB = 0), annotation_clip=False, zorder=5 * i)
+            # ax.text(np.min(self.x) + self.ls + 0.2 * (np.max(self.x) - np.min(self.x)),
+            #         -0.65 * 2 * self.underlying_std, r'$\ell_{\mathrm{guess}}$', fontsize=14,
+            #         horizontalalignment='right', verticalalignment='center', zorder=5 * i)
 
+            ax.annotate("", xy=(np.min(self.x), -0.9 * 2 * self.underlying_std),
+                        xytext=(np.min(self.x) + self.ls_true, -0.9 * 2 * self.underlying_std),
+                        arrowprops=dict(arrowstyle="<->", capstyle='projecting', lw=1,
+                                        color='k', shrinkA=0, shrinkB=0), annotation_clip=False, zorder=5 * i)
+            ax.text(np.min(self.x) + self.ls_true + 0.2 * (np.max(self.x) - np.min(self.x)),
+                    -0.9 * 2 * self.underlying_std, r'$\ell_{\mathrm{fit}}$', fontsize=14,
+                    horizontalalignment='right', verticalalignment='center', zorder=5 * i)
+
+            # draws standard deviations
+            # ax.annotate("", xy=(np.min(self.x) + 0.90 * (np.max(self.x) - np.min(self.x)), 0),
+            #             xytext=(np.min(self.x) + 0.90 * (np.max(self.x) - np.min(self.x)),
+            #                     -1. * self.std_est),
+            #             arrowprops=dict(arrowstyle="<->", capstyle='projecting', lw=1,
+            #                             color='k', shrinkA = 0, shrinkB = 0), annotation_clip=False, zorder=5 * i)
+            # ax.text(np.min(self.x) + 0.90 * (np.max(self.x) - np.min(self.x)),
+            #         -1.2 * self.std_est, r'$\sigma_{\mathrm{guess}}$', fontsize=14,
+            #         horizontalalignment='center', verticalalignment='bottom', zorder=5 * i)
+
+            ax.annotate("", xy=(np.min(self.x) + 0.74 * (np.max(self.x) - np.min(self.x)), 0),
+                        xytext=(np.min(self.x) + 0.74 * (np.max(self.x) - np.min(self.x)),
+                                -1. * self.underlying_std),
+                        arrowprops=dict(arrowstyle="<->", capstyle='projecting', lw=1,
+                                        color='k', shrinkA=0, shrinkB=0), annotation_clip=False, zorder=5 * i)
+            ax.text(np.min(self.x) + 0.74 * (np.max(self.x) - np.min(self.x)),
+                    -1.2 * self.underlying_std, r'$\sigma_{\mathrm{fit}}$', fontsize=14,
+                    horizontalalignment='center', verticalalignment='bottom', zorder=5 * i)
+        elif np.shape(self.x)[-1] == 2:
+            print(np.shape(self.coeffs)[-1])
+            fig, ax_array = plt.subplots(np.shape(self.coeffs)[-1], 1,
+                                         figsize=(3.2, np.shape(self.coeffs)[-1] * 2.2))
+
+            x_train_scatter, y_train_scatter = self.x_train.T
+            x_test_scatter, y_test_scatter = self.x_test.T
+
+            for i, n in enumerate(self.orders_restricted):
+                ax_array[i].contourf(self.x[..., 0], self.x[..., 1],
+                                     np.reshape(self.coeffs[..., i], np.shape(self.x)[:-1]),
+                                     cmap=self.schemescale.cmaps_str[i])
+                ax_array[i].scatter(x_train_scatter, y_train_scatter, c='black', s=12)
+                ax_array[i].scatter(x_test_scatter, y_test_scatter, c='gray', s=2)
+
+                ax_array[i].set_xlim(
+                    np.amin(self.x[..., 0]) - 0.03 * (np.amax(self.x[..., 0]) - np.amin(self.x[..., 0])),
+                    np.amax(self.x[..., 0]) + 0.03 * (np.amax(self.x[..., 0]) - np.amin(self.x[..., 0]))
+                )
+                ax_array[i].set_ylim(
+                    np.amin(self.x[..., 1]) - 0.03 * (np.amax(self.x[..., 1]) - np.amin(self.x[..., 1])),
+                    np.amax(self.x[..., 1]) + 0.03 * (np.amax(self.x[..., 1]) - np.amin(self.x[..., 1]))
+                )
+
+                ax_array[i].arrow((1.06 - 1) / (2 * 1.06),
+                                  (1.06 - 1) / (2 * 1.06),
+                                  self.ls_true[0] / 1.06 / (np.amax(self.x[..., 0]) - np.amin(self.x[..., 0])),
+                                  0,
+                                  facecolor='black', head_length=0.05,
+                                  shape='left', width=0.01, head_width=0.05,
+                                  length_includes_head=True, transform=ax_array[i].transAxes)
+                ax_array[i].arrow((1.06 - 1) / (2 * 1.06),
+                                  (1.06 - 1) / (2 * 1.06),
+                                  0,
+                                  self.ls_true[1] / 1.06 / (np.amax(self.x[..., 1]) - np.amin(self.x[..., 1])),
+                                  facecolor='black', head_length=0.05,
+                                  shape='right', width=0.01, head_width=0.05,
+                                  length_includes_head=True, transform=ax_array[i].transAxes)
+
+                ax_array[i].set_ylabel(self.caption_coeffs[1])
+
+            ax_array[i].set_xlabel(self.caption_coeffs[0])
         # saves figure
         if 'fig' in locals() and whether_save:
             fig.tight_layout()
@@ -925,9 +1718,14 @@ class GSUMDiagnostics:
             self.gp.kernel_
 
             # takes into account a constraint, if applicable
-            if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
-                dX = np.array([[self.x[i]] for i in self.constraint[0]])
-                self.mean, self.cov = self.gp.predict(self.X_test,
+            if self.constraint is not None and \
+                    np.any([self.constraint[-1] == name for name in self.x_quantity_name]) and \
+                    np.shape(np.array(self.x_quantity_array)[
+                                 np.array([self.constraint[-1] == name for name in self.x_quantity_name])][0])[
+                        0] != 1 and \
+                    np.shape(self.x)[-1] == 1:
+                dX = np.array([[np.squeeze(self.x)[i]] for i in self.constraint[0]])
+                self.mean, self.cov = self.gp.predict(self.x_test,
                                                       Xc=dX,
                                                       y=np.array(self.constraint[1]),
                                                       return_std=False,
@@ -956,7 +1754,8 @@ class GSUMDiagnostics:
                 fig.tight_layout();
 
                 fig.savefig(('figures/' + self.scheme + '_' + self.scale + '/' + self.observable_name + \
-                             '_' + 'md' + '_' + str(self.fixed_quantity_value) + str(self.fixed_quantity_units) + '_' + \
+                             '_' + 'md' + '_' + str(self.fixed_quantity_value) + str(
+                            self.fixed_quantity_units) + '_' + \
                              self.scheme + '_' + self.scale + '_Q' + self.Q_param + '_' + self.vs_what + \
                              '_' + str(self.n_train_pts) + '_' + str(self.n_test_pts) + '_' + \
                              self.train_pts_loc + '_' + self.p_param +
@@ -983,9 +1782,14 @@ class GSUMDiagnostics:
             self.gp.kernel_
 
             # takes into account constraints, if applicable
-            if self.constraint is not None and self.constraint[2] == self.x_quantity_name:
-                dX = np.array([[self.x[i]] for i in self.constraint[0]])
-                self.mean, self.cov = self.gp.predict(self.X_test,
+            if self.constraint is not None and \
+                    np.any([self.constraint[-1] == name for name in self.x_quantity_name]) and \
+                    np.shape(np.array(self.x_quantity_array)[
+                                 np.array([self.constraint[-1] == name for name in self.x_quantity_name])][0])[
+                        0] != 1 and \
+                    np.shape(self.x)[-1] == 1:
+                dX = np.array([[np.squeeze(self.x[i])] for i in self.constraint[0]])
+                self.mean, self.cov = self.gp.predict(self.x_test,
                                                       Xc=dX,
                                                       y=np.array(self.constraint[1]),
                                                       return_std=False,
@@ -1015,10 +1819,10 @@ class GSUMDiagnostics:
                 for i, n in enumerate(self.nn_orders_full[self.mask_restricted]):
                     # legend_handles.append(Patch(color=self.colors[i], label=r'$c_{}$'.format(n)))
                     legend_handles.append(Line2D([0], [0], marker='o',
-                                            color='w',
-                                            label=r'$c_{}$'.format(n),
-                                            markerfacecolor=self.colors[i],
-                                            markersize=8))
+                                                 color='w',
+                                                 label=r'$c_{}$'.format(n),
+                                                 markerfacecolor=self.colors[i],
+                                                 markersize=8))
                 ax.legend(handles=legend_handles,
                           loc='center left',
                           bbox_to_anchor=(1, 0.5),
@@ -1042,7 +1846,6 @@ class GSUMDiagnostics:
 
         except:
             print("Error in calculating or plotting the pivoted Cholesky decomposition.")
-
     def plot_posterior_pdf(self, ax_joint=None, ax_marg_x=None,
                            ax_marg_y=None, whether_save=True):
         """

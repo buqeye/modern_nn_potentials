@@ -370,6 +370,8 @@ def versatile_train_test_split_nd(tts):
     # x_train = np.meshgrid(np.linspace(np.amin(tts.x, axis = tuple(range(tts.x.ndim - 1))) + tts.offset_train_min,
     #                       np.amax(tts.x, axis = tuple(range(tts.x.ndim - 1))) - tts.offset_train_max,
     #                       np.prod(tts.n_train) + np.sum(tts.n_train) + 1))
+    print("tts.n_train = " + str(tts.n_train))
+    print("tts.y.ndim = " + str(tts.y.ndim))
     x_train = gm.cartesian(*[np.linspace(np.amin(tts.x, axis = tuple(range(tts.x.ndim - 1)))[idx] + tts.offset_train_min[idx],
                           np.amax(tts.x, axis = tuple(range(tts.x.ndim - 1)))[idx] - tts.offset_train_max[idx],
                           tts.n_train[idx] + 1) for idx in range(tts.y.ndim - 1)])
