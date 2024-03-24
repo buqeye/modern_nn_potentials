@@ -1559,7 +1559,9 @@ def generate_diagnostics(
                                 #         "degrees",
                                 #     ]
                                 #     x_quantity = ["energy", t_lab, "MeV"]
-                                x_quantity = [["energy", E_lab, t_lab, "MeV"], ["angle", angle_lab, degrees, "degrees"]]
+
+                                # x_quantity = [["energy", E_lab, t_lab, "MeV"], ["angle", angle_lab, degrees, "degrees"]]
+                                x_quantity = [["energy", E_lab, t_lab, "MeV"]]
                                 MyPlot = GSUMDiagnostics(
                                     schemescale=ScaleScheme,
                                     observable=Observable,
@@ -1637,7 +1639,7 @@ def generate_diagnostics(
 
 
 def generate_posteriors(
-    nn_interaction="np",
+    # nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
     Q_param_method_array=["sum"],
     p_param_method_array=["Qofprel"],
@@ -1863,9 +1865,9 @@ def generate_posteriors(
             "SGT",
             SGT,
             [],
-            [],
             "\sigma_{\mathrm{tot}}",
             "dimensionful",
+            nn_interaction="np",
         )
 
         # no slicing; normal procedure.
@@ -1874,47 +1876,47 @@ def generate_posteriors(
                 "DSG",
                 DSG,
                 [],
-                [],
                 "d \sigma / d \Omega",
                 "dimensionful",
+                nn_interaction="np",
             )
             AYBunch = ObservableBunch(
                 "AY",
                 AY,
                 # np.reshape(AY[:, np.isin(t_lab, E_slice_Q), :], (np.shape(AY)[0], len(degrees))),
                 [],
-                [],
                 "A_{y}",
                 "dimensionless",
+                nn_interaction="np",
                 constraint=[[0, -1], [0, 0], "angle"],
             )
             ABunch = ObservableBunch(
                 "A",
                 A,
                 [],
-                [],
                 "A",
                 "dimensionless",
+                nn_interaction="np",
                 constraint=[[0], [0], "angle"],
             )
             DBunch = ObservableBunch(
                 "D",
                 D,
-                [], [], "D", "dimensionless"
+                [], "D", "dimensionless"
             )
             # version of DBunch that treats D as dimensionful for the purposes of Fig. 22
             DBunch_dimensionful = ObservableBunch(
-                "D_dimensionful", D, [], [], "D", "dimensionful"
+                "D_dimensionful", D, [], "D", "dimensionful", nn_interaction="np",
             )
             AXXBunch = ObservableBunch(
                 "AXX",
                 AXX,
-                [], [], "A_{xx}", "dimensionless"
+                [], "A_{xx}", "dimensionless", nn_interaction="np",
             )
             AYYBunch = ObservableBunch(
                 "AYY",
                 AYY,
-                [], [], "A_{yy}", "dimensionless"
+                [], "A_{yy}", "dimensionless", nn_interaction="np",
             )
         # sliced in energy; used for calculations with constant Q.
         elif (Elab_slice is not None) and (deg_slice is None):
@@ -1922,9 +1924,9 @@ def generate_posteriors(
                 "DSG",
                 np.reshape(DSG[:, np.isin(t_lab, Elab_slice), :], (np.shape(DSG)[0], len(degrees))),
                 [],
-                [],
                 "d \sigma / d \Omega",
                 "dimensionful",
+                nn_interaction="np",
             )
             AYBunch = ObservableBunch(
                 "AY",
@@ -1932,39 +1934,40 @@ def generate_posteriors(
                 np.reshape(AY[:, np.isin(t_lab, Elab_slice), :], (np.shape(AY)[0], len(degrees))),
                 # np.reshape(AY[:, np.isin(t_lab, E_slice_Q), :], (np.shape(AY)[0], len(degrees))),
                 [],
-                [],
                 "A_{y}",
                 "dimensionless",
+                nn_interaction="np",
                 constraint=[[0, -1], [0, 0], "angle"],
             )
             ABunch = ObservableBunch(
                 "A",
                 np.reshape(A[:, np.isin(t_lab, Elab_slice), :], (np.shape(A)[0], len(degrees))),
                 [],
-                [],
                 "A",
                 "dimensionless",
+                nn_interaction="np",
                 constraint=[[0], [0], "angle"],
             )
             DBunch = ObservableBunch(
                 "D",
                 np.reshape(D[:, np.isin(t_lab, Elab_slice), :], (np.shape(D)[0], len(degrees))),
-                [], [], "D", "dimensionless"
+                [], "D", "dimensionless", nn_interaction="np",
             )
             # version of DBunch that treats D as dimensionful for the purposes of Fig. 22
             DBunch_dimensionful = ObservableBunch(
                 "D_dimensionful",
-                np.reshape(D[:, np.isin(t_lab, Elab_slice), :], (np.shape(D)[0], len(degrees))), [], [], "D", "dimensionful"
+                np.reshape(D[:, np.isin(t_lab, Elab_slice), :], (np.shape(D)[0], len(degrees))), [], "D", "dimensionful",
+                nn_interaction = "np",
             )
             AXXBunch = ObservableBunch(
                 "AXX",
                 np.reshape(AXX[:, np.isin(t_lab, Elab_slice), :], (np.shape(AXX)[0], len(degrees))),
-                [], [], "A_{xx}", "dimensionless"
+                [], "A_{xx}", "dimensionless", nn_interaction="np",
             )
             AYYBunch = ObservableBunch(
                 "AYY",
                 np.reshape(AYY[:, np.isin(t_lab, Elab_slice), :], (np.shape(AYY)[0], len(degrees))),
-                [], [], "A_{yy}", "dimensionless"
+                [], "A_{yy}", "dimensionless", nn_interaction="np",
             )
         # sliced in angle; not used for anything.
         elif (Elab_slice is None) and (deg_slice is not None):
@@ -1972,9 +1975,9 @@ def generate_posteriors(
                 "DSG",
                 np.reshape(DSG[:, :, np.isin(degrees, deg_slice)], (np.shape(DSG)[0], len(t_lab))),
                 [],
-                [],
                 "d \sigma / d \Omega",
                 "dimensionful",
+                nn_interaction="np",
             )
             AYBunch = ObservableBunch(
                 "AY",
@@ -1982,40 +1985,41 @@ def generate_posteriors(
                 np.reshape(AY[:, :, np.isin(degrees, deg_slice)], (np.shape(AY)[0], len(t_lab))),
                 # np.reshape(AY[:, np.isin(t_lab, E_slice_Q), :], (np.shape(AY)[0], len(degrees))),
                 [],
-                [],
                 "A_{y}",
                 "dimensionless",
+                nn_interaction="np",
                 constraint=[[0, -1], [0, 0], "angle"],
             )
             ABunch = ObservableBunch(
                 "A",
                 np.reshape(A[:, :, np.isin(degrees, deg_slice)], (np.shape(A)[0], len(t_lab))),
                 [],
-                [],
                 "A",
                 "dimensionless",
+                nn_interaction="np",
                 constraint=[[0], [0], "angle"],
             )
             DBunch = ObservableBunch(
                 "D",
                 np.reshape(D[:, :, np.isin(degrees, deg_slice)], (np.shape(D)[0], len(t_lab))),
-                [], [], "D", "dimensionless"
+                [], "D", "dimensionless", nn_interaction="np",
             )
             # version of DBunch that treats D as dimensionful for the purposes of Fig. 22
             DBunch_dimensionful = ObservableBunch(
                 "D_dimensionful",
-                np.reshape(D[:, :, np.isin(degrees, deg_slice)], (np.shape(D)[0], len(t_lab))), [], [], "D",
-                "dimensionful"
+                np.reshape(D[:, :, np.isin(degrees, deg_slice)], (np.shape(D)[0], len(t_lab))), [], "D",
+                "dimensionful",
+                nn_interaction="np",
             )
             AXXBunch = ObservableBunch(
                 "AXX",
                 np.reshape(AXX[:, :, np.isin(degrees, deg_slice)], (np.shape(AXX)[0], len(t_lab))),
-                [], [], "A_{xx}", "dimensionless"
+                [], "A_{xx}", "dimensionless", nn_interaction="np",
             )
             AYYBunch = ObservableBunch(
                 "AYY",
                 np.reshape(AYY[:, :, np.isin(degrees, deg_slice)], (np.shape(AYY)[0], len(t_lab))),
-                [], [], "A_{yy}", "dimensionless"
+                [], "A_{yy}", "dimensionless", nn_interaction="np",
             )
 
         observable_array = [
@@ -2036,7 +2040,7 @@ def generate_posteriors(
                 deg_fn,
                 p_approx(
                     PParamMethod,
-                    E_to_p(t_lab, interaction=nn_interaction),
+                    E_to_p(t_lab, interaction="np"),
                     degrees,
                 ),
                 r"$\theta$ (deg)",
@@ -2053,7 +2057,7 @@ def generate_posteriors(
                 neg_cos,
                 p_approx(
                     PParamMethod,
-                    E_to_p(t_lab, interaction=nn_interaction),
+                    E_to_p(t_lab, interaction="np"),
                     degrees,
                 ),
                 r"$-\mathrm{cos}(\theta)$",
@@ -2070,7 +2074,7 @@ def generate_posteriors(
                 sin_thing,
                 p_approx(
                     PParamMethod,
-                    E_to_p(t_lab, interaction=nn_interaction),
+                    E_to_p(t_lab, interaction="np"),
                     degrees,
                 ),
                 r"$\mathrm{sin}(\theta)$",
@@ -2087,7 +2091,7 @@ def generate_posteriors(
                 deg_to_qcm,
                 p_approx(
                     PParamMethod,
-                    E_to_p(t_lab, interaction=nn_interaction),
+                    E_to_p(t_lab, interaction="np"),
                     degrees,
                 ),
                 r"$q_{\mathrm{cm}}$ (MeV)",
@@ -2104,7 +2108,7 @@ def generate_posteriors(
                 deg_to_qcm2,
                 p_approx(
                     PParamMethod,
-                    E_to_p(t_lab, interaction=nn_interaction),
+                    E_to_p(t_lab, interaction="np"),
                     degrees,
                 ),
                 r"$q_{\mathrm{cm}}^{2}$ (MeV$^{2}$)",
@@ -2130,7 +2134,7 @@ def generate_posteriors(
                 Elab_fn,
                 p_approx(
                     "Qofprel",
-                    E_to_p(t_lab, interaction=nn_interaction),
+                    E_to_p(t_lab, interaction="np"),
                     degrees,
                 ),
                 r"$E_{\mathrm{lab}}$ (MeV)",
@@ -2142,7 +2146,7 @@ def generate_posteriors(
                 E_to_p,
                 p_approx(
                     "Qofprel",
-                    E_to_p(t_lab, interaction=nn_interaction),
+                    E_to_p(t_lab, interaction="np"),
                     degrees,
                 ),
                 r"$p_{\mathrm{rel}}$ (MeV)",
@@ -2177,11 +2181,11 @@ def generate_posteriors(
 
                         # information for naming the savefiles
                         FileName = FileNaming(
-                            ScaleScheme.potential_string,
-                            ScaleScheme.cutoff_string,
+                            # ScaleScheme.potential_string,
+                            # ScaleScheme.cutoff_string,
                             QParamMethod,
                             PParamMethod,
-                            VsQuantityPosteriorDeg.name + 'x' + VsQuantityPosteriorTlab.name,
+                            # VsQuantityPosteriorDeg.name + 'x' + VsQuantityPosteriorTlab.name,
                             filename_addendum=filename_addendum,
                         )
                         #
@@ -2224,7 +2228,7 @@ def generate_posteriors(
                                 VsQuantityPosteriorTlab.input_space(
                                     **{
                                         "E_lab": t_lab,
-                                        "interaction": nn_interaction,
+                                        "interaction": "np",
                                     }
                                 )
                             )
@@ -2233,7 +2237,7 @@ def generate_posteriors(
                                     **{
                                         "deg_input": degrees,
                                         "p_input": E_to_p(
-                                            np.average(t_lab_train_pts), interaction=nn_interaction
+                                            np.average(t_lab_train_pts), interaction="np",
                                         ),
                                     }
                                 )
@@ -2253,7 +2257,7 @@ def generate_posteriors(
                                                         4: 'N3LO', 3: 'N2LO',
                                                         2: 'NLO'},
                                     # strings
-                                    nn_interaction = nn_interaction,
+                                    nn_interaction = "np",
                                     # hyperparameters
                                     center = center,
                                     disp = disp,

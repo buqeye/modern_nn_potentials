@@ -1687,6 +1687,9 @@ class GSUMDiagnostics:
 
                 ax_array[i].set_ylabel(self.caption_coeffs[1])
 
+                ax_array[i].legend(title=r'$c_{}$'.format(n),
+                                   loc='upper right')
+
             ax_array[i].set_xlabel(self.caption_coeffs[0])
         # saves figure
         if 'fig' in locals() and whether_save:
