@@ -1024,7 +1024,7 @@ def generate_diagnostics(
                         deg_fn,
                         p_approx(
                             PParamMethod,
-                            E_to_p(t_lab, interaction=Observable.nn_interaction),
+                            E_to_p(E_lab, interaction=Observable.nn_interaction),
                             angle_lab,
                         ),
                         r"$\theta$ (deg)",
@@ -1041,7 +1041,7 @@ def generate_diagnostics(
                         neg_cos,
                         p_approx(
                             PParamMethod,
-                            E_to_p(t_lab, interaction=Observable.nn_interaction),
+                            E_to_p(E_lab, interaction=Observable.nn_interaction),
                             angle_lab,
                         ),
                         r"$-\mathrm{cos}(\theta)$",
@@ -1058,7 +1058,7 @@ def generate_diagnostics(
                         sin_thing,
                         p_approx(
                             PParamMethod,
-                            E_to_p(t_lab, interaction=Observable.nn_interaction),
+                            E_to_p(E_lab, interaction=Observable.nn_interaction),
                             angle_lab,
                         ),
                         r"$\mathrm{sin}(\theta)$",
@@ -1075,7 +1075,7 @@ def generate_diagnostics(
                         deg_to_qcm,
                         p_approx(
                             PParamMethod,
-                            E_to_p(t_lab, interaction=Observable.nn_interaction),
+                            E_to_p(E_lab, interaction=Observable.nn_interaction),
                             angle_lab,
                         ),
                         r"$q_{\mathrm{cm}}$ (MeV)",
@@ -1092,7 +1092,7 @@ def generate_diagnostics(
                         deg_to_qcm2,
                         p_approx(
                             PParamMethod,
-                            E_to_p(t_lab, interaction=Observable.nn_interaction),
+                            E_to_p(E_lab, interaction=Observable.nn_interaction),
                             angle_lab,
                         ),
                         r"$q_{\mathrm{cm}}^{2}$ (MeV$^{2}$)",
@@ -1110,8 +1110,8 @@ def generate_diagnostics(
                         Elab_fn,
                         p_approx(
                             "Qofprel",
-                            E_to_p(t_lab, interaction=Observable.nn_interaction),
-                            degrees,
+                            E_to_p(E_lab, interaction=Observable.nn_interaction),
+                            angle_lab,
                         ),
                         r"$E_{\mathrm{lab}}$ (MeV)",
                         [r"$", Observable.title, r"(E_{\mathrm{lab}}, \theta= ", angle_lab_val, "^{\circ})$"],
@@ -1122,8 +1122,8 @@ def generate_diagnostics(
                         E_to_p,
                         p_approx(
                             "Qofprel",
-                            E_to_p(t_lab, interaction=Observable.nn_interaction),
-                            degrees,
+                            E_to_p(E_lab, interaction=Observable.nn_interaction),
+                            angle_lab,
                         ),
                         r"$p_{\mathrm{rel}}$ (MeV)",
                         [r"$", Observable.title, r"(p_{\mathrm{rel}}, \theta= ", angle_lab_val, "^{\circ})$"],
@@ -1559,9 +1559,11 @@ def generate_diagnostics(
                                 #         "degrees",
                                 #     ]
                                 #     x_quantity = ["energy", t_lab, "MeV"]
+                                if Observable.name == "SGT":
+                                    x_quantity = [["energy", E_lab, t_lab, "MeV"]]
+                                else:
+                                    x_quantity = [["energy", E_lab, t_lab, "MeV"], ["angle", angle_lab, degrees, "degrees"]]
 
-                                # x_quantity = [["energy", E_lab, t_lab, "MeV"], ["angle", angle_lab, degrees, "degrees"]]
-                                x_quantity = [["energy", E_lab, t_lab, "MeV"]]
                                 MyPlot = GSUMDiagnostics(
                                     schemescale=ScaleScheme,
                                     observable=Observable,
