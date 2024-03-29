@@ -4,6 +4,8 @@ import gsum as gm
 import urllib
 import tables
 import scipy
+from shapely.geometry import Polygon, Point
+
 
 def correlation_coefficient(x, y, pdf):
     """
@@ -377,7 +379,7 @@ def versatile_train_test_split_nd(tts):
                           tts.n_train[idx] + 1) for idx in range(tts.y.ndim - 1)])
     # print("x_train has shape " + str(np.shape(x_train)))
     # print("x_train = " + str(x_train))
-    x_train = np.reshape(x_train, tuple(tts.n_train + np.ones(len(tts.n_train), dtype = int)) + (len(tts.n_train), ))
+    # x_train = np.reshape(x_train, tuple(tts.n_train + np.ones(len(tts.n_train), dtype = int)) + (len(tts.n_train), ))
     # print("x_train has shape " + str(np.shape(x_train)))
     # print("x_train = " + str(x_train))
     # x_test = np.linspace(np.amin(tts.x, axis = tuple(range(tts.x.ndim - 1))) + tts.offset_test_min,
@@ -389,7 +391,7 @@ def versatile_train_test_split_nd(tts):
                       tts.n_train[idx] * tts.n_test_inter[idx] + 1) for idx in range(tts.y.ndim - 1)])
     # print("x_test has shape " + str(np.shape(x_test)))
     # print("x_test = " + str(x_test))
-    x_test = np.reshape(x_test, tuple([a * b for a, b in zip(tts.n_train, tts.n_test_inter)] + np.ones(len(tts.n_test_inter), dtype=int)) + (len(tts.n_test_inter),))
+    # x_test = np.reshape(x_test, tuple([a * b for a, b in zip(tts.n_train, tts.n_test_inter)] + np.ones(len(tts.n_test_inter), dtype=int)) + (len(tts.n_test_inter),))
     # print("x_test has shape " + str(np.shape(x_test)))
     # print("Before masking, x_test = " + str(x_test))
 
@@ -400,47 +402,96 @@ def versatile_train_test_split_nd(tts):
     # if tts.xmin_test == None: tts.xmin_test = np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)));
     # if tts.xmax_test == None: tts.xmax_test = np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1)));
 
-    # eliminates, using a mask, all values for the training and testing x points outside of
-    # x
-    # print(np.less( x_train, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1))) ))
-    # print(np.greater( x_train, np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))) ))
-    # print(x_train[np.prod(np.invert(np.less( x_train, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1))) ) + \
-    #       np.greater( x_train, np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))) )), axis = -1)])
-    # x_train = x_train[np.prod(np.invert(np.less( x_train, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1))) ) + \
-    #       np.greater( x_train, np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))) )), axis = -1)]
-    x_train = x_train[np.prod(np.invert(np.less(x_train, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)))) + \
-                                        np.greater(x_train, np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))))),
-                              axis=-1).astype(bool)]
-    print("x_train has shape " + str(np.shape(x_train)))
-    # x_test = x_test[np.invert([(x_test[i] < np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1))) or x_test[i] > np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1)))) \
-    #                            for i in range(len(x_test))])]
-    # mfmask = np.moveaxis(np.tile(np.prod(np.invert(np.less(x_test, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)))) + \
-    #                                     np.greater(x_test, np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))))),
-    #                           axis=-1), (2, 1, 1)), 0, -1) * np.ones(np.shape(x_test), dtype = bool)
-    # mfmask = np.prod(np.invert(np.less(x_test, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)))) + \
+    # # eliminates, using a mask, all values for the training and testing x points outside of
+    # # x
+    # # print(np.less( x_train, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1))) ))
+    # # print(np.greater( x_train, np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))) ))
+    # # print(x_train[np.prod(np.invert(np.less( x_train, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1))) ) + \
+    # #       np.greater( x_train, np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))) )), axis = -1)])
+    # # x_train = x_train[np.prod(np.invert(np.less( x_train, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1))) ) + \
+    # #       np.greater( x_train, np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))) )), axis = -1)]
+    # x_train = x_train[np.prod(np.invert(np.less(x_train, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)))) + \
+    #                                     np.greater(x_train, np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))))),
+    #                           axis=-1).astype(bool)]
+    # print("x_train has shape " + str(np.shape(x_train)))
+    # # x_test = x_test[np.invert([(x_test[i] < np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1))) or x_test[i] > np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1)))) \
+    # #                            for i in range(len(x_test))])]
+    # # mfmask = np.moveaxis(np.tile(np.prod(np.invert(np.less(x_test, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)))) + \
+    # #                                     np.greater(x_test, np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))))),
+    # #                           axis=-1), (2, 1, 1)), 0, -1) * np.ones(np.shape(x_test), dtype = bool)
+    # # mfmask = np.prod(np.invert(np.less(x_test, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)))) + \
+    # #                                                np.greater(x_test,
+    # #                                                           np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))))),
+    # #                                      axis=-1)
+    # # print(mfmask)
+    # # print("The mask has shape " + str(np.shape(mfmask)))
+    # # print("The mask is of type " + str(mfmask.dtype))
+    # # mfmask = mfmask.astype(bool)
+    # # print("The mask is of type " + str(mfmask.dtype))
+    # # print("x_test has shape " + str(np.shape(x_test)))
+    # # x_test = x_test[np.prod(np.invert(np.less(x_test, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)))) + \
+    # #                                     np.greater(x_test, np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))))),
+    # #                           axis=-1)]
+    # # x_test = x_test[np.moveaxis(np.tile(np.prod(np.invert(np.less(x_test, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)))) + \
+    # #                                     np.greater(x_test, np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))))),
+    # #                           axis=-1), (2, 1, 1)), 0, -1) * np.ones(np.shape(x_test), dtype = bool)]
+    # x_test = x_test[np.prod(np.invert(np.less(x_test, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)))) + \
     #                                                np.greater(x_test,
     #                                                           np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))))),
-    #                                      axis=-1)
-    # print(mfmask)
-    # print("The mask has shape " + str(np.shape(mfmask)))
-    # print("The mask is of type " + str(mfmask.dtype))
-    # mfmask = mfmask.astype(bool)
-    # print("The mask is of type " + str(mfmask.dtype))
+    #                                      axis=-1).astype(bool)]
+    # # for op in np.reshape(x_test, (np.prod(list(np.shape(x_test)[0:-1])), ) + (np.shape(x_test)[-1], )):
+    # #     print(op)
     # print("x_test has shape " + str(np.shape(x_test)))
-    # x_test = x_test[np.prod(np.invert(np.less(x_test, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)))) + \
-    #                                     np.greater(x_test, np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))))),
-    #                           axis=-1)]
-    # x_test = x_test[np.moveaxis(np.tile(np.prod(np.invert(np.less(x_test, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)))) + \
-    #                                     np.greater(x_test, np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))))),
-    #                           axis=-1), (2, 1, 1)), 0, -1) * np.ones(np.shape(x_test), dtype = bool)]
-    x_test = x_test[np.prod(np.invert(np.less(x_test, np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)))) + \
-                                                   np.greater(x_test,
-                                                              np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1))))),
-                                         axis=-1).astype(bool)]
-    # for op in np.reshape(x_test, (np.prod(list(np.shape(x_test)[0:-1])), ) + (np.shape(x_test)[-1], )):
-    #     print(op)
-    print("x_test has shape " + str(np.shape(x_test)))
-    # print("x_test = " + str(x_test))
+    # # print("x_test = " + str(x_test))
+
+    if np.shape(tts.x)[-1] == 2:
+        warped_poly = Polygon(np.concatenate([
+            tts.x[0, :, ...],
+            tts.x[:, -1, ...],
+            tts.x[-1, :, ...],
+            np.flip(tts.x[:, 0, ...], axis=0),
+        ]))
+        #         print(warped_poly.contains((0, 0)))
+
+        print("self.x_train has shape " + str(np.shape(x_train)))
+        print("self.x_train = " + str(x_train))
+        x_train = x_train[[warped_poly.buffer(0.001).contains(Point(pt)) for pt in x_train], ...]
+        print("self.x_train has shape " + str(np.shape(x_train)))
+        print("self.x_train = " + str(x_train))
+
+        print("self.x_test has shape " + str(np.shape(x_test)))
+        print("self.x_test = " + str(x_test))
+        x_test = x_test[[warped_poly.buffer(0.001).contains(Point(pt)) for pt in x_test], ...]
+        print("self.x_test has shape " + str(np.shape(x_test)))
+        print("self.x_test = " + str(x_test))
+
+        # self.y_train = np.array([])
+        # self.y_test = np.array([])
+        # for norder in self.data:
+        #     self.y_train = np.append(self.y_train, griddata(
+        #         np.reshape(self.x, (np.prod(np.shape(self.x)[0:-1]),) + (np.shape(self.x)[-1],)),
+        #         np.reshape(norder, np.prod(np.shape(norder))),
+        #         self.x_train)
+        #                              )
+        #     self.y_test = np.append(self.y_test, griddata(
+        #         np.reshape(self.x, (np.prod(np.shape(self.x)[0:-1]),) + (np.shape(self.x)[-1],)),
+        #         np.reshape(norder, np.prod(np.shape(norder))),
+        #         self.x_test)
+        #                             )
+        #
+        # self.y_train = np.reshape(self.y_train, (np.shape(self.data)[0],) + (np.shape(self.x_train)[0],))
+        # self.y_test = np.reshape(self.y_test, (np.shape(self.data)[0],) + (np.shape(self.x_test)[0],))
+        #
+        # print("self.y_train after warping = " + str(y_train))
+        # print("self.y_test after warping = " + str(y_test))
+    elif np.shape(tts.x)[-1] == 1:
+        x_train = x_train[
+                           [(pt >= np.min(tts.x[:, 0]) and pt <= np.max(tts.x[:, 0])) for pt in x_train], ...][:,
+                       None]
+        x_test = x_test[
+                          [(pt >= np.min(tts.x[:, 0]) and pt <= np.max(tts.x[:, 0])) for pt in x_test], ...][:,
+                      None]
+
 
 
     # eliminates, using a mask, all values for the training and testing x points outside of
@@ -486,6 +537,26 @@ def versatile_train_test_split_nd(tts):
     print("y has shape " + str(np.shape(tts.y)))
     print("x_train has shape " + str(np.shape(x_train)))
     print("x_test has shape " + str(np.shape(x_test)))
+
+    # y_train = np.array([])
+    # y_test = np.array([])
+    # for norder in self.data:
+    #     self.y_train = np.append(self.y_train, griddata(
+    #         np.reshape(self.x, (np.prod(np.shape(self.x)[0:-1]),) + (np.shape(self.x)[-1],)),
+    #         np.reshape(norder, np.prod(np.shape(norder))),
+    #         self.x_train)
+    #                              )
+    #     self.y_test = np.append(self.y_test, griddata(
+    #         np.reshape(self.x, (np.prod(np.shape(self.x)[0:-1]),) + (np.shape(self.x)[-1],)),
+    #         np.reshape(norder, np.prod(np.shape(norder))),
+    #         self.x_test)
+    #                             )
+    #
+    # self.y_train = np.reshape(self.y_train, (np.shape(self.data)[0],) + (np.shape(self.x_train)[0],))
+    # self.y_test = np.reshape(self.y_test, (np.shape(self.data)[0],) + (np.shape(self.x_test)[0],))
+    # print("self.y_train has shape " + str(np.shape(self.y_train)))
+    # print("self.y_train = " + str(self.y_train))
+
     y_train = np.array([])
     y_test = np.array([])
     for norder in tts.y:
