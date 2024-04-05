@@ -739,8 +739,6 @@ setup_rc_params()
 def generate_diagnostics(
     scale_scheme_bunch_array=[RKE500MeV],
     observable_input=["DSG"],
-    # E_input_array=[150],
-    # deg_input_array=[0],
     x_quantities_array = [[150], []],
     Q_param_method_array=["sum"],
     p_param_method_array=["Qofprel"],
@@ -749,9 +747,7 @@ def generate_diagnostics(
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
-    # LengthScaleTlabInput = LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
-    # LengthScaleDegInput = LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
-    LengthScale_list = [None],
+    LengthScale_list = [LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit = True)],
     fixed_sd=None,
     m_pi_eff=138,
     Lambdab=600,
@@ -796,19 +792,11 @@ def generate_diagnostics(
     Built-in options: "SGT", "DSG", "AY", "A", "D", "AXX", "AYY"
     Default: ["DSG"]
 
-    E_input_array (int list): lab energies in MeV for evaluation. Note that SGT
-        must be treated differently since it is not evaluated at one energy at
-        a time.
-    May be any integer x such that 1 <= x <= 350
+    x_quantities_array (list of lists of empty or 1 int): values (if any) at which to fix observables.
+        Note that SGT must be treated differently since it is not evaluated at one energy at a time.
     Must be [] for SGT
-    If no evaluation at fixed lab energy is desired, set equal to []
-    Default: [150]
-
-    deg_input_array (int list): angles in degrees for evaluation.
-    May be any integer x such that 1 <= x <= 179
-    Must be [0] for SGT
-    If no evaluation at fixed angle measure is desired, set equal to [0]
-    Default: []
+    If no evaluation at fixed quantity is desired, set equal to []
+    Default: [[150], []]
 
     Q_param_method_array (str list): methods of parametrizing the dimensionless
         expansion parameter Q for evaluation.
@@ -847,12 +835,12 @@ def generate_diagnostics(
         of EFT orders and their corresponding math-mode-formatted labels (str)
     Default: None
 
-    LengthScaleTlabInput (LengthScale): initial guess for the correlation
+    LengthScale_list (LengthScale list): initial guess(es) for the correlation
         length in the kernel (as a factor of the total size of the energy-
         dependent input space) plus boundaries of the fit procedure as factors
         of the initial guess for the correlation length. Fitting may be bypassed
         when whether_fit = False.
-    Default: LengthScale(0.25, 0.25, 4, whether_fit = True)
+    Default: [LengthScale(0.25, 0.25, 4, whether_fit = True)]
 
     LengthScaleDegInput (LengthScale): initial guess for the correlation
         length in the kernel (as a factor of the total size of the angle-
@@ -914,34 +902,29 @@ def generate_diagnostics(
         t_lab = ScaleScheme.get_data("t_lab")
         degrees = ScaleScheme.get_data("degrees")
 
-        print(x_quantities_array)
         for xq_idx in range(len(x_quantities_array)):
             if x_quantities_array[xq_idx] == []:
                 x_quantities_array[xq_idx] = None
-        print(x_quantities_array)
 
         x_quantities_tuples = gm.cartesian(*x_quantities_array)
-        print(x_quantities_tuples)
 
-        # runs through the energies at which to evaluate the observables
+        # runs through the x quantities at which to evaluate the observables
         for j, x_quantities_tuple in enumerate(x_quantities_tuples):
             E_lab_val = x_quantities_tuple[0]
             angle_lab_val = x_quantities_tuple[1]
             E_angle_vals_pair = [E_lab_val, angle_lab_val]
 
+            # sets E_lab to full t_lab array when E_lab_val is None
             if E_lab_val is not None:
                 E_lab = np.array([E_lab_val])
             else:
                 E_lab = t_lab
-            print("E_lab = " + str(E_lab))
 
+            # sets angle_lab to full degrees array when angle_lab_val is None
             if angle_lab_val is not None:
                 angle_lab = np.array([angle_lab_val])
             else:
                 angle_lab = degrees
-            print("angle_lab = " + str(angle_lab))
-
-            # E_angle_pair = [E_lab, angle_lab]
 
             # creates the bunch for each observable to be plotted against angle
             SGTBunch = ObservableBunch(
@@ -1010,15 +993,7 @@ def generate_diagnostics(
             for m, Observable in enumerate(observable_array):
                 # runs through the parametrizations of p in Q(p)
                 for p, PParamMethod in enumerate(p_param_method_array):
-                    # energy_deg_pairs = np.concatenate(
-                    #     (np.array(E_input_array + [0] * len(deg_input_array)),
-                    #     np.array([0] * len(E_input_array) + deg_input_array)),
-                    #     axis = 0)
-                    # if np.shape(energy_deg_pairs) == (0,):
-                    #     energy_deg_pairs = np.array([[0, 0]])
-                    # else:
-                    #     energy_deg_pairs = np.reshape(energy_deg_pairs,
-                    #         (len(E_input_array) + len(deg_input_array), 2), order='F')
+                    # instantiates input spaces
                     DegBunch = InputSpaceBunch(
                         "deg",
                         deg_fn,
@@ -1128,252 +1103,6 @@ def generate_diagnostics(
                         r"$p_{\mathrm{rel}}$ (MeV)",
                         [r"$", Observable.title, r"(p_{\mathrm{rel}}, \theta= ", angle_lab_val, "^{\circ})$"],
                     )
-                    # if E_angle_pair[0]:
-                    #     # creates the bunches for the vs-angle input spaces
-                    #     DegBunch = InputSpaceBunch(
-                    #         "deg",
-                    #         deg_fn,
-                    #         p_approx(
-                    #             PParamMethod,
-                    #             E_to_p(t_lab, interaction=Observable.nn_interaction),
-                    #             degrees,
-                    #         ),
-                    #         r"$\theta$ (deg)",
-                    #         [
-                    #             r"$",
-                    #             Observable.title,
-                    #             r"(\theta, E_{\mathrm{lab}}= ",
-                    #             E_lab,
-                    #             "\,\mathrm{MeV})$",
-                    #         ],
-                    #     )
-                    #     CosBunch = InputSpaceBunch(
-                    #         "cos",
-                    #         neg_cos,
-                    #         p_approx(
-                    #             PParamMethod,
-                    #             E_to_p(t_lab, interaction=Observable.nn_interaction),
-                    #             degrees,
-                    #         ),
-                    #         r"$-\mathrm{cos}(\theta)$",
-                    #         [
-                    #             r"$",
-                    #             Observable.title,
-                    #             r"(-\mathrm{cos}(\theta), E_{\mathrm{lab}}= ",
-                    #             E_lab,
-                    #             "\,\mathrm{MeV})$",
-                    #         ],
-                    #     )
-                    #     SinBunch = InputSpaceBunch(
-                    #         "sin",
-                    #         sin_thing,
-                    #         p_approx(
-                    #             PParamMethod,
-                    #             E_to_p(t_lab, interaction=Observable.nn_interaction),
-                    #             degrees,
-                    #         ),
-                    #         r"$\mathrm{sin}(\theta)$",
-                    #         [
-                    #             r"$",
-                    #             Observable.title,
-                    #             r"(\mathrm{sin}(\theta), E_{\mathrm{lab}}= ",
-                    #             E_lab,
-                    #             "\,\mathrm{MeV})$",
-                    #         ],
-                    #     )
-                    #     QcmBunch = InputSpaceBunch(
-                    #         "qcm",
-                    #         deg_to_qcm,
-                    #         p_approx(
-                    #             PParamMethod,
-                    #             E_to_p(t_lab, interaction=Observable.nn_interaction),
-                    #             degrees,
-                    #         ),
-                    #         r"$q_{\mathrm{cm}}$ (MeV)",
-                    #         [
-                    #             r"$",
-                    #             Observable.title,
-                    #             r"(q_{\mathrm{cm}}, E_{\mathrm{lab}}= ",
-                    #             E_lab,
-                    #             "\,\mathrm{MeV})$",
-                    #         ],
-                    #     )
-                    #     Qcm2Bunch = InputSpaceBunch(
-                    #         "qcm2",
-                    #         deg_to_qcm2,
-                    #         p_approx(
-                    #             PParamMethod,
-                    #             E_to_p(t_lab, interaction=Observable.nn_interaction),
-                    #             degrees,
-                    #         ),
-                    #         r"$q_{\mathrm{cm}}^{2}$ (MeV$^{2}$)",
-                    #         [
-                    #             r"$",
-                    #             Observable.title,
-                    #             r"(q_{\mathrm{cm}}^{2}, E_{\mathrm{lab}}= ",
-                    #             E_lab,
-                    #             "\,\mathrm{MeV})$",
-                    #         ],
-                    #     )
-                    #
-                    #     vsquantity_array_deg = [
-                    #         DegBunch,
-                    #         CosBunch,
-                    #         QcmBunch,
-                    #         Qcm2Bunch,
-                    #         SinBunch,
-                    #     ]
-                    #     vsquantity_array = vsquantity_array_deg
-                    #
-                    #     ElabBunch = InputSpaceBunch(
-                    #         "Elab",
-                    #         Elab_fn,
-                    #         p_approx(
-                    #             "Qofprel",
-                    #             E_to_p(t_lab, interaction=Observable.nn_interaction),
-                    #             degrees,
-                    #         ),
-                    #         r"$E_{\mathrm{lab}}$ (MeV)",
-                    #         [r"$", Observable.title, r"(E_{\mathrm{lab}}, \theta= ", angle_lab, "^{\circ})$"],
-                    #     )
-                    #
-                    #     PrelBunch = InputSpaceBunch(
-                    #         "prel",
-                    #         E_to_p,
-                    #         p_approx(
-                    #             "Qofprel",
-                    #             E_to_p(t_lab, interaction=Observable.nn_interaction),
-                    #             degrees,
-                    #         ),
-                    #         r"$p_{\mathrm{rel}}$ (MeV)",
-                    #         [r"$", Observable.title, r"(p_{\mathrm{rel}}, \theta= ", angle_lab, "^{\circ})$"],
-                    #     )
-                    #
-                    #     vsquantity_array_tlab = [ElabBunch, PrelBunch]
-                    #
-                    # else:
-                    #     # creates the bunches for the vs-energy input spaces
-                    #     ElabBunch = InputSpaceBunch(
-                    #         "Elab",
-                    #         Elab_fn,
-                    #         p_approx(
-                    #             "Qofprel",
-                    #             E_to_p(t_lab, interaction=Observable.nn_interaction),
-                    #             degrees,
-                    #         ),
-                    #         r"$E_{\mathrm{lab}}$ (MeV)",
-                    #         [r"$", Observable.title, r"(E_{\mathrm{lab}}, \theta= ", angle_lab, "^{\circ})$"],
-                    #     )
-                    #
-                    #     PrelBunch = InputSpaceBunch(
-                    #         "prel",
-                    #         E_to_p,
-                    #         p_approx(
-                    #             "Qofprel",
-                    #             E_to_p(t_lab, interaction=Observable.nn_interaction),
-                    #             degrees,
-                    #         ),
-                    #         r"$p_{\mathrm{rel}}$ (MeV)",
-                    #         [r"$", Observable.title, r"(p_{\mathrm{rel}}, \theta= ", angle_lab, "^{\circ})$"],
-                    #     )
-                    #
-                    #     vsquantity_array_tlab = [ElabBunch, PrelBunch]
-                    #     vsquantity_array = vsquantity_array_tlab
-                    #
-                    #     # creates the bunches for the vs-angle input spaces
-                    #     DegBunch = InputSpaceBunch(
-                    #         "deg",
-                    #         deg_fn,
-                    #         p_approx(
-                    #             PParamMethod,
-                    #             E_to_p(np.array([1]), interaction=Observable.nn_interaction),
-                    #             degrees,
-                    #         ),
-                    #         r"$\theta$ (deg)",
-                    #         [
-                    #             r"$",
-                    #             Observable.title,
-                    #             r"(\theta, E_{\mathrm{lab}}= ",
-                    #             1,
-                    #             "\,\mathrm{MeV})$",
-                    #         ],
-                    #     )
-                    #     CosBunch = InputSpaceBunch(
-                    #         "cos",
-                    #         neg_cos,
-                    #         p_approx(
-                    #             PParamMethod,
-                    #             E_to_p(np.array([1]), interaction=Observable.nn_interaction),
-                    #             degrees,
-                    #         ),
-                    #         r"$-\mathrm{cos}(\theta)$",
-                    #         [
-                    #             r"$",
-                    #             Observable.title,
-                    #             r"(-\mathrm{cos}(\theta), E_{\mathrm{lab}}= ",
-                    #             1,
-                    #             "\,\mathrm{MeV})$",
-                    #         ],
-                    #     )
-                    #     SinBunch = InputSpaceBunch(
-                    #         "sin",
-                    #         sin_thing,
-                    #         p_approx(
-                    #             PParamMethod,
-                    #             E_to_p(np.array([1]), interaction=Observable.nn_interaction),
-                    #             degrees,
-                    #         ),
-                    #         r"$\mathrm{sin}(\theta)$",
-                    #         [
-                    #             r"$",
-                    #             Observable.title,
-                    #             r"(\mathrm{sin}(\theta), E_{\mathrm{lab}}= ",
-                    #             1,
-                    #             "\,\mathrm{MeV})$",
-                    #         ],
-                    #     )
-                    #     QcmBunch = InputSpaceBunch(
-                    #         "qcm",
-                    #         deg_to_qcm,
-                    #         p_approx(
-                    #             PParamMethod,
-                    #             E_to_p(np.array([1]), interaction=Observable.nn_interaction),
-                    #             degrees,
-                    #         ),
-                    #         r"$q_{\mathrm{cm}}$ (MeV)",
-                    #         [
-                    #             r"$",
-                    #             Observable.title,
-                    #             r"(q_{\mathrm{cm}}, E_{\mathrm{lab}}= ",
-                    #             1,
-                    #             "\,\mathrm{MeV})$",
-                    #         ],
-                    #     )
-                    #     Qcm2Bunch = InputSpaceBunch(
-                    #         "qcm2",
-                    #         deg_to_qcm2,
-                    #         p_approx(
-                    #             PParamMethod,
-                    #             E_to_p(np.array([1]), interaction=Observable.nn_interaction),
-                    #             degrees,
-                    #         ),
-                    #         r"$q_{\mathrm{cm}}^{2}$ (MeV$^{2}$)",
-                    #         [
-                    #             r"$",
-                    #             Observable.title,
-                    #             r"(q_{\mathrm{cm}}^{2}, E_{\mathrm{lab}}= ",
-                    #             1,
-                    #             "\,\mathrm{MeV})$",
-                    #         ],
-                    #     )
-                    #
-                    #     vsquantity_array_deg = [
-                    #         DegBunch,
-                    #         CosBunch,
-                    #         QcmBunch,
-                    #         Qcm2Bunch,
-                    #         SinBunch,
-                    #     ]
 
                     vsquantity_array = [DegBunch, CosBunch, SinBunch, QcmBunch, Qcm2Bunch, ElabBunch, PrelBunch]
 
@@ -1396,65 +1125,7 @@ def generate_diagnostics(
                             for l, TrainingTestingSplit in enumerate(
                                 train_test_split_array
                             ):
-                                # if E_angle_pair[0]:
-                                #     # conforms the training and testing masks to each input space
-                                #     TrainingTestingSplit.make_masks(
-                                #         VsQuantity.input_space(
-                                #             **{
-                                #                 "deg_input": degrees,
-                                #                 "p_input": E_to_p(
-                                #                     E_lab, interaction=Observable.nn_interaction
-                                #                 ),
-                                #             }
-                                #         ),
-                                #         Observable.data,
-                                #     )
-                                # else:
-                                #     try:
-                                #         TrainingTestingSplit.make_masks(
-                                #             VsQuantity.input_space(
-                                #                 **{
-                                #                     "E_lab": t_lab,
-                                #                     "interaction": Observable.nn_interaction,
-                                #                 }
-                                #             ),
-                                #             Observable.data.swapaxes(1, 2),
-                                #         )
-                                #     except:
-                                #         TrainingTestingSplit.make_masks(
-                                #             VsQuantity.input_space(
-                                #                 **{
-                                #                     "E_lab": t_lab,
-                                #                     "interaction": Observable.nn_interaction,
-                                #                 }
-                                #             ),
-                                #             Observable.data,
-                                #         )
-
-                                # chooses a starting guess for the GP length scale optimization procedure
-                                # LengthScaleGuess = length_scale_input
-                                # if E_angle_pair[0]:
-                                #     LengthScaleGuess = LengthScaleDegInput
-                                #     LengthScaleGuess.make_guess(
-                                #         VsQuantity.input_space(
-                                #             **{
-                                #                 "deg_input": degrees,
-                                #                 "p_input": E_to_p(
-                                #                     E_lab, interaction=Observable.nn_interaction
-                                #                 ),
-                                #             }
-                                #         )
-                                #     )
-                                # else:
-                                #     LengthScaleGuess = LengthScaleTlabInput
-                                #     LengthScaleGuess.make_guess(
-                                #         VsQuantity.input_space(
-                                #             **{
-                                #                 "E_lab": t_lab,
-                                #                 "interaction": Observable.nn_interaction,
-                                #             }
-                                #         )
-                                #     )
+                                # calculates initial guesses for the GP length scale, with bounds for fitting
                                 for (ls, vsq) in zip(LengthScale_list, VsQuantity):
                                     ls.make_guess(
                                         vsq.input_space(
@@ -1491,30 +1162,12 @@ def generate_diagnostics(
                                     print(ls.ls_guess)
 
                                 # creates the GP with all its hyperparameters
-                                # ratio = Q_approx(
-                                #     VsQuantity.mom,
-                                #     QParamMethod,
-                                #     Lambda_b=Lambdab,
-                                #     m_pi=m_pi_eff,
-                                # )
                                 ratio = Q_approx(
                                     p_approx(PParamMethod, E_to_p(E_lab, "np"), angle_lab),
                                     QParamMethod,
                                     Lambda_b=Lambdab,
                                     m_pi=m_pi_eff,
                                 ).T
-
-                                # if not E_angle_pair[0]:
-                                #     if not E_angle_pair[1]:
-                                #         ratio = ratio[0, :]
-                                #         ratio = np.reshape(ratio, (len(t_lab)))
-                                #     else:
-                                #         ratio = ratio[np.isin(degrees, E_angle_pair[1]), :]
-                                #         ratio = np.reshape(ratio, (len(t_lab)))
-                                # else:
-                                #     ratio = ratio[:, np.isin(t_lab, E_angle_pair[0])]
-                                #     ratio = np.reshape(ratio, (len(degrees)))
-
                                 center = 0
                                 df = 1
                                 disp = 0
@@ -1547,18 +1200,7 @@ def generate_diagnostics(
                                     orders_labels_dict=orders_labels_dict,
                                 )
 
-                                # # creates the object used to generate and plot statistical diagnostics
-                                # if E_angle_pair[0]:
-                                #     fixed_quantity = ["energy", E_lab, t_lab, "MeV"]
-                                #     x_quantity = ["angle", degrees, "degrees"]
-                                # else:
-                                #     fixed_quantity = [
-                                #         "angle",
-                                #         angle_lab,
-                                #         degrees,
-                                #         "degrees",
-                                #     ]
-                                #     x_quantity = ["energy", t_lab, "MeV"]
+                                # creates the object used to generate and plot statistical diagnostics
                                 if Observable.name == "SGT":
                                     x_quantity = [["energy", E_lab, t_lab, "MeV"]]
                                 else:

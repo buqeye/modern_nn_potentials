@@ -27,7 +27,7 @@ class GPHyperparameters:
 
         Parameters
         ----------
-        ls_class (LengthScale) : LengthScale object with relevant information.
+        ls_class (LengthScale array) : LengthScale object with relevant information.
         center (float) : initial guess for the mean of the distribution.
         ratio (array) : array of values for the dimensionless expansion parameter
         nugget (float) : small number used for allowing white-noise error into fitting procedures.
@@ -53,11 +53,6 @@ class GPHyperparameters:
             self.ls_upper_array = np.append(self.ls_upper_array, lsc.ls_bound_upper)
             self.whether_fit_array = np.append(self.whether_fit_array, lsc.whether_fit)
 
-        # self.ls = ls_class.ls_guess
-        # self.ls_lower = ls_class.ls_bound_lower
-        # self.ls_upper = ls_class.ls_bound_upper
-        # self.whether_fit = ls_class.whether_fit
-
         self.center = center
         self.ratio = ratio
         self.nugget = nugget
@@ -70,28 +65,20 @@ class GPHyperparameters:
 
 class FileNaming:
     def __init__(self,
-                 # scheme, scale,
                  Q_param, p_param,
-                 # input_space,
                  filename_addendum=""):
         """
         Information necessary to name files for output figures.
 
         Parameters
         ----------
-        scheme (str) : name of the scheme
-        scale (str) : name of the scale
         Q_param (str) : name of the Q parametrization
         p_param (str) : name of the p parametrization
-        input_space (str) : name of the input space (x-variable)
         filename_addendum (str) : optional extra string
             default : ""
         """
-        # self.scheme = scheme
-        # self.scale = scale
         self.Q_param = Q_param
         self.p_param = p_param
-        # self.vs_what = input_space
         self.filename_addendum = filename_addendum
 
 
@@ -192,16 +179,13 @@ class InputSpaceBunch:
 class ObservableBunch:
     def __init__(self, name, data,
                  x_array,
-                 # energies, angles,
                  title, ref_type, nn_interaction, unit_string = None, constraint=None):
         """
         Class for an observable
         name (string) : (abbreviated) name for the observable
         data (array) : coefficient values at each order over the mesh
-        energies (array) : energies at which the observable will be evaluated (should be None for observables
-            plotted against angle)
-        angles (array) : angles at which the observable will be evaluated (should be None for observables
-            plotted against energy)
+        x_array (array) : array(s) corresponding to the dimensions of the data.
+            For example, for the differential cross section (DSG), this would be [energies, angles].
         title (string) : title for the coefficient plot
         ref_type (string) : tells whether the reference scale (to be divided out of the coefficient
             values) has dimension (e.g., the case of the cross section) or not (e.g., the case of the
@@ -216,8 +200,6 @@ class ObservableBunch:
         """
         self.name = name
         self.data = data
-        # self.energies = energies
-        # self.angles = angles
         self.x_array = x_array
         self.title = title
         self.ref_type = ref_type
@@ -242,115 +224,6 @@ class Interpolation:
         # self.f_interp = interp1d(self.x, self.y, kind=self.kind)
         self.f_interp = interp1d(self.x, self.y)
 
-
-# class TrainTestSplit:
-#     def __init__(self, name, n_train, n_test_inter, isclose_factor=0.01,
-#                  offset_train_min_factor=0, offset_train_max_factor=0,
-#                  xmin_train_factor=0, xmax_train_factor=1,
-#                  offset_test_min_factor=0, offset_test_max_factor=0,
-#                  xmin_test_factor=0, xmax_test_factor=1,
-#                  train_at_ends=True, test_at_ends=False):
-#         """
-#         Class for an input space (i.e., x-coordinate)
-#
-#         name (str) : (abbreviated) name for the combination of training and testing masks
-#         n_train (int) : number of intervals into which to split x, with training points at the
-#             edges of each interval
-#         n_test_inter (int) : number of subintervals into which to split the intervals between
-#             training points, with testing points at the edges of each subinterval
-#         isclose_factor (float) : fraction of the total input space for the tolerance of making
-#             sure that training and testing points don't coincide
-#         offset_train_min_factor (float) : fraction above the minimum of the input space where
-#             the first potential training point ought to go
-#         offset_train_max_factor (float) : fraction below the maximum of the input space where
-#             the last potential training point ought to go
-#         xmin_train_factor (float) : fraction of the input space below which there ought not to
-#             be training points
-#         xmax_train_factor (float) : fraction of the input space above which there ought not to
-#             be training points
-#         offset_test_min_factor (float) : fraction above the minimum of the input space where
-#             the first potential testing point ought to go
-#         offset_test_max_factor (float) : fraction below the maximum of the input space where
-#             the last potential testing point ought to go
-#         xmin_test_factor (float) : fraction of the input space below which there ought not to
-#             be testing points
-#         xmax_test_factor (float) : fraction of the input space above which there ought not to
-#             be testing points
-#         train_at_ends (bool) : whether training points should be allowed at or near the
-#             endpoints of x
-#         test_at_ends (bool) : whether testing points should be allowed at or near the endpoints
-#             of x
-#         """
-#         self.name = name
-#         self.n_train = n_train
-#         self.n_test_inter = n_test_inter
-#         self.isclose_factor = isclose_factor
-#         self.offset_train_min_factor = offset_train_min_factor
-#         self.offset_train_max_factor = offset_train_max_factor
-#         self.xmin_train_factor = xmin_train_factor
-#         self.xmax_train_factor = xmax_train_factor
-#         self.offset_test_min_factor = offset_test_min_factor
-#         self.offset_test_max_factor = offset_test_max_factor
-#         self.xmin_test_factor = xmin_test_factor
-#         self.xmax_test_factor = xmax_test_factor
-#         self.train_at_ends = train_at_ends
-#         self.test_at_ends = test_at_ends
-#
-#     def make_masks(self, x, y):
-#         """Returns the training and testing points in the input space and the corresponding
-#         (interpolated) data values after calculating the actual values for xmin, xmax, and
-#         offsets using the corresponding factors and the input space
-#
-#         Parameters
-#         ----------
-#         x (1D array) : input space
-#         y (ND array) : data points at each input space value, with N>1 dimensions for N
-#             orders
-#         """
-#         self.x = x
-#         self.y = y
-#
-#         print(np.shape(self.x))
-#         print(np.shape(self.y))
-#         # calculates the actual value for each offset, xmin, and xmax
-#         self.offset_train_min = self.offset_train_min_factor \
-#                                 * (np.max(self.x) - np.min(self.x))
-#         self.offset_train_max = self.offset_train_max_factor \
-#                                 * (np.max(self.x) - np.min(self.x))
-#         print(self.xmin_train_factor)
-#         print(np.max(self.x) - np.min(self.x))
-#         self.xmin_train = np.min(self.x) + np.array(self.xmin_train_factor) * \
-#                           (np.max(self.x) - np.min(self.x))
-#         print(self.xmin_train)
-#         self.xmax_train = np.min(self.x) + np.array(self.xmax_train_factor) * \
-#                           (np.max(self.x) - np.min(self.x))
-#         print(self.xmax_train)
-#         self.offset_test_min = self.offset_test_min_factor \
-#                                * (np.max(self.x) - np.min(self.x))
-#         self.offset_test_max = self.offset_test_max_factor \
-#                                * (np.max(self.x) - np.min(self.x))
-#         self.xmin_test = np.min(self.x) + np.array(self.xmin_test_factor) * \
-#                          (np.max(self.x) - np.min(self.x))
-#         self.xmax_test = np.min(self.x) + np.array(self.xmax_test_factor) * \
-#                          (np.max(self.x) - np.min(self.x))
-#
-#         self.interp_obj = Interpolation(self.x, self.y, kind='cubic')
-#
-#         # creates the x and y training and testing points
-#         self.x_train, self.x_test, self.y_train, self.y_test = \
-#             versatile_train_test_split(self.interp_obj,
-#                                        self.n_train, n_test_inter=self.n_test_inter,
-#                                        isclose_factor=self.isclose_factor,
-#                                        offset_train_min=self.offset_train_min,
-#                                        offset_train_max=self.offset_train_max,
-#                                        xmin_train=self.xmin_train, xmax_train=self.xmax_train,
-#                                        offset_test_min=self.offset_test_min,
-#                                        offset_test_max=self.offset_test_max,
-#                                        xmin_test=self.xmin_test, xmax_test=self.xmax_test,
-#                                        train_at_ends=self.train_at_ends, test_at_ends=self.test_at_ends)
-#
-#         return self.x_train, self.x_test, self.y_train, self.y_test
-
 class TrainTestSplit:
     def __init__(self, name, n_train, n_test_inter, isclose_factor=0.01,
                  offset_train_min_factor=0, offset_train_max_factor=0,
@@ -362,31 +235,31 @@ class TrainTestSplit:
         Class for an input space (i.e., x-coordinate)
 
         name (str) : (abbreviated) name for the combination of training and testing masks
-        n_train (int) : number of intervals into which to split x, with training points at the
+        n_train (int array) : number of intervals into which to split x, with training points at the
             edges of each interval
-        n_test_inter (int) : number of subintervals into which to split the intervals between
+        n_test_inter (int array) : number of subintervals into which to split the intervals between
             training points, with testing points at the edges of each subinterval
-        isclose_factor (float) : fraction of the total input space for the tolerance of making
+        isclose_factor (float or float array) : fraction of the total input space for the tolerance of making
             sure that training and testing points don't coincide
-        offset_train_min_factor (float) : fraction above the minimum of the input space where
+        offset_train_min_factor (float or float array) : fraction above the minimum of the input space where
             the first potential training point ought to go
-        offset_train_max_factor (float) : fraction below the maximum of the input space where
+        offset_train_max_factor (float or float array) : fraction below the maximum of the input space where
             the last potential training point ought to go
-        xmin_train_factor (float) : fraction of the input space below which there ought not to
+        xmin_train_factor (float or float array) : fraction of the input space below which there ought not to
             be training points
-        xmax_train_factor (float) : fraction of the input space above which there ought not to
+        xmax_train_factor (float or float array) : fraction of the input space above which there ought not to
             be training points
-        offset_test_min_factor (float) : fraction above the minimum of the input space where
+        offset_test_min_factor (float or float array) : fraction above the minimum of the input space where
             the first potential testing point ought to go
-        offset_test_max_factor (float) : fraction below the maximum of the input space where
+        offset_test_max_factor (float or float array) : fraction below the maximum of the input space where
             the last potential testing point ought to go
-        xmin_test_factor (float) : fraction of the input space below which there ought not to
+        xmin_test_factor (float or float array) : fraction of the input space below which there ought not to
             be testing points
-        xmax_test_factor (float) : fraction of the input space above which there ought not to
+        xmax_test_factor (float or float array) : fraction of the input space above which there ought not to
             be testing points
-        train_at_ends (bool) : whether training points should be allowed at or near the
+        train_at_ends (bool or bool array) : whether training points should be allowed at or near the
             endpoints of x
-        test_at_ends (bool) : whether testing points should be allowed at or near the endpoints
+        test_at_ends (bool or bool array) : whether testing points should be allowed at or near the endpoints
             of x
         """
         self.name = name
@@ -413,58 +286,32 @@ class TrainTestSplit:
 
         Parameters
         ----------
-        x (1D array) : input space
-        y (ND array) : data points at each input space value, with N>1 dimensions for N
-            orders
+        x (ND array) : input space
+        y (oD x ND array) : data points at each input space value, with N>1 dimensions for N dimensions and
+            o orders
         """
         self.x = x
         self.y = y
 
-        print(np.shape(self.x))
-        print(np.shape(self.y))
         # calculates the actual value for each offset, xmin, and xmax
-        # print(self.offset_train_min_factor)
-        # print(np.amax(self.x, axis = tuple(range(self.x.ndim - 1))))
         self.offset_train_min = self.offset_train_min_factor \
                                 * (np.amax(self.x, axis = tuple(range(self.x.ndim - 1))) - np.amin(self.x, axis = tuple(range(self.x.ndim - 1))))
-        # print(np.shape(self.offset_train_min))
-        print(self.offset_train_min)
         self.offset_train_max = self.offset_train_max_factor \
                                 * (np.amax(self.x, axis = tuple(range(self.x.ndim - 1))) - np.amin(self.x, axis = tuple(range(self.x.ndim - 1))))
-        print(self.offset_train_max)
         self.xmin_train = np.amin(self.x, axis = tuple(range(self.x.ndim - 1))) + self.xmin_train_factor * \
                           (np.amax(self.x, axis = tuple(range(self.x.ndim - 1))) - np.amin(self.x, axis = tuple(range(self.x.ndim - 1))))
-        print(self.xmin_train)
         self.xmax_train = np.amin(self.x, axis = tuple(range(self.x.ndim - 1))) + self.xmax_train_factor * \
                           (np.amax(self.x, axis = tuple(range(self.x.ndim - 1))) - np.amin(self.x, axis = tuple(range(self.x.ndim - 1))))
-        print(self.xmax_train)
         self.offset_test_min = self.offset_test_min_factor \
                                * (np.amax(self.x, axis = tuple(range(self.x.ndim - 1))) - np.amin(self.x, axis = tuple(range(self.x.ndim - 1))))
-        print(self.offset_test_min)
         self.offset_test_max = self.offset_test_max_factor \
                                * (np.amax(self.x, axis = tuple(range(self.x.ndim - 1))) - np.amin(self.x, axis = tuple(range(self.x.ndim - 1))))
-        print(self.offset_test_max)
         self.xmin_test = np.amin(self.x, axis = tuple(range(self.x.ndim - 1))) + self.xmin_test_factor * \
                          (np.amax(self.x, axis = tuple(range(self.x.ndim - 1))) - np.amin(self.x, axis = tuple(range(self.x.ndim - 1))))
-        print(self.xmin_test)
         self.xmax_test = np.amin(self.x, axis = tuple(range(self.x.ndim - 1))) + self.xmax_test_factor * \
                          (np.amax(self.x, axis = tuple(range(self.x.ndim - 1))) - np.amin(self.x, axis = tuple(range(self.x.ndim - 1))))
-        print(self.xmax_test)
-
-        # self.interp_obj = Interpolation(self.x, self.y)
 
         # creates the x and y training and testing points
-        # self.x_train, self.x_test, self.y_train, self.y_test = \
-        #     versatile_train_test_split_nd(self.x, self.y,
-        #                                self.n_train, n_test_inter=self.n_test_inter,
-        #                                isclose_factor=self.isclose_factor,
-        #                                offset_train_min=self.offset_train_min,
-        #                                offset_train_max=self.offset_train_max,
-        #                                xmin_train=self.xmin_train, xmax_train=self.xmax_train,
-        #                                offset_test_min=self.offset_test_min,
-        #                                offset_test_max=self.offset_test_max,
-        #                                xmin_test=self.xmin_test, xmax_test=self.xmax_test,
-        #                                train_at_ends=self.train_at_ends, test_at_ends=self.test_at_ends)
         self.x_train, self.x_test, self.y_train, self.y_test = \
             versatile_train_test_split_nd(self)
 
@@ -481,7 +328,7 @@ class ScaleSchemeBunch:
         ----------
         file_name (str) : name for files that includes information about the scale and scheme.
         orders_full (int array) : array with the full range of orders for that scheme and scale.
-        cmaps (cmap) : array of matplotlib cmap objects corresponding to each order of coefficient.
+        cmaps_str (str array) : array of matplotlib cmap objects' names corresponding to each order of coefficient.
         potential_string (str) : name of potential (scheme).
         cutoff_string (str) : name of cutoff (scale).
         dir_path (str) : path to directory where data is stored on each scale/scheme combination.
@@ -496,8 +343,9 @@ class ScaleSchemeBunch:
         self.dir_path = dir_path
 
         self.full_path = self.dir_path + self.file_name
-        self.cmaps = [plt.get_cmap(name) for name in self.cmaps_str]
 
+        # gets matplotlib cmaps and extracts colors and light colors
+        self.cmaps = [plt.get_cmap(name) for name in self.cmaps_str]
         self.colors = [cmap(0.55 - 0.1 * (i == 0)) for i, cmap in enumerate(self.cmaps)]
         self.light_colors = [cmap(0.35) for cmap in self.cmaps]
 
@@ -529,10 +377,10 @@ class LengthScale:
 
         Parameters
         ----------
-        name (str) : name for the instance.
-        ls_guess_factor (float) : ls_guess_factor * total length of the input space = initial guess for length scale.
-        ls_bound_lower_factor (float) : ls_bound_lower_factor * total length of the input space = lower bound for length scale fitting.
-        ls_bound_upper_factor (float) : ls_bound_upper_factor * total length of the input space = upper bound for length scale fitting.
+        name (str) : name for the class instance.
+        ls_guess_factor (float array) : ls_guess_factor * total length of the input space = initial guess for length scale.
+        ls_bound_lower_factor (float array) : ls_bound_lower_factor * total length of the input space = lower bound for length scale fitting.
+        ls_bound_upper_factor (float array) : ls_bound_upper_factor * total length of the input space = upper bound for length scale fitting.
         whether_fit (bool) : should the length scale be fitted or kept constant?
             default : True
         """
@@ -1055,24 +903,32 @@ class LengthScale:
 class GSUMDiagnostics:
     def __init__(self, schemescale, observable, inputspace, traintestsplit,
                  gphyperparameters, orderinfo, filenaming,
-                 #                  fixed_quantity=[None, None, None, None],
-                 x_quantity=[None, None, None]):
+                 x_quantity,
+                 warping_fn=None,
+                 warping_fn_kwargs=None
+                 ):
         """
         Class for everything involving Jordan Melendez's GSUM library for observables that
         can be plotted against angle.
 
         Parameters
         ----------
-        nn_interaction (str) : two-letter string for two nucleons interacting in observables.
+        schemscale (ScaleSchemeBunch) : potential (with cutoff) being considered.
         observable (ObservableBunch) : observable being plotted.
         inputspace (InputSpaceBunch) : input space against which the observable is plotted.
         traintestsplit (TrainTestSplit) : training and testing masks.
         gphyperparameters (GPHyperparameters) : parameters for fitted Gaussian process.
         orderinfo (OrderInfo) : information about the EFT orders and their colors.
         filenaming (FileNaming) : strings for naming the save files.
-        fixed_quantity (list) : [fixed_quantity name (str), fixed_quantity value (float), fixed_quantity array (array), fixed_quantity units (str)]
-        x_quantity (list) : [x_quantity name (str), x_quantity array (array), x_quantity units (str)]
+        x_quantity (list) : information about the default quantities against which the observable is plotted, along with
+            values at which it may be fixed.
+            Of the form [name of the quantity (str), values at which the observable is considered (1D array),
+            values at which the observable can be considered (1D array), units of the quantity (str)] * N,
+            for an observable of N dimensions.
+        warping_fn (callable) : function for distorting the input space.
+        warping_fn_kwargs (dict) : keyword arguments for warping_fn.
         """
+        # information on the scheme and scale (i.e., the potential and cutoff)
         self.schemescale = schemescale
         self.scheme = self.schemescale.potential_string
         self.scale = self.schemescale.cutoff_string
@@ -1088,19 +944,7 @@ class GSUMDiagnostics:
         self.observable_units = self.observable.unit_string
         self.constraint = self.observable.constraint
 
-        #         # energy or angle at which the observable is evaluated, along with all
-        #         # possible energies or angles for evaluation
-        #         self.fixed_quantity_name = []
-        #         self.fixed_quantity_value = []
-        #         self.fixed_quantity_array = []
-        #         self.fixed_quantity_units = []
-        #         for fq in fixed_quantity:
-        #             self.fixed_quantity_name.append(fq[0])
-        #             self.fixed_quantity_value.append(fq[1])
-        #             self.fixed_quantity_array.append(fq[2])
-        #             self.fixed_quantity_units.append(fq[3])
-
-        # angle or energy mesh
+        # information on the quantity(ies) against which the observable is plotted by default
         self.x_quantity_name = []
         self.x_quantity_array = []
         self.x_quantity_full = []
@@ -1109,15 +953,13 @@ class GSUMDiagnostics:
             self.x_quantity_name.append(xq[0])
             self.x_quantity_array.append(xq[1])
             self.x_quantity_full.append(xq[2])
-            print("full shape: " + str(np.shape(xq[2])))
             self.x_quantity_units.append(xq[3])
-
+        # counts the number of dimensions in the input space that are not fixed at one value
         self.x_quantity_num = 0
         for xq in self.x_quantity_array:
             if np.shape(xq)[0] != 1: self.x_quantity_num += 1;
 
         # information on the input space
-        #         self.inputspace = inputspace
         self.vs_what = np.array([])
         self.x = np.array([])
         self.X = np.array([])
@@ -1127,13 +969,8 @@ class GSUMDiagnostics:
             self.vs_what = np.append(self.vs_what, isp.name)
             self.caption_coeffs = np.append(self.caption_coeffs, isp.caption)
             self.title_coeffs = np.append(self.title_coeffs, isp.title)
-        #         self.x = np.array(list(itertools.product(tuple(
-        #                     [isp.input_space(**{"deg_input": self.x_quantity_array[1],
-        #                                         "p_input": E_to_p(self.x_quantity_array[0],
-        #                                                           interaction=self.nn_interaction),
-        #                                         "E_lab": self.x_quantity_array[0],
-        #                                         "interaction": self.nn_interaction}) for isp in inputspace])
-        #                               )))
+
+        # calculates the input space array
         try:
             self.x_full = gm.cartesian(*[isp.input_space(**{"deg_input": self.x_quantity_full[1],
                                                               "p_input": E_to_p(self.x_quantity_full[0],
@@ -1141,7 +978,6 @@ class GSUMDiagnostics:
                                                               "E_lab": self.x_quantity_full[0],
                                                               "interaction": self.nn_interaction}) for isp in
                                            inputspace])
-            print("self.x_full has shape " + str(np.shape(self.x_full)))
             self.x = gm.cartesian(*[isp.input_space(**{"deg_input": self.x_quantity_array[1],
                                                          "p_input": E_to_p(self.x_quantity_array[0],
                                                                            interaction=self.nn_interaction),
@@ -1154,55 +990,44 @@ class GSUMDiagnostics:
                                   interaction=self.nn_interaction),
                 "E_lab": self.x_quantity_full[0],
                 "interaction": self.nn_interaction}) for isp in inputspace])
-            print("self.x_full has shape " + str(np.shape(self.x_full)))
             self.x = gm.cartesian(*[isp.input_space(**{
                 "p_input": E_to_p(self.x_quantity_array[0],
                                   interaction=self.nn_interaction),
                 "E_lab": self.x_quantity_array[0],
                 "interaction": self.nn_interaction}) for isp in inputspace])
-        print("self.x has shape " + str(np.shape(self.x)))
-        print("self.x = " + str(self.x))
-        self.X = self.x[..., None]
-        print("self.X has shape " + str(np.shape(self.X)))
 
-        #         print(tuple((np.shape(xq) for xq in self.x_quantity_array)))
-        #         print((len(self.x_quantity_array)))
+        self.X = self.x[..., None]
+
+        # reshapes the input array
         self.x = np.reshape(self.x,
                             tuple(len(xq) for xq in self.x_quantity_array if len(xq) > 1) + \
                             (self.x_quantity_num,))
-        print("self.x has shape " + str(np.shape(self.x)))
-        print("self.x = " + str(self.x))
         self.X = np.reshape(self.X,
                             tuple(len(xq) for xq in self.x_quantity_array if len(xq) > 1) + \
                             (self.x_quantity_num,) + (1,))
-        print("self.X has shape " + str(np.shape(self.X)))
 
-        #         information on the train/test split
+        # information on the train/test split
         self.traintestsplit = traintestsplit
-        #         self.train_pts_loc = self.traintestsplit.name
-        #         self.x_train = self.traintestsplit.x_train
-        #         self.n_train_pts = len(self.x_train)
-        #         self.x_test = self.traintestsplit.x_test
-        #         self.n_test_pts = len(self.x_test)
-        #         self.y_train = self.traintestsplit.y_train
-        #         self.y_test = self.traintestsplit.y_test
 
-        # data
-        print("self.data has shape " + str(np.shape(self.data)))
+        # creates a mask for treating the observable as fixed in at least one dimension
         mymask = functools.reduce(np.multiply,
                                   np.ix_(*[np.isin(xqfull, xqval).astype(int) for (xqfull, xqval) in
                                            zip(self.x_quantity_full, self.x_quantity_array)]))
-        print("mymask has shape " + str(np.shape(mymask)))
         mymask_tiled = np.tile(mymask, (np.shape(self.data)[0],) +
                                (1,) * (self.data.ndim - 1)
                                )
-        print("mymask_tiled has shape " + str(np.shape(mymask_tiled)))
+        # masks the data
         self.data = self.data[mymask_tiled.astype(bool)]
-        print("self.data has shape " + str(np.shape(self.data)))
         self.data = np.reshape(self.data, (np.shape(mymask_tiled)[0],) +
                                tuple([len(arr) for arr in self.x_quantity_array if len(arr) > 1]))
-        print("self.data has shape " + str(np.shape(self.data)))
 
+        # applies a warping function that distorts the input space
+        if warping_fn is None:
+            pass
+        else:
+            self.x = warping_fn(self.x, **warping_fn_kwargs)
+
+        # information on the train/test split
         self.train_pts_loc = self.traintestsplit.name
         self.traintestsplit.make_masks(self.x, self.data)
         self.x_train = self.traintestsplit.x_train
@@ -1219,12 +1044,6 @@ class GSUMDiagnostics:
         self.ls_array = self.gphyperparameters.ls_array
         self.ls_lower = self.gphyperparameters.ls_lower_array
         self.ls_upper = self.gphyperparameters.ls_upper_array
-        #         for (lsv, lsl, lsu) in zip(gphyperparameters.ls,
-        #                                    gphyperparameters.ls_lower,
-        #                                    gphyperparameters.ls_upper):
-        #             self.ls.append(lsv)
-        #             self.ls_lower.append(lsl)
-        #             self.ls_upper.append(lsu)
         self.whether_fit_array = self.gphyperparameters.whether_fit_array
         self.center = self.gphyperparameters.center
         self.ratio = self.gphyperparameters.ratio
@@ -1236,7 +1055,6 @@ class GSUMDiagnostics:
         self.sd = self.gphyperparameters.sd
 
         # information on the orders at which the potential is evaluated
-
         self.orderinfo = orderinfo
         self.nn_orders_full = self.orderinfo.orders_full
         self.excluded = self.orderinfo.excluded
@@ -1246,6 +1064,7 @@ class GSUMDiagnostics:
         self.orders_restricted = self.orderinfo.orders_restricted
         self.mask_eval = self.orderinfo.mask_eval
 
+        # names and labels for the orders under test. Defaults to a familiar scheme if none is specified.
         if self.orderinfo.orders_names_dict is None:
             self.orders_names_dict = {
                 6: "N4LO+",
@@ -1269,121 +1088,25 @@ class GSUMDiagnostics:
         self.p_param = self.filenaming.p_param
         self.filename_addendum = self.filenaming.filename_addendum
 
-        #         # for plotting observables at a fixed energy
-        #         if self.fixed_quantity_name == "energy":
-        #             self.fixed_idx = np.nonzero(self.fixed_quantity_array == self.fixed_quantity_value)[0][0]
-
-        #             self.data = self.data[:, self.fixed_idx, :].T
-
-        #             self.X_train = self.x_train[:, None]
-        #             self.y_train = self.y_train[:, self.fixed_idx, :].T
-        #             self.X_test = self.x_test[:, None]
-        #             self.y_test = self.y_test[:, self.fixed_idx, :].T
-
-        #             # determines the reference scale for the truncation-error model, including for
-        #             # training and testing
-        #             if self.ref_type == "dimensionless":
-        #                 self.ref = np.ones(len(self.x)) * 1
-        #                 self.ref_train = np.ones(len(self.x_train)) * 1
-        #                 self.ref_test = np.ones(len(self.x_test)) * 1
-
-        #             elif self.ref_type == "dimensionful":
-        #                 self.ref = self.data[:, -1]
-
-        #                 self.interp_f_ref = interp1d(self.x, self.ref)
-        #                 self.ref_train = self.interp_f_ref(self.x_train)
-        #                 self.ref_test = self.interp_f_ref(self.x_test)
-
-        #         # for plotting observables at a fixed angle
-        #         elif self.fixed_quantity_name == "angle":
-        #             if self.fixed_quantity_value == 0:
-        #                 self.X_train = self.x_train[:, None]
-        #                 self.y_train = self.y_train.T
-        #                 self.X_test = self.x_test[:, None]
-        #                 self.y_test = self.y_test.T
-        #             else:
-        #                 self.fixed_idx = np.nonzero(self.fixed_quantity_array == self.fixed_quantity_value)[0][0]
-
-        #                 self.data = self.data[:, :, self.fixed_idx].T
-
-        #                 self.X_train = self.x_train[:, None]
-        #                 self.y_train = self.y_train[:, self.fixed_idx, :].T
-        #                 self.X_test = self.x_test[:, None]
-        #                 self.y_test = self.y_test[:, self.fixed_idx, :].T
-
-        #             # determines the reference scale for the truncation-error model, including for
-        #             # training and testing
-        #             if self.ref_type == "dimensionless":
-        #                 self.ref = np.ones(len(self.x)) * 1
-        #                 self.ref_train = np.ones(len(self.x_train)) * 1
-        #                 self.ref_test = np.ones(len(self.x_test)) * 1
-        #             elif self.ref_type == "dimensionful":
-        #                 if self.fixed_quantity_value == 0:
-        #                     self.ref = self.data[-1]
-        #                     self.data = self.data.T
-        #                 else:
-        #                     self.ref = self.data[:, -1]
-
-        #                 self.interp_f_ref = interp1d(self.x, self.ref)
-        #                 self.ref_train = self.interp_f_ref(self.x_train)
-        #                 self.ref_test = self.interp_f_ref(self.x_test)
-
-        #         # uses interpolation to find the proper reference scales
-        #         self.interp_f_ref = interp1d(self.x, self.ref)
-
-        #         # data
-        #         print("self.data has shape " + str(np.shape(self.data)))
-        #         mymask = functools.reduce(np.multiply,
-        #                         np.ix_(*[np.isin(xqfull, xqval).astype(int) for (xqfull, xqval) in
-        #                                  zip(self.x_quantity_full, self.x_quantity_array)]))
-        #         print("mymask has shape " + str(np.shape(mymask)))
-        #         mymask_tiled = np.tile(mymask, (np.shape(self.data)[0], ) +
-        #                          (1, ) * (self.data.ndim - 1)
-        #                         )
-        #         print("mymask_tiled has shape " + str(np.shape(mymask_tiled)))
-        #         self.data = self.data[mymask_tiled.astype(bool)]
-        #         print("self.data has shape " + str(np.shape(self.data)))
-        #         self.data = np.reshape(self.data, (np.shape(mymask_tiled)[0], ) +
-        #                         tuple([len(arr) for arr in self.x_quantity_array]))
-        #         print("self.data has shape " + str(np.shape(self.data)))
-
-        # ref
+        # sets the reference scale
         if self.ref_type == "dimensionless":
             self.ref = np.ones(np.shape(self.data)[1:])
-            print("self.ref has shape " + str(np.shape(self.ref)))
-
-            #             print(np.shape(self.x[mymask.astype(bool)]))
-            #             print(np.shape(np.reshape(self.ref, (np.prod(np.shape(self.ref)), ))))
-            #             print(np.shape(self.x_train))
             self.ref_train = np.ones(np.shape(self.x_train)[0])
-            print("self.ref_train has shape " + str(np.shape(self.ref_train)))
-
             self.ref_test = np.ones(np.shape(self.x_test)[0])
-            print("self.ref_test has shape " + str(np.shape(self.ref_test)))
 
         elif self.ref_type == "dimensionful":
             self.ref = self.data[-1, ...]
-            print("self.ref has shape " + str(np.shape(self.ref)))
-
-            #             print(np.shape(self.x[mymask.astype(bool)]))
-            #             print(np.shape(np.reshape(self.ref, (np.prod(np.shape(self.ref)), ))))
-            #             print(np.shape(self.x_train))
-            print(np.shape(mymask))
-            print(np.shape(self.x))
             if mymask.ndim <= np.squeeze(self.x).ndim:
                 self.ref_train = np.squeeze(griddata(
                     self.x[mymask.astype(bool)],
                     np.reshape(self.ref, (np.prod(np.shape(self.ref)),)),
                     self.x_train
                 ))
-                print("self.ref_train has shape " + str(np.shape(self.ref_train)))
-
                 self.ref_test = np.squeeze(griddata(
                     self.x[mymask.astype(bool)],
                     np.reshape(self.ref, (np.prod(np.shape(self.ref)),)),
                     self.x_test
                 ))
-                print("self.ref_test has shape " + str(np.shape(self.ref_test)))
 
             if mymask.ndim > np.squeeze(self.x).ndim:
                 self.ref_train = np.squeeze(griddata(
@@ -1391,117 +1114,70 @@ class GSUMDiagnostics:
                     np.reshape(self.ref, (np.prod(np.shape(self.ref)),)),
                     self.x_train
                 ))
-                print("self.ref_train has shape " + str(np.shape(self.ref_train)))
-
                 self.ref_test = np.squeeze(griddata(
                     self.x,
                     np.reshape(self.ref, (np.prod(np.shape(self.ref)),)),
                     self.x_test
                 ))
-                print("self.ref_test has shape " + str(np.shape(self.ref_test)))
 
-        # ratio
+        # sets the ratio
         if mymask.ndim <= np.squeeze(self.x).ndim:
-            print("self.ratio has shape " + str(np.shape(self.ratio)))
             self.ratio = np.reshape(self.ratio[mymask.astype(bool)], np.shape(self.data)[1:])
-            print("self.ratio has shape " + str(np.shape(self.ratio)))
             self.ratio_train = np.squeeze(griddata(
                 self.x[mymask.astype(bool)],
                 np.reshape(self.ratio, (np.prod(np.shape(self.ratio)),)),
                 self.x_train
             ))
-            print("self.ratio_train has shape " + str(np.shape(self.ratio_train)))
 
             self.ratio_test = np.squeeze(griddata(
                 self.x[mymask.astype(bool)],
                 np.reshape(self.ratio, (np.prod(np.shape(self.ratio)),)),
                 self.x_test
             ))
-            print("self.ratio_test has shape " + str(np.shape(self.ratio_test)))
 
         elif mymask.ndim > np.squeeze(self.x).ndim:
-            print("self.ratio has shape " + str(np.shape(self.ratio)))
             self.ratio = np.reshape(self.ratio, np.shape(self.data)[1:])
-            print("self.ratio has shape " + str(np.shape(self.ratio)))
             self.ratio_train = np.squeeze(griddata(
                 self.x,
                 np.reshape(self.ratio, (np.prod(np.shape(self.ratio)),)),
                 self.x_train
             ))
-            print("self.ratio_train has shape " + str(np.shape(self.ratio_train)))
 
             self.ratio_test = np.squeeze(griddata(
                 self.x,
                 np.reshape(self.ratio, (np.prod(np.shape(self.ratio)),)),
                 self.x_test
             ))
-            print("self.ratio_test has shape " + str(np.shape(self.ratio_test)))
 
-        print(np.shape(self.data))
-        print(np.shape(self.ratio))
-        print(np.shape(self.ref))
-        print(np.shape(self.nn_orders_full))
-        # Extract the coefficients and define kernel
+        # extracts the coefficients
         self.coeffs = gm.coefficients(np.reshape(self.data, (np.shape(self.data)[0],) +
                                                  (np.prod(np.shape(self.data)[1:]),)).T,
                                       ratio=np.reshape(self.ratio, (np.prod(np.shape(self.ratio)),)),
                                       ref=np.reshape(self.ref, (np.prod(np.shape(self.ratio)),)),
                                       orders=self.nn_orders_full)
-        print("self.coeffs has shape " + str(np.shape(self.coeffs)))
-
-        # uses interpolation to find the proper ratios for training and testing
-        #         self.interp_f_ratio = interp1d(self.x, self.ratio * np.ones(len(self.x)))
-        #         self.ratio_train = self.interp_f_ratio(self.x_train)
-        #         self.coeffs_train = gm.coefficients(self.y_train, ratio=self.ratio_train,
-        #                                             ref=self.ref_train,
-        #                                             orders=self.nn_orders_full)
-        #         self.ratio_test = self.interp_f_ratio(self.x_test)
-        #         self.coeffs_test = gm.coefficients(self.y_test, ratio=self.ratio_test,
-        #                                            ref=self.ref_test,
-        #                                            orders=self.nn_orders_full)
-
-        print(np.shape(self.y_train.T))
-        print(np.shape(self.ratio_train))
-        print(np.shape(self.ref_train))
-        print(np.shape(self.nn_orders_full))
         self.coeffs_train = gm.coefficients(self.y_train.T,
                                             ratio=self.ratio_train,
                                             ref=self.ref_train,
                                             orders=self.nn_orders_full)
-        print("self.coeffs_train has shape " + str(np.shape(self.coeffs_train)))
         self.coeffs_test = gm.coefficients(self.y_test.T,
                                            ratio=self.ratio_test,
                                            ref=self.ref_test,
                                            orders=self.nn_orders_full)
-        print("self.coeffs_test has shape " + str(np.shape(self.coeffs_test)))
 
         # defines the kernel
-        #         if self.fixed_quantity_name == "energy" and \
-        #                 self.fixed_quantity_value < 70.1 and \
-        #                 self.fixed_quantity_value >= 1.:
-        #             self.kernel = RBF(length_scale=self.ls,
-        #                               length_scale_bounds=(self.ls_lower, self.ls_upper)) + \
-        #                           WhiteKernel(1e-6, noise_level_bounds='fixed')
-        #         else:
-        #             self.kernel = RBF(length_scale=self.ls, \
-        #                               length_scale_bounds=(self.ls_lower, self.ls_upper)) + \
-        #                           WhiteKernel(1e-10, noise_level_bounds='fixed')
         self.kernel = RBF(length_scale=self.ls_array,
                           length_scale_bounds=np.array([[lsl, lsu]
                                                         for (lsl, lsu) in zip(self.ls_lower, self.ls_upper)])) + \
                       WhiteKernel(1e-6, noise_level_bounds='fixed')
 
-        # Define the GP
+        # defines the Gaussian process (GP) object
         self.gp = gm.ConjugateGaussianProcess(
             self.kernel, center=self.center, disp=self.disp, df=self.df,
             scale=self.std_est, n_restarts_optimizer=50, random_state=self.seed,
             sd=self.sd)
 
-        # restricts coeffs and colors to only those orders desired for
-        # evaluating statistical diagnostics
+        # restricts coeffs and colors to only those orders desired for evaluating statistical diagnostics
         self.nn_orders = self.orders_restricted
-        print(np.shape(self.coeffs))
-        print(np.shape(self.mask_restricted))
         self.coeffs = (self.coeffs.T[self.mask_restricted]).T
         self.coeffs_train = (self.coeffs_train.T[self.mask_restricted]).T
         self.coeffs_test = (self.coeffs_test.T[self.mask_restricted]).T
@@ -1521,18 +1197,10 @@ class GSUMDiagnostics:
         """
         # optimizes the ConjugateGaussianProcess for the given parameters and extracts the
         # length scale
-        print("self.x_train has shape " + str(np.shape(self.x_train)))
-        print("self.X_train has shape " + str(np.shape(self.X_train)))
-        print("self.coeffs_train has shape " + str(np.shape(self.coeffs_train)))
         self.gp.fit(self.X_train, self.coeffs_train)
         self.ls_true = np.exp(self.gp.kernel_.theta)
-        print("self.ls_true = " + str(self.ls_true))
 
-        # #         print("self.X has shape " + str(np.shape(self.X)))
-        #         self.pred, self.std = self.gp.predict(np.reshape(self.x,
-        #                                 (np.prod(np.shape(self.x)[:-1]), ) + (np.shape(self.x)[-1], )),
-        #                     return_std=True)
-        print("self.X_test has shape " + str(np.shape(self.X_test)))
+        # predicts the GP over specified x values, with error bars
         if np.squeeze(self.x).ndim == 1:
             self.pred, self.std = self.gp.predict(self.x,
                                                   return_std=True)
@@ -1540,10 +1208,9 @@ class GSUMDiagnostics:
             self.pred, self.std = self.gp.predict(self.X_test,
                                                   return_std=True)
         self.underlying_std = np.sqrt(self.gp.cov_factor_)
-        print("self.underlying_std = " + str(self.underlying_std))
 
         if np.shape(self.x)[-1] == 1:
-            # plots the coefficients against the given input space
+            # plots the coefficients against the given input space in 1D
             if ax is None:
                 fig, ax = plt.subplots(figsize=(3.2, 2.2))
 
@@ -1586,9 +1253,6 @@ class GSUMDiagnostics:
                 loc='best',
                 title=self.title_coeffs[0]).set_zorder(5 * i)
 
-            #             print(np.array([self.constraint[-1] == name for name in self.x_quantity_name]).astype(bool))
-            #             print(np.array(self.x_quantity_array)[np.array([self.constraint[-1] == name for name in self.x_quantity_name])])
-            #             print(np.shape(np.array(self.x_quantity_array)[np.array([self.constraint[-1] == name for name in self.x_quantity_name])][0]))
             # takes constraint into account, if applicable
             if self.constraint is not None and \
                     np.any([self.constraint[-1] == name for name in self.x_quantity_name]) and \
@@ -1646,8 +1310,9 @@ class GSUMDiagnostics:
             ax.text(np.min(self.x) + 0.74 * (np.max(self.x) - np.min(self.x)),
                     -1.2 * self.underlying_std, r'$\sigma_{\mathrm{fit}}$', fontsize=14,
                     horizontalalignment='center', verticalalignment='bottom', zorder=5 * i)
+
         elif np.shape(self.x)[-1] == 2:
-            print(np.shape(self.coeffs)[-1])
+            # plots the coefficients against the given input space in 2D
             fig, ax_array = plt.subplots(np.shape(self.coeffs)[-1], 1,
                                          figsize=(3.2, np.shape(self.coeffs)[-1] * 2.2))
 
@@ -1670,6 +1335,7 @@ class GSUMDiagnostics:
                     np.amax(self.x[..., 1]) + 0.03 * (np.amax(self.x[..., 1]) - np.amin(self.x[..., 1]))
                 )
 
+                # plots the length scale
                 ax_array[i].arrow((1.06 - 1) / (2 * 1.06),
                                   (1.06 - 1) / (2 * 1.06),
                                   self.ls_true[0] / 1.06 / (np.amax(self.x[..., 0]) - np.amin(self.x[..., 0])),
