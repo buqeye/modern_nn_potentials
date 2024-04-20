@@ -369,8 +369,10 @@ def versatile_train_test_split_nd(tts):
         *[np.linspace(np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)))[idx] + tts.offset_test_min[idx],
                       np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1)))[idx] - tts.offset_test_max[idx],
                       tts.n_train[idx] * tts.n_test_inter[idx] + 1) for idx in range(tts.y.ndim - 1)])
-    # eliminates, using a mask, all values for the training and testing x points outside of
+
+    # eliminates, using a mask, all values for the training and testing x points outside of...
     if np.shape(tts.x)[-1] == 2:
+        # ... the quadrilateral described by the boundaries of the input space
         warped_poly = Polygon(np.concatenate([
             tts.x[0, :, ...],
             tts.x[:, -1, ...],
@@ -382,6 +384,7 @@ def versatile_train_test_split_nd(tts):
         x_test = x_test[[warped_poly.buffer(0.001).contains(Point(pt)) for pt in x_test], ...]
 
     elif np.shape(tts.x)[-1] == 1:
+        # ... the range encompassed by the max. and min. of the input space
         x_train = x_train[
                            [(pt >= np.min(tts.x[:, 0]) and pt <= np.max(tts.x[:, 0])) for pt in x_train], ...][:,
                        None]

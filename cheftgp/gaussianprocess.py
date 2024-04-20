@@ -13,9 +13,12 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import gsum as gm
-from sklearn.gaussian_process.kernels import RBF, WhiteKernel
+from sklearn.gaussian_process.kernels import RBF, WhiteKernel, Kernel, NormalizedKernelMixin, Hyperparameter, \
+    _check_length_scale
+from scipy.spatial.distance import pdist, squareform, cdist
 import itertools
 import functools
+from shapely.geometry import Polygon, Point
 
 setup_rc_params()
 
@@ -66,7 +69,10 @@ class GPHyperparameters:
 class FileNaming:
     def __init__(self,
                  Q_param, p_param,
-                 filename_addendum=""):
+                 filename_addendum="",
+                 scheme = "",
+                 scale = "",
+                 vs_what = ""):
         """
         Information necessary to name files for output figures.
 
@@ -80,7 +86,9 @@ class FileNaming:
         self.Q_param = Q_param
         self.p_param = p_param
         self.filename_addendum = filename_addendum
-
+        self.scheme = scheme
+        self.scale = scale
+        self.vs_what = vs_what
 
 class PosteriorBounds:
     def __init__(self, x_lower, x_upper, x_n, y_lower, y_upper, y_n):
@@ -2080,10 +2088,13 @@ def ratio_fn_curvewise(X, p_grid_train, p_param, p_shape, Q_param, mpi_var, lamb
     single_expansion (bool) : if True, then mpi_var is set to 0 within Q_approx
         Default : False
     """
+    # print("p_grid_train in ratio_fn = " + str(p_grid_train))
     p = np.array([])
     for pt in p_grid_train:
+        # print("pt = " + str(pt))
         try:
-            p = np.append(p, p_approx(p_name = p_param, degrees = np.array([pt[0]]), prel = np.array([pt[1]])))
+            # p = np.append(p, p_approx(p_name = p_param, degrees = np.array([pt[0]]), prel = np.array([pt[1]])))
+            p = np.append(p, p_approx(p_name=p_param, degrees=np.array([pt[1]]), prel=np.array([pt[0]])))
         except:
             p = np.append(p, p_approx(p_name=p_param, degrees=np.array([0]), prel=np.array([pt[0]])))
 
@@ -2132,6 +2143,7 @@ def make_likelihood_filename(FileNameObj,
             + "posterior_pdf_curvewise"
             + "_"
             + str(observable_name)
+            # + "_SMS_500MeV"
             + "_"
             + str(FileNameObj.scheme)
             + "_"
@@ -2145,10 +2157,13 @@ def make_likelihood_filename(FileNameObj,
             + str(FileNameObj.p_param)
             + "_"
             + str(FileNameObj.vs_what)
+            # + "_cosxprel"
     )
 
     for (logprior, random_var) in zip(logpriors_names, random_vars_array):
         filename += "_" + str(random_var.name) + "_" + str(logprior) + '_' + str(len(random_var.var)) + "pts"
+
+    print(filename)
 
     return str(filename.replace("__", "_") + FileNameObj.filename_addendum + ".txt")
 
@@ -2358,14 +2373,14 @@ def plot_posteriors_curvewise(
                           mom_fn,
                           mom_fn_kwargs,
 
-                          scaling_fn,
-                          scaling_fn_kwargs,
-
                           ratio_fn,
                           ratio_fn_kwargs,
 
                           log_likelihood_fn,
                           log_likelihood_fn_kwargs,
+
+                          warping_fn = None,
+                          warping_fn_kwargs = None,
 
                           orders=2,
                           FileName = None,
@@ -2414,8 +2429,8 @@ def plot_posteriors_curvewise(
     mom_fn (function) : function for converting from lab energy to relative momentum.
     mom_fn_kwargs (dict) : keyword arguments for mom_fn.
 
-    scaling_fn (function) : function for scaling input space.
-    scaling_fn_kwargs (dict) : keyword arguments for scaling_fn.
+    warping_fn (function) : function for scaling input space.
+    warping_fn_kwargs (dict) : keyword arguments for warping_fn.
 
     ratio_fn (function) : function for evaluating the ratio (dimensionless expansion parameter, or Q).
     ratio_fn_kwargs (dict) : keyword arguments for ratio_fn.
@@ -2459,6 +2474,11 @@ def plot_posteriors_curvewise(
     # list for appending log-likelihoods
     like_list = []
 
+    # sorts out case when warping_fn = None
+    if warping_fn is None:
+        warping_fn = lambda warp : warp
+        warping_fn_kwargs = {}
+
     for (obs_grouping, obs_name, mesh_cart_group) in zip(obs_data_grouped_list, obs_name_grouped_list, mesh_cart_grouped_list):
         for order_counter in range(1, order_num + 1):
             order = np.max(nn_orders_array) - order_num + order_counter
@@ -2469,6 +2489,7 @@ def plot_posteriors_curvewise(
                     raise ValueError("You elected not to use saved data.")
                 else:
                     # if they exist, they are read in, reshaped, and appended to like_list
+                    print("We're looking for data.")
                     like_list.append(np.reshape(
                         np.loadtxt(make_likelihood_filename(FileName,
                                                             "data",
@@ -2493,6 +2514,7 @@ def plot_posteriors_curvewise(
                         # 1D observables
                         if np.shape(obs_data_full)[1] == len(degrees):
                             # observables that depend only on scattering angle (of which none exist)
+                            # doesn't quite work since it needs a momentum
                             # sets kernel
                             kernel_posterior = RBF(length_scale=(LsDeg.ls_guess),
                                                    length_scale_bounds=(
@@ -2503,21 +2525,52 @@ def plot_posteriors_curvewise(
                             degrees_input = InputSpaceDeg.input_space(**{"deg_input": degrees})
                             degrees_train_pts_input = InputSpaceDeg.input_space(**{"deg_input": degrees_train_pts})
 
-                            # sieves the data
-                            obs_data = np.reshape(
-                                obs_data_full,
-                                # (len(self.nn_orders_full), -1))
-                                (len(nn_orders_full_array), -1))
-                            obs_data_train = np.reshape(
-                                obs_data_full[:, np.isin(degrees, degrees_train_pts)],
-                                # (len(self.nn_orders_full), -1))
-                                (len(nn_orders_full_array), -1))
+                            input_space_warped = warping_fn(np.reshape(gm.cartesian(*[degrees_input, ]),
+                                                                       (len(degrees), 1)),
+                                                            **warping_fn_kwargs)
+
+                            grid_train = degrees_train_pts_input
+                            p_grid_train = degrees_train_pts
+
+                            p_grid_train = p_grid_train[
+                                               [(pt >= np.min(input_space_warped[:, 0]) and pt <= np.max(
+                                                   input_space_warped[:, 0])) for
+                                                pt in
+                                                grid_train]][:, None]
+                            grid_train = grid_train[
+                                             [(pt >= np.min(input_space_warped[:, 0]) and pt <= np.max(
+                                                 input_space_warped[:, 0])) for pt
+                                              in
+                                              grid_train]][:, None]
+
+                            obs_data_train = np.array([])
+                            for norder in obs_data_full:
+                                obs_data_train = np.append(obs_data_train, griddata(
+                                    np.reshape(input_space_warped, (np.prod(np.shape(input_space_warped)[0:-1]),) + (
+                                        np.shape(input_space_warped)[-1],)),
+                                    np.reshape(norder, np.prod(np.shape(norder))),
+                                    grid_train)
+                                                           )
+                            obs_data_train = np.reshape(obs_data_train,
+                                                        (np.shape(obs_data_full)[0],) + (np.shape(grid_train)[0],))
+                            print("obs_data_train has shape " + str(np.shape(obs_data_train)))
+
+                            # # sieves the data
+                            # obs_data = np.reshape(
+                            #     obs_data_full,
+                            #     # (len(self.nn_orders_full), -1))
+                            #     (len(nn_orders_full_array), -1))
+                            # obs_data_train = np.reshape(
+                            #     obs_data_full[:, np.isin(degrees, degrees_train_pts)],
+                            #     # (len(self.nn_orders_full), -1))
+                            #     (len(nn_orders_full_array), -1))
 
                             # sets yref
                             if yref_type == "dimensionful":
                                 yref = obs_data_train[-1]
                             elif yref_type == "dimensionless":
-                                yref = np.ones((len(degrees_train_pts)))
+                                # yref = np.ones((len(degrees_train_pts)))
+                                yref = np.ones((np.shape(grid_train)[0],))
 
                             # creates and fits the TruncationTP object
                             gp_post_obs = gm.TruncationTP(kernel_posterior,
@@ -2528,13 +2581,18 @@ def plot_posteriors_curvewise(
                                                           df=df,
                                                           scale=std_est,
                                                           excluded=excluded,
+                                                          # ratio_kws={**ratio_fn_kwargs,
+                                                          #            **{"p_shape": (len(degrees_train_pts))},
+                                                          #            **{"p_grid_train": degrees_train_pts[:, None]}
+                                                          #            },
                                                           ratio_kws={**ratio_fn_kwargs,
-                                                                     **{"p_shape": (len(degrees_train_pts))},
-                                                                     **{"p_grid_train": degrees_train_pts[:, None]}
+                                                                     **{"p_shape": np.shape(p_grid_train)[:-1]},
+                                                                     **{"p_grid_train": p_grid_train}
                                                                      }
                                                           )
                             # fits the TP to data
-                            gp_post_obs.fit(scaling_fn(degrees_train_pts_input, **scaling_fn_kwargs)[:, None],
+                            # gp_post_obs.fit(warping_fn(degrees_train_pts_input, **warping_fn_kwargs)[:, None],
+                            gp_post_obs.fit(grid_train,
                                             (obs_data_train[:order, :]).T,
                                             orders = nn_orders_full_array[:order])
 
@@ -2547,8 +2605,12 @@ def plot_posteriors_curvewise(
                                                         log_likelihood_fn,
                                                         gp_post_ray,
                                                         log_likelihood_fn_kwargs={**log_likelihood_fn_kwargs,
-                                                                                  **{"p_shape": (len(degrees_train_pts))},
-                                                                                  **{"p_grid_train": degrees_train_pts[:, None]}
+                                                                                  # **{"p_shape": (len(degrees_train_pts))},
+                                                                                  # **{"p_grid_train": degrees_train_pts[:, None]}
+                                                                                  **{"p_shape": np.shape(
+                                                                                      p_grid_train)[
+                                                                                                :-1]},
+                                                                                  **{"p_grid_train": p_grid_train}
                                                                                   }
                                                         )
                             obs_loglike = np.reshape(log_like, tuple(
@@ -2584,21 +2646,50 @@ def plot_posteriors_curvewise(
                             tlab_mom = mom_fn(t_lab, **mom_fn_kwargs)
                             tlab_train_pts_mom = mom_fn(t_lab_train_pts, **mom_fn_kwargs)
 
-                            # sieves the data
-                            obs_data = np.reshape(
-                                obs_data_full,
-                                # (len(self.nn_orders_full), -1))
-                                (len(nn_orders_full_array), -1))
-                            obs_data_train = np.reshape(
-                                obs_data_full[:, np.isin(t_lab, t_lab_train_pts)],
-                                # (len(self.nn_orders_full), -1))
-                                (len(nn_orders_full_array), -1))
+                            input_space_warped = warping_fn(np.reshape(gm.cartesian(*[tlab_input, ]),
+                                                                       (len(t_lab), 1)),
+                                                            **warping_fn_kwargs)
+
+                            grid_train = tlab_train_pts_input
+                            p_grid_train = tlab_train_pts_mom
+
+                            p_grid_train = p_grid_train[
+                                [(pt >= np.min(input_space_warped[:, 0]) and pt <= np.max(input_space_warped[:, 0])) for
+                                 pt in
+                                 grid_train]][:, None]
+                            grid_train = grid_train[
+                            [(pt >= np.min(input_space_warped[:, 0]) and pt <= np.max(input_space_warped[:, 0])) for pt
+                             in
+                             grid_train]][:, None]
+
+                            obs_data_train = np.array([])
+                            for norder in obs_data_full:
+                                obs_data_train = np.append(obs_data_train, griddata(
+                                    np.reshape(input_space_warped, (np.prod(np.shape(input_space_warped)[0:-1]),) + (
+                                    np.shape(input_space_warped)[-1],)),
+                                    np.reshape(norder, np.prod(np.shape(norder))),
+                                    grid_train)
+                                                           )
+                            obs_data_train = np.reshape(obs_data_train,
+                                                        (np.shape(obs_data_full)[0],) + (np.shape(grid_train)[0],))
+                            print("obs_data_train has shape " + str(np.shape(obs_data_train)))
+
+                            # # sieves the data
+                            # obs_data = np.reshape(
+                            #     obs_data_full,
+                            #     # (len(self.nn_orders_full), -1))
+                            #     (len(nn_orders_full_array), -1))
+                            # obs_data_train = np.reshape(
+                            #     obs_data_full[:, np.isin(t_lab, t_lab_train_pts)],
+                            #     # (len(self.nn_orders_full), -1))
+                            #     (len(nn_orders_full_array), -1))
 
                             # sets yref
                             if yref_type == "dimensionful":
                                 yref = obs_data_train[-1]
                             elif yref_type == "dimensionless":
-                                yref = np.ones((len(t_lab_train_pts)))
+                                # yref = np.ones((len(t_lab_train_pts)))
+                                yref = np.ones((np.shape(grid_train)[0],))
 
                             # creates and fits the TruncationTP object
                             gp_post_obs = gm.TruncationTP(kernel_posterior,
@@ -2609,13 +2700,18 @@ def plot_posteriors_curvewise(
                                                           df=df,
                                                           scale=std_est,
                                                           excluded=excluded,
+                                                          # ratio_kws = {**ratio_fn_kwargs,
+                                                                       # **{"p_shape" : (len(tlab_train_pts_mom))},
+                                                                       # **{"p_grid_train" : tlab_train_pts_mom[:, None]}
+                                                                       # }
                                                           ratio_kws = {**ratio_fn_kwargs,
-                                                                       **{"p_shape" : (len(tlab_train_pts_mom))},
-                                                                       **{"p_grid_train" : tlab_train_pts_mom[:, None]}
-                                                                       }
+                                                                         **{"p_shape": np.shape(p_grid_train)[:-1]},
+                                                                         **{"p_grid_train": p_grid_train}
+                                                                         }
                                                           )
                             # fits the TP to data
-                            gp_post_obs.fit(scaling_fn(tlab_train_pts_input, **scaling_fn_kwargs)[:, None],
+                            # gp_post_obs.fit(warping_fn(tlab_train_pts_input, **warping_fn_kwargs)[:, None],
+                            gp_post_obs.fit(grid_train,
                                             (obs_data_train[:order, :]).T,
                                             orders = nn_orders_full_array[:order])
 
@@ -2628,8 +2724,12 @@ def plot_posteriors_curvewise(
                                                         log_likelihood_fn,
                                                         gp_post_ray,
                                                         log_likelihood_fn_kwargs={**log_likelihood_fn_kwargs,
-                                                                                  **{"p_shape" : (len(t_lab_train_pts))},
-                                                                                  **{"p_grid_train" : tlab_train_pts_mom[:, None]}
+                                                                                  # **{"p_shape" : (len(t_lab_train_pts))},
+                                                                                  # **{"p_grid_train" : tlab_train_pts_mom[:, None]}
+                                                                                    ** {"p_shape": np.shape(
+                                                                                      p_grid_train)[
+                                                                                                   :-1]},
+                                                                                  **{"p_grid_train": p_grid_train}
                                                                                   }
                                                         )
                             obs_loglike = np.reshape(log_like, tuple(
@@ -2650,9 +2750,9 @@ def plot_posteriors_curvewise(
                     else:
                         # 2D observables
                         # sets kernel
-                        kernel_posterior = RBF(length_scale=(LsDeg.ls_guess, LsTlab.ls_guess),
-                                               length_scale_bounds=((LsDeg.ls_bound_lower, LsDeg.ls_bound_upper),
-                                                                    (LsTlab.ls_bound_lower, LsTlab.ls_bound_upper))) + \
+                        kernel_posterior = RBF(length_scale=(LsTlab.ls_guess, LsDeg.ls_guess),
+                                               length_scale_bounds=((LsTlab.ls_bound_lower, LsTlab.ls_bound_upper),
+                                                                    (LsDeg.ls_bound_lower, LsDeg.ls_bound_upper))) + \
                                            WhiteKernel(1e-6, noise_level_bounds='fixed')
 
                         # converts points in t_lab to the current input space
@@ -2671,50 +2771,92 @@ def plot_posteriors_curvewise(
                         degrees_train_pts_input = InputSpaceDeg.input_space(**{"deg_input": degrees_train_pts,
                                                                                "p_input" : tlab_train_pts_mom})
 
-                        # creates a grid of training points in the 2D input space
-                        if tlab_train_pts_input.ndim == 1 and degrees_train_pts_input.ndim == 1:
-                            grid_train = scaling_fn(np.flip(np.array(list(itertools.product(tlab_train_pts_input, degrees_train_pts_input))), axis = 1),
-                                            **scaling_fn_kwargs)
-                        elif tlab_train_pts_input.ndim == 1 and degrees_train_pts_input.ndim != 1:
-                            grid_train = scaling_fn(np.flip(
-                                    np.array(
-                                        [[np.tile(tlab_train_pts_input, (np.shape(degrees_train_pts_input)[0], 1)).flatten('F')[s], degrees_train_pts_input.flatten('F')[s]] for s in range(degrees_train_pts_input.size)]
-                                    ),
-                                axis=1),
-                                **scaling_fn_kwargs)
-                        elif tlab_train_pts_input.ndim != 1 and degrees_train_pts_input.ndim == 1:
-                            # untested
-                            grid_train = scaling_fn(np.flip(
-                                np.array(
-                                    [[tlab_train_pts_input.flatten('F')[s],
-                                      np.tile(degrees_train_pts_input.flatten('F')[s], (np.shape(tlab_train_pts_input)[1], 1))] for s in range(tlab_train_pts_input.size)]
-                                ),
-                                axis=1),
-                                **scaling_fn_kwargs)
-                        else:
-                            # untested
-                            grid_train = scaling_fn(np.flip(
-                                np.array(
-                                    [[tlab_train_pts_input.flatten('F')[s],
-                                      degrees_train_pts_input.flatten('F')[s]] for s in
-                                     range(tlab_train_pts_input.size)]
-                                ),
-                                axis=1),
-                                **scaling_fn_kwargs)
+                        # # creates a grid of training points in the 2D input space
+                        # if tlab_train_pts_input.ndim == 1 and degrees_train_pts_input.ndim == 1:
+                        #     grid_train = warping_fn(np.flip(np.array(list(itertools.product(tlab_train_pts_input, degrees_train_pts_input))), axis = 1),
+                        #                     **warping_fn_kwargs)
+                        # elif tlab_train_pts_input.ndim == 1 and degrees_train_pts_input.ndim != 1:
+                        #     grid_train = warping_fn(np.flip(
+                        #             np.array(
+                        #                 [[np.tile(tlab_train_pts_input, (np.shape(degrees_train_pts_input)[0], 1)).flatten('F')[s], degrees_train_pts_input.flatten('F')[s]] for s in range(degrees_train_pts_input.size)]
+                        #             ),
+                        #         axis=1),
+                        #         **warping_fn_kwargs)
+                        # elif tlab_train_pts_input.ndim != 1 and degrees_train_pts_input.ndim == 1:
+                        #     # untested
+                        #     grid_train = warping_fn(np.flip(
+                        #         np.array(
+                        #             [[tlab_train_pts_input.flatten('F')[s],
+                        #               np.tile(degrees_train_pts_input.flatten('F')[s], (np.shape(tlab_train_pts_input)[1], 1))] for s in range(tlab_train_pts_input.size)]
+                        #         ),
+                        #         axis=1),
+                        #         **warping_fn_kwargs)
+                        # else:
+                        #     # untested
+                        #     grid_train = warping_fn(np.flip(
+                        #         np.array(
+                        #             [[tlab_train_pts_input.flatten('F')[s],
+                        #               degrees_train_pts_input.flatten('F')[s]] for s in
+                        #              range(tlab_train_pts_input.size)]
+                        #         ),
+                        #         axis=1),
+                        #         **warping_fn_kwargs)
+                        # print("grid_train = " + str(grid_train))
 
-                        # sieves the data
-                        obs_data = np.reshape(
-                            obs_data_full,
-                            (len(nn_orders_full_array), -1))
-                        obs_data_train = np.reshape(
-                            obs_data_full[:, np.isin(t_lab, t_lab_train_pts)][..., np.isin(degrees, degrees_train_pts)],
-                            (len(nn_orders_full_array), -1))
+                        input_space_warped = warping_fn(np.reshape(gm.cartesian(*[tlab_input, degrees_input]),
+                                                 (len(t_lab), len(degrees), 2)), **warping_fn_kwargs)
+                        # print("input_space has shape " + str(np.shape(input_space_warped)))
+
+                        warped_poly = Polygon(np.concatenate([
+                            input_space_warped[0, :, ...],
+                            input_space_warped[:, -1, ...],
+                            input_space_warped[-1, :, ...],
+                            np.flip(input_space_warped[:, 0, ...], axis=0),
+                        ]))
+
+                        grid_train = gm.cartesian(*[tlab_train_pts_input, degrees_train_pts_input])
+                        print("grid_train has shape " + str(np.shape(grid_train)))
+
+                        p_grid_train = gm.cartesian(*[tlab_train_pts_mom, degrees_train_pts])
+                        p_grid_train = p_grid_train[
+                            [warped_poly.buffer(0.001).contains(Point(pt)) for pt in grid_train], ...]
+                        # p_grid_train = warping_fn(p_grid_train, **warping_fn_kwargs)
+                        print("p_grid_train has shape " + str(np.shape(p_grid_train)))
+                        print("p_grid_train = " + str(p_grid_train))
+                        # print("The alternative is " + str(np.flip(np.array(list(itertools.product(tlab_train_pts_mom, degrees_train_pts))), axis = 1)))
+
+
+                        grid_train = grid_train[[warped_poly.buffer(0.001).contains(Point(pt)) for pt in grid_train], ...]
+                        # grid_train = warping_fn(grid_train, **warping_fn_kwargs)
+                        print("The filtered grid_train has shape " + str(np.shape(grid_train)))
+                        print("The filtered grid_train is " + str(grid_train))
+
+
+
+                        # # sieves the data
+                        # obs_data = np.reshape(
+                        #     obs_data_full,
+                        #     (len(nn_orders_full_array), -1))
+                        # obs_data_train = np.reshape(
+                        #     obs_data_full[:, np.isin(t_lab, t_lab_train_pts)][..., np.isin(degrees, degrees_train_pts)],
+                        #     (len(nn_orders_full_array), -1))
+                        # # print("obs_data_train has shape " + str(np.shape(obs_data_train)))
+
+                        obs_data_train = np.array([])
+                        for norder in obs_data_full:
+                            obs_data_train = np.append(obs_data_train, griddata(
+                                np.reshape(input_space_warped, (np.prod(np.shape(input_space_warped)[0:-1]),) + (np.shape(input_space_warped)[-1],)),
+                                np.reshape(norder, np.prod(np.shape(norder))),
+                                grid_train)
+                                                       )
+                        obs_data_train = np.reshape(obs_data_train, (np.shape(obs_data_full)[0],) + (np.shape(grid_train)[0],))
+                        print("obs_data_train has shape " + str(np.shape(obs_data_train)))
 
                         # sets yref
                         if yref_type == "dimensionful":
                             yref = obs_data_train[-1]
                         elif yref_type == "dimensionless":
-                            yref = np.ones((len(degrees_train_pts) * len(t_lab_train_pts)))
+                            yref = np.ones((np.shape(grid_train)[0], ))
 
                         # creates and fits the TruncationTP object
                         gp_post_obs = gm.TruncationTP(kernel_posterior,
@@ -2725,12 +2867,16 @@ def plot_posteriors_curvewise(
                                                       df=df,
                                                       scale=std_est,
                                                       excluded=excluded,
-                                                      ratio_kws={**ratio_fn_kwargs,
-                                                                 **{"p_shape" : (len(degrees_train_pts) * len(tlab_train_pts_mom))},
-                                                                 **{"p_grid_train" : np.flip(np.array(list(itertools.product(tlab_train_pts_mom, degrees_train_pts))), axis = 1)}
-                                                                 }
-
+                                                      # ratio_kws={**ratio_fn_kwargs,
+                                                      #            **{"p_shape" : (len(degrees_train_pts) * len(tlab_train_pts_mom))},
+                                                      #            **{"p_grid_train" : np.flip(np.array(list(itertools.product(tlab_train_pts_mom, degrees_train_pts))), axis = 1)}
+                                                      #            }
+                                                      ratio_kws = {**ratio_fn_kwargs,
+                                                                     **{"p_shape": np.shape(p_grid_train)[:-1]},
+                                                                     **{"p_grid_train": p_grid_train}
+                                                                   }
                                                       )
+
                         # fits the TP to data
                         gp_post_obs.fit(grid_train,
                                         (obs_data_train[:order, :]).T,
@@ -2739,6 +2885,7 @@ def plot_posteriors_curvewise(
 
                         # puts important objects into ray objects
                         gp_post_ray = ray.put(gp_post_obs)
+                        # print(1/0)
 
                         # calculates the posterior using ray
                         log_like = calc_loglike_ray(mesh_cart,
@@ -2746,8 +2893,11 @@ def plot_posteriors_curvewise(
                                                     log_likelihood_fn,
                                                     gp_post_ray,
                                                     log_likelihood_fn_kwargs={**log_likelihood_fn_kwargs,
-                                                                              **{"p_shape" : (len(degrees_train_pts) * len(tlab_train_pts_mom))},
-                                                                              **{"p_grid_train" : np.flip(np.array(list(itertools.product(tlab_train_pts_mom, degrees_train_pts))), axis = 1)}
+                                                                              # **{"p_shape" : (len(degrees_train_pts) * len(tlab_train_pts_mom))},
+                                                                              # **{"p_grid_train" : np.flip(np.array(list(itertools.product(tlab_train_pts_mom, degrees_train_pts))), axis = 1)}
+                                                                              **{"p_shape": np.shape(p_grid_train)[
+                                                                                               :-1]},
+                                                                              **{"p_grid_train": p_grid_train}
                                                                               }
                                                     )
                         obs_loglike = np.reshape(log_like, tuple(
@@ -2805,10 +2955,13 @@ def plot_posteriors_curvewise(
             if whether_save_plots:
                 # saves
                 obs_name_corner_concat = ''.join(obs_name_grouped_list)
-                fig.savefig(('figures/' + FileName.scheme + '_' + FileName.scale + '/' +
+                # fig.savefig(('figures/' + FileName.scheme + '_' + FileName.scale + '/' +
+                fig.savefig(('figures/' + FileName.scheme + "_" + FileName.scale + '/' +
                              variable.name + '_posterior_pdf_curvewise' + '_' + obs_name_corner_concat +
-                             '_' + FileName.scheme + '_' +
-                             FileName.scale + '_Q' + FileName.Q_param + '_' + FileName.p_param + '_' +
+                             '_' +
+                             FileName.scheme + '_' +
+                             FileName.scale + '_' +
+                             'Q' + FileName.Q_param + '_' + FileName.p_param + '_' +
                              InputSpaceDeg.name + 'x' + InputSpaceTlab.name +
                              FileName.filename_addendum).replace('_0MeVlab_', '_'))
 
@@ -3080,24 +3233,226 @@ def plot_posteriors_pointwise(
         print("opt_vals_list = " + str(opt_vals_list))
     return fit_stats_array
 
-def scaling_fn(pts_array):
-    try:
-        pass
-        # for pt_idx, pt in enumerate(pts_array):
-        #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0],
-        #                                      pts_array[pt_idx, 1] * 0.5])
-        # for pt_idx, pt in enumerate(pts_array):
-        #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0] * 25 / (2600 * (pts_array[pt_idx, 1])**(-0.79)),
-        #                                      pts_array[pt_idx, 1]])
-        # for pt_idx, pt in enumerate(pts_array):
-        #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0] * 25 / (700 * (pts_array[pt_idx, 1]) ** (-0.58)),
-        #                                      pts_array[pt_idx, 1]])
-        # for pt_idx, pt in enumerate(pts_array):
-        #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0] * 25 / (3200 * (pts_array[pt_idx, 1]) ** (-0.83)),
-        #                                      pts_array[pt_idx, 1]])
-        # for pt_idx, pt in enumerate(pts_array):
-        #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0] * 25 / (3300 * (pts_array[pt_idx, 1]) ** (-0.83)),
-        #                                      pts_array[pt_idx, 1]])
-    except:
-        pass
-    return pts_array
+# def scaling_fn(pts_array):
+#     try:
+#         pass
+#         # for pt_idx, pt in enumerate(pts_array):
+#         #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0],
+#         #                                      pts_array[pt_idx, 1] * 0.5])
+#         # for pt_idx, pt in enumerate(pts_array):
+#         #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0] * 25 / (2600 * (pts_array[pt_idx, 1])**(-0.79)),
+#         #                                      pts_array[pt_idx, 1]])
+#         # for pt_idx, pt in enumerate(pts_array):
+#         #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0] * 25 / (700 * (pts_array[pt_idx, 1]) ** (-0.58)),
+#         #                                      pts_array[pt_idx, 1]])
+#         # for pt_idx, pt in enumerate(pts_array):
+#         #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0] * 25 / (3200 * (pts_array[pt_idx, 1]) ** (-0.83)),
+#         #                                      pts_array[pt_idx, 1]])
+#         # for pt_idx, pt in enumerate(pts_array):
+#         #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0] * 25 / (3300 * (pts_array[pt_idx, 1]) ** (-0.83)),
+#         #                                      pts_array[pt_idx, 1]])
+#         # for pt_idx, pt in enumerate(pts_array):
+#         #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0],
+#         #                                      pts_array[pt_idx, 1] * 0.28 / (110 * (pts_array[pt_idx, 0])**(-1.)),])
+#         print("We warped successfully.")
+#     except:
+#         pass
+#     return pts_array
+
+# def scaling_fn(pts_array):
+#     pts_array_shape = np.shape(pts_array)
+#     pts_array = np.reshape(pts_array, (np.prod(pts_array_shape[:-1]), ) + (pts_array_shape[-1], ))
+#     try:
+#         pass
+#         # for pt_idx, pt in enumerate(pts_array):
+#         #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0],
+#         #                                      pts_array[pt_idx, 1]])
+#         # for pt_idx, pt in enumerate(pts_array):
+#         #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0],
+#         #                                      pts_array[pt_idx, 1] * 0.23 / (990 * (pts_array[pt_idx, 0])**(-1.4)),])
+#         # for pt_idx, pt in enumerate(pts_array):
+#         #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0],
+#         #                                      pts_array[pt_idx, 1] * 0.28 / (110 * (pts_array[pt_idx, 0])**(-1.)),])
+#         # for pt_idx, pt in enumerate(pts_array):
+#         #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0],
+#         #                                      pts_array[pt_idx, 1] * 0.37 / (100 * (pts_array[pt_idx, 0])**(-0.94)),])
+#         # for pt_idx, pt in enumerate(pts_array):
+#         #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0],
+#         #                                      pts_array[pt_idx, 1] * 0.26 / (340 * (pts_array[pt_idx, 0])**(-1.2)),])
+#
+# #         for pt_idx, pt in enumerate(pts_array):
+# #             pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0],])
+# #                     for pt_idx, pt in enumerate(pts_array):
+# #                         pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0]**(2) / 500, ])
+# #                     for pt_idx, pt in enumerate(pts_array):
+# #                         pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0]**(3) / 2, ])
+#         print("We warped successfully.")
+#     except:
+#         pass
+#
+#     pts_array = np.reshape(pts_array, pts_array_shape)
+#
+#     return pts_array
+
+class NontationaryKernelMixin:
+    """Mixin for kernels which are stationary: k(X, Y)= f(X-Y).
+
+    .. versionadded:: 0.18
+    """
+
+    def is_stationary(self):
+        """Returns whether the kernel is stationary."""
+        return False
+
+class NSRBF(NontationaryKernelMixin, NormalizedKernelMixin, Kernel):
+    """Radial basis function kernel (aka squared-exponential kernel).
+
+    The RBF kernel is a stationary kernel. It is also known as the
+    "squared exponential" kernel. It is parameterized by a length scale
+    parameter :math:`l>0`, which can either be a scalar (isotropic variant
+    of the kernel) or a vector with the same number of dimensions as the inputs
+    X (anisotropic variant of the kernel). The kernel is given by:
+
+    .. math::
+        k(x_i, x_j) = \\exp\\left(- \\frac{d(x_i, x_j)^2}{2l^2} \\right)
+
+    where :math:`l` is the length scale of the kernel and
+    :math:`d(\\cdot,\\cdot)` is the Euclidean distance.
+    For advice on how to set the length scale parameter, see e.g. [1]_.
+
+    This kernel is infinitely differentiable, which implies that GPs with this
+    kernel as covariance function have mean square derivatives of all orders,
+    and are thus very smooth.
+    See [2]_, Chapter 4, Section 4.2, for further details of the RBF kernel.
+
+    Read more in the :ref:`User Guide <gp_kernels>`.
+
+    .. versionadded:: 0.18
+
+    Parameters
+    ----------
+    length_scale : float or ndarray of shape (n_features,), default=1.0
+        The length scale of the kernel. If a float, an isotropic kernel is
+        used. If an array, an anisotropic kernel is used where each dimension
+        of l defines the length-scale of the respective feature dimension.
+
+    length_scale_bounds : pair of floats >= 0 or "fixed", default=(1e-5, 1e5)
+        The lower and upper bound on 'length_scale'.
+        If set to "fixed", 'length_scale' cannot be changed during
+        hyperparameter tuning.
+
+    References
+    ----------
+    .. [1] `David Duvenaud (2014). "The Kernel Cookbook:
+        Advice on Covariance functions".
+        <https://www.cs.toronto.edu/~duvenaud/cookbook/>`_
+
+    .. [2] `Carl Edward Rasmussen, Christopher K. I. Williams (2006).
+        "Gaussian Processes for Machine Learning". The MIT Press.
+        <http://www.gaussianprocess.org/gpml/>`_
+
+    Examples
+    --------
+    >>> from sklearn.datasets import load_iris
+    >>> from sklearn.gaussian_process import GaussianProcessClassifier
+    >>> from sklearn.gaussian_process.kernels import RBF
+    >>> X, y = load_iris(return_X_y=True)
+    >>> kernel = 1.0 * RBF(1.0)
+    >>> gpc = GaussianProcessClassifier(kernel=kernel,
+    ...         random_state=0).fit(X, y)
+    >>> gpc.score(X, y)
+    0.9866...
+    >>> gpc.predict_proba(X[:2,:])
+    array([[0.8354..., 0.03228..., 0.1322...],
+           [0.7906..., 0.0652..., 0.1441...]])
+    """
+
+    def __init__(self, length_scale=1.0, length_scale_bounds=(1e-5, 1e5)):
+        self.length_scale = length_scale
+        self.length_scale_bounds = length_scale_bounds
+
+    @property
+    def anisotropic(self):
+        return np.iterable(self.length_scale) and len(self.length_scale) > 1
+
+    @property
+    def hyperparameter_length_scale(self):
+        if self.anisotropic:
+            return Hyperparameter(
+                "length_scale",
+                "numeric",
+                self.length_scale_bounds,
+                len(self.length_scale),
+            )
+        return Hyperparameter("length_scale", "numeric", self.length_scale_bounds)
+
+    def __call__(self, X, Y=None, eval_gradient=False):
+        """Return the kernel k(X, Y) and optionally its gradient.
+
+        Parameters
+        ----------
+        X : ndarray of shape (n_samples_X, n_features)
+            Left argument of the returned kernel k(X, Y)
+
+        Y : ndarray of shape (n_samples_Y, n_features), default=None
+            Right argument of the returned kernel k(X, Y). If None, k(X, X)
+            if evaluated instead.
+
+        eval_gradient : bool, default=False
+            Determines whether the gradient with respect to the log of
+            the kernel hyperparameter is computed.
+            Only supported when Y is None.
+
+        Returns
+        -------
+        K : ndarray of shape (n_samples_X, n_samples_Y)
+            Kernel k(X, Y)
+
+        K_gradient : ndarray of shape (n_samples_X, n_samples_X, n_dims), \
+                optional
+            The gradient of the kernel k(X, X) with respect to the log of the
+            hyperparameter of the kernel. Only returned when `eval_gradient`
+            is True.
+        """
+        X = np.atleast_2d(X)
+        length_scale = _check_length_scale(X, self.length_scale)
+        if Y is None:
+            dists = pdist(X / length_scale, metric="sqeuclidean")
+            K = np.exp(-0.5 * dists)
+            # convert from upper-triangular matrix to square matrix
+            K = squareform(K)
+            np.fill_diagonal(K, 1)
+        else:
+            if eval_gradient:
+                raise ValueError("Gradient can only be evaluated when Y is None.")
+            # print("Y / length_scale = " + str(Y / length_scale))
+            dists = cdist(X / length_scale, Y / length_scale, metric="sqeuclidean")
+            K = np.exp(-0.5 * dists)
+
+        if eval_gradient:
+            if self.hyperparameter_length_scale.fixed:
+                # Hyperparameter l kept fixed
+                return K, np.empty((X.shape[0], X.shape[0], 0))
+            elif not self.anisotropic or length_scale.shape[0] == 1:
+                K_gradient = (K * squareform(dists))[:, :, np.newaxis]
+                return K, K_gradient
+            elif self.anisotropic:
+                # We need to recompute the pairwise dimension-wise distances
+                K_gradient = (X[:, np.newaxis, :] - X[np.newaxis, :, :]) ** 2 / (
+                    length_scale**2
+                )
+                K_gradient *= K[..., np.newaxis]
+                return K, K_gradient
+        else:
+            return K
+
+    def __repr__(self):
+        if self.anisotropic:
+            return "{0}(length_scale=[{1}])".format(
+                self.__class__.__name__,
+                ", ".join(map("{0:.3g}".format, self.length_scale)),
+            )
+        else:  # isotropic
+            return "{0}(length_scale={1:.3g})".format(
+                self.__class__.__name__, np.ravel(self.length_scale)[0]
+            )

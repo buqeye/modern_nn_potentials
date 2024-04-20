@@ -71,7 +71,7 @@ log_likelihood_fn_kwargs={
 }
 
 generate_posteriors(
-    nn_interaction="np",
+    # nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
     Q_param_method_array=["sum"],
     p_param_method_array=["psmax"],

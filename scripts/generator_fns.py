@@ -1312,6 +1312,8 @@ def generate_posteriors(
     ratio_fn_kwargs_posterior = None,
     log_likelihood_fn_posterior = None,
     log_likelihood_fn_kwargs_posterior = None,
+    warping_fn = None,
+    warping_fn_kwargs = None,
 
     variables_array_pointwise = [None],
     plot_posterior_pointwise_bool=False,
@@ -1546,7 +1548,7 @@ def generate_posteriors(
             DBunch = ObservableBunch(
                 "D",
                 D,
-                [], "D", "dimensionless"
+                [], "D", "dimensionless", nn_interaction="np",
             )
             # version of DBunch that treats D as dimensionful for the purposes of Fig. 22
             DBunch_dimensionful = ObservableBunch(
@@ -1825,11 +1827,11 @@ def generate_posteriors(
 
                         # information for naming the savefiles
                         FileName = FileNaming(
-                            # ScaleScheme.potential_string,
-                            # ScaleScheme.cutoff_string,
                             QParamMethod,
                             PParamMethod,
-                            # VsQuantityPosteriorDeg.name + 'x' + VsQuantityPosteriorTlab.name,
+                            scheme = ScaleScheme.potential_string,
+                            scale = ScaleScheme.cutoff_string,
+                            vs_what = VsQuantityPosteriorDeg.name + 'x' + VsQuantityPosteriorTlab.name,
                             filename_addendum=filename_addendum,
                         )
                         #
@@ -1925,8 +1927,8 @@ def generate_posteriors(
                                     mom_fn=E_to_p,
                                     mom_fn_kwargs={"interaction" : "np"},
 
-                                    scaling_fn=scaling_fn,
-                                    scaling_fn_kwargs={},
+                                    warping_fn=warping_fn,
+                                    warping_fn_kwargs=warping_fn_kwargs,
 
                                     ratio_fn=ratio_fn_posterior,
                                     ratio_fn_kwargs=ratio_fn_kwargs_posterior,

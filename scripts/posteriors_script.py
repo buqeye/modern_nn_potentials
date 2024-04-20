@@ -3,14 +3,14 @@ from generator_fns import *
 # sets the meshes for the random variable arrays
 mpi_vals = np.linspace(1, 350, 30, dtype=np.dtype('f4'))
 # mpi_vals = 200 * np.array([0.9999, 1.0001])
-ls_deg_vals = np.linspace(0.01, 4, 30, dtype=np.dtype('f4'))
 ls_tlab_vals = np.linspace(1, 150, 30, dtype=np.dtype('f4'))
+ls_deg_vals = np.linspace(0.01, 4, 30, dtype=np.dtype('f4'))
 lambda_vals = np.linspace(200, 900, 30, dtype=np.dtype('f4'))
 # lambda_vals = 600 * np.array([0.9999, 1.0001])
 
-mesh_cart = gm.cartesian(lambda_vals, np.log(ls_deg_vals), np.log(ls_tlab_vals), mpi_vals)
-mesh_cart_sgt = np.delete(mesh_cart, 1, 1)
-mesh_cart_ang = np.delete(mesh_cart, 2, 1)
+mesh_cart = gm.cartesian(lambda_vals, np.log(ls_tlab_vals), np.log(ls_deg_vals), mpi_vals)
+mesh_cart_sgt = np.delete(mesh_cart, 2, 1)
+mesh_cart_ang = np.delete(mesh_cart, 1, 1)
 # print(mesh_cart_ang)
 
 # # just SGT
@@ -19,17 +19,18 @@ mesh_cart_ang = np.delete(mesh_cart, 2, 1)
 # obs_labels_grouped_list = [r'$\sigma$']
 # mesh_cart_grouped_list = [[mesh_cart_sgt]]
 
-# just DSG
+# # just DSG
 # plot_obs_list = [["DSG"]]
 # obs_name_grouped_list = ["DSG"]
 # obs_labels_grouped_list = [r'$\displaystyle\frac{d\sigma}{d\Omega}$']
-# # mesh_cart_grouped_list = [mesh_cart]
-# mesh_cart_grouped_list = [[mesh_cart_q]]
+# mesh_cart_grouped_list = [[mesh_cart]]
+# # mesh_cart_grouped_list = [[mesh_cart_q]]
 
 # # just D
 # plot_obs_list = [["D"]]
 # obs_name_grouped_list = ["D"]
 # obs_labels_grouped_list = [r'$D$']
+# mesh_cart_grouped_list = [[mesh_cart]]
 
 # # just AXX
 # plot_obs_list = [["AXX"]]
@@ -64,12 +65,12 @@ mesh_cart_ang = np.delete(mesh_cart, 2, 1)
 # obs_labels_grouped_list = [r'$\displaystyle\frac{d\sigma}{d\Omega}(\Theta, p = 100\,\mathrm{MeV})$', ]
 # mesh_cart_grouped_list = [[mesh_cart_ang]]
 
-# for equalizing SGT and DSG
-plot_obs_list = [["SGT"], ["DSG"], ["SGT", "DSG"]]
-obs_name_grouped_list = ["SGT", "DSG", "TWOOBS"]
-obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$', r'2Obs.']
-# mesh_cart_grouped_list = [mesh_cart, mesh_cart, mesh_cart]
-mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart], [mesh_cart_sgt, mesh_cart]]
+# # for equalizing SGT and DSG
+# plot_obs_list = [["SGT"], ["DSG"], ["SGT", "DSG"]]
+# obs_name_grouped_list = ["SGT", "DSG", "TWOOBS"]
+# obs_labels_grouped_list = [r'$\sigma$', r'$\displaystyle\frac{d\sigma}{d\Omega}$', r'2Obs.']
+# # mesh_cart_grouped_list = [mesh_cart, mesh_cart, mesh_cart]
+# mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart], [mesh_cart_sgt, mesh_cart]]
 
 #
 # plot_obs_list = [["SGT"], ["SGTnosine"], ["DSGsine"], ["DSG"]]
@@ -128,6 +129,7 @@ mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart], [mesh_cart_sgt, mesh_car
 # plot_obs_list = [["DSG", "D", "AXX", "AYY", "A", "AY"]]
 # obs_name_grouped_list = ["ALLOBS"]
 # obs_labels_grouped_list = [r'Obs.']
+# mesh_cart_grouped_list = [[mesh_cart, mesh_cart, mesh_cart, mesh_cart, mesh_cart, mesh_cart]]
 
 # # SGT, DSG, spins, ALLOBS for energy input spaces
 # plot_obs_list = [["SGT"], ["DSG"], ["D", "AXX", "AYY", "A", "AY"],
@@ -234,13 +236,20 @@ mesh_cart_grouped_list = [[mesh_cart_sgt], [mesh_cart], [mesh_cart_sgt, mesh_car
 #                            mesh_cart_ang]
 #                           ]
 
+# ALLOBS
+plot_obs_list = [["DSG", "D", "AXX", "AYY", "A", "AY"]]
+obs_name_grouped_list = ["ALLOBS"]
+obs_labels_grouped_list = [r'$\Pi$Obs.']
+mesh_cart_grouped_list = [[mesh_cart, mesh_cart, mesh_cart,
+                           mesh_cart, mesh_cart, mesh_cart]]
+
 # sets the RandomVariable objects
 LambdabVariable = RandomVariable(var=lambda_vals,
                                  user_val=None,
                                  name='Lambdab',
                                  label="\Lambda_{b}",
                                  units="MeV",
-                                 ticks=[300, 450, 600, 750],
+                                 ticks=[300, 400, 500, 600, 700, 800],
                                  logprior=Lb_logprior(lambda_vals),
                                  logprior_name="uniformprior",
                                  marg_bool = True)
@@ -271,7 +280,7 @@ MpieffVariable = RandomVariable(var=mpi_vals,
                                 logprior=mpieff_logprior(mpi_vals),
                                 logprior_name="uniformprior",
                                 marg_bool = True)
-variables_array = np.array([LambdabVariable, LsDegVariable, LsTlabVariable, MpieffVariable])
+variables_array = np.array([LambdabVariable, LsTlabVariable, LsDegVariable, MpieffVariable])
 
 # ls_deg_vals = np.linspace(0.01, 4, 100, dtype=np.dtype('f4'))
 # q_vals = np.linspace(0.01, 1.01, 100, dtype=np.dtype('f4'))
@@ -298,8 +307,59 @@ variables_array = np.array([LambdabVariable, LsDegVariable, LsTlabVariable, Mpie
 #                                marg_bool=False)
 # variables_array = np.array([QVariable, LsDegVariable])
 
+ratio_fn=ratio_fn_curvewise
+ratio_fn_kwargs={
+    "p_param": "pprel",
+    "Q_param": "sum",
+    "mpi_var": 138,
+    "lambda_var": 570,
+    "single_expansion": False,
+}
+log_likelihood_fn=log_likelihood
+log_likelihood_fn_kwargs={
+    "p_param": "pprel",
+    "Q_param": "sum",
+    "single_expansion": False,
+}
+
+def warping_fn(pts_array):
+    pts_array_shape = np.shape(pts_array)
+    pts_array = np.reshape(pts_array, (np.prod(pts_array_shape[:-1]), ) + (pts_array_shape[-1], ))
+    try:
+        pass
+        # for pt_idx, pt in enumerate(pts_array):
+        #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0],
+        #                                      pts_array[pt_idx, 1]])
+        # for pt_idx, pt in enumerate(pts_array):
+        #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0],
+        #                                      pts_array[pt_idx, 1] * 0.23 / (990 * (pts_array[pt_idx, 0])**(-1.4)),])
+        # for pt_idx, pt in enumerate(pts_array):
+        #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0],
+        #                                      pts_array[pt_idx, 1] * 0.28 / (110 * (pts_array[pt_idx, 0])**(-1.)),])
+        # for pt_idx, pt in enumerate(pts_array):
+        #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0],
+        #                                      pts_array[pt_idx, 1] * 0.37 / (100 * (pts_array[pt_idx, 0])**(-0.94)),])
+        # for pt_idx, pt in enumerate(pts_array):
+        #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0],
+        #                                      pts_array[pt_idx, 1] * 0.26 / (340 * (pts_array[pt_idx, 0])**(-1.2)),])
+
+#         for pt_idx, pt in enumerate(pts_array):
+#             pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0],])
+#                     for pt_idx, pt in enumerate(pts_array):
+#                         pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0]**(2) / 500, ])
+#                     for pt_idx, pt in enumerate(pts_array):
+#                         pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0]**(3) / 2, ])
+        print("We warped successfully.")
+    except:
+        pass
+
+    pts_array = np.reshape(pts_array, pts_array_shape)
+
+    return pts_array
+
+warping_fn_kwargs={}
+
 generate_posteriors(
-    nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
     Q_param_method_array=["sum"],
     p_param_method_array=["pprel"],
@@ -329,20 +389,20 @@ generate_posteriors(
     # degrees_train_pts=np.array([40, 60, 80, 100, 120, 140]), # 1704
     # degrees_train_pts=np.array([60, 70, 80, 90, 100, 110, 120]), # morecos
     # degrees_train_pts=np.array([1, 2, 4, 90, 176, 178, 179]), # evencsc
-    orders_from_ho=2,
+    orders_from_ho=1,
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
     LengthScaleTlabInput=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
     LengthScaleDegInput=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
-    m_pi_eff=141,
-    Lambdab=480,
+    m_pi_eff=138,
+    Lambdab=570,
     print_all_classes=False,
     savefile_type="png",
 
     plot_posterior_curvewise_bool=True,
     plot_corner_curvewise_bool=True,
-    use_data_curvewise_bool=True,
+    use_data_curvewise_bool=False,
     save_data_curvewise_bool=True,
     save_posterior_curvewise_bool=True,
 
@@ -352,10 +412,17 @@ generate_posteriors(
     mesh_cart_grouped_list = mesh_cart_grouped_list,
     variables_array_curvewise = variables_array,
 
+    ratio_fn_posterior=ratio_fn,
+    ratio_fn_kwargs_posterior=ratio_fn_kwargs,
+    log_likelihood_fn_posterior=log_likelihood_fn,
+    log_likelihood_fn_kwargs_posterior=log_likelihood_fn_kwargs,
+    warping_fn = warping_fn,
+    warping_fn_kwargs = warping_fn_kwargs,
+
     plot_posterior_pointwise_bool=True,
-    save_posterior_pointwise_bool=True,
+    save_posterior_pointwise_bool=False,
 
     variables_array_pointwise = np.array([LambdabVariable]),
 
-    filename_addendum="_set0_argtest",
+    filename_addendum="_prewarp",
 )

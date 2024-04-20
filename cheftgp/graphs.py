@@ -284,7 +284,7 @@ def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_
     return fig, stats
 
 def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_array,
-                           joint_post_array, GP, obs_name_corner, whether_save_plots,
+                           joint_post_array, FileName, obs_name_corner, whether_save_plots,
                            nn_orders_array, orders_labels_dict):
     """
     Plots the fully marginalized posteriors.
@@ -426,11 +426,11 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
             try:
                 ax_title.text(.99, .99,
                         obs_name_corner[obs_idx] + '\n' +
-                        GP.scheme + '\,' + GP.scale + '\n' +
+                        FileName.scheme + '\,' + FileName.scale + '\n' +
                         r'' + orders_labels_dict[np.max(nn_orders_array) - order_num + 1 + i] + '\n' +
-                        r'$Q_{\mathrm{' + GP.Q_param + '}}$' + '\n' +
-                        GP.p_param + '\n' +
-                        GP.vs_what,
+                        r'$Q_{\mathrm{' + FileName.Q_param + '}}$' + '\n' +
+                        FileName.p_param + '\n' +
+                        FileName.vs_what,
                         ha='right', va='top',
                         transform=ax_title.transAxes,
                         fontsize=25)
@@ -443,9 +443,12 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
             if whether_save_plots:
                 fig.tight_layout()
 
-                fig.savefig(('figures/' + GP.scheme + '_' + GP.scale + '/' +
-                             'corner_plot_curvewise' + '_' + obs_name_corner[obs_idx] + '_' + GP.scheme + '_' +
-                             GP.scale + '_Q' + GP.Q_param + '_' + GP.p_param + '_' + GP.vs_what +
-                             GP.filename_addendum).replace('_0MeVlab_', '_'))
+                fig.savefig(('figures/' + FileName.scheme + '_' + FileName.scale + '/' +
+                # fig.savefig(('figures/' + 'SMS_500MeV' + '/' +
+                             'corner_plot_curvewise' + '_' + obs_name_corner[obs_idx] + '_' +
+                             FileName.scheme + '_' + FileName.scale + '_' +
+                             'Q' + FileName.Q_param + '_' + FileName.p_param + '_' +
+                             FileName.vs_what +
+                             FileName.filename_addendum).replace('_0MeVlab_', '_'))
 
     return fig
