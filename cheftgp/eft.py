@@ -2,8 +2,7 @@ import numpy as np
 import math
 
 
-def Q_approx(p, Q_parametrization, Lambda_b, m_pi=138,
-             single_expansion=False):
+def Q_approx(p, Q_parametrization, Lambda_b, m_pi=138, single_expansion=False):
     """
     Returns the dimensionless expansion parameter Q.
 
@@ -25,7 +24,7 @@ def Q_approx(p, Q_parametrization, Lambda_b, m_pi=138,
         # Interpolate to smooth the transition from m_pi to p with a ratio
         # of polynomials
         n = 8
-        q = (m_pi ** n + p ** n) / (m_pi ** (n - 1) + p ** (n - 1)) / Lambda_b
+        q = (m_pi**n + p**n) / (m_pi ** (n - 1) + p ** (n - 1)) / Lambda_b
         return q
 
     elif Q_parametrization == "max":
@@ -33,7 +32,12 @@ def Q_approx(p, Q_parametrization, Lambda_b, m_pi=138,
         try:
             q = max(p, m_pi) / Lambda_b
         except:
-            q = np.reshape([max(p_val, m_pi) for p_val in np.array(p).flatten()], np.shape(p)) / Lambda_b
+            q = (
+                np.reshape(
+                    [max(p_val, m_pi) for p_val in np.array(p).flatten()], np.shape(p)
+                )
+                / Lambda_b
+            )
         return q
 
     elif Q_parametrization == "sum":
@@ -46,10 +50,6 @@ def Q_approx(p, Q_parametrization, Lambda_b, m_pi=138,
         q = (p + m_pi) / Lambda_b
         return q
 
-    elif Q_parametrization == "twosum":
-        # Transition from m_pi to p with a simple sum
-        q = (p + m_pi) / (m_pi + Lambda_b)
-        return q
 
 def Qsum_to_Qsmoothmax(m_pi):
     """
@@ -62,6 +62,8 @@ def Qsum_to_Qsmoothmax(m_pi):
     """
     return (m_pi + 750) / 600
     # return 1.7
+
+
 def p_approx(p_name, prel, degrees):
     """
     Returns the dimensionless expansion parameter Q.
@@ -70,7 +72,7 @@ def p_approx(p_name, prel, degrees):
     ----------
     p_name (str): name for the parametrization of the momentum
     prel (float or array): relative momentum for the interaction (in MeV)
-    degrees (float array): degrees
+    degrees (float or array): degrees
     """
     if p_name == "Qofprel" or p_name == "pprel":
         return np.tile(np.array(prel), (len(degrees), 1))
@@ -79,11 +81,12 @@ def p_approx(p_name, prel, degrees):
         return np.array([np.array(deg_to_qcm(prel, d)) for d in degrees])
 
     elif p_name == "Qofpq" or p_name == "psmax":
-        return np.array([[softmax_mom(p, deg_to_qcm(p, d))
-                         for p in prel] for d in degrees])
+        return np.array(
+            [[softmax_mom(p, deg_to_qcm(p, d)) for p in prel] for d in degrees]
+        )
     elif p_name == "Qofpqmax" or p_name == "pmax":
-        return np.array([[max(p, deg_to_qcm(p, d))
-                         for p in prel] for d in degrees])
+        return np.array([[max(p, deg_to_qcm(p, d)) for p in prel] for d in degrees])
+
 
 def deg_fn(deg_input, **kwargs):
     """
@@ -109,7 +112,7 @@ def neg_cos(deg_input, **kwargs):
 
 def deg_to_qcm(p_input, deg_input, **kwargs):
     """
-    Returns the center-of-momentum momentum transfer q in MeV.
+    Returns the center-of-momentum momentum transfer q in MeV (shape: p_input x deg_input).
 
     Parameters
     ----------
@@ -118,24 +121,34 @@ def deg_to_qcm(p_input, deg_input, **kwargs):
     """
     try:
         return np.array(
-            [np.array(
-                p_input * np.sqrt(2 * (1 - np.cos(np.radians(d))))
-            ) for d in deg_input]
-        )
+            [
+                np.array(p_input * np.sqrt(2 * (1 - np.cos(np.radians(d)))))
+                for d in deg_input
+            ]
+        ).T
     except:
         return p_input * np.sqrt(2 * (1 - np.cos(np.radians(deg_input))))
 
 
 def deg_to_qcm2(p_input, deg_input, **kwargs):
     """
-    Returns the center-of-momentum momentum transfer q squared, in MeV^2.
+    Returns the center-of-momentum momentum transfer q squared, in MeV^2 (shape: p_input x deg_input).
 
     Parameters
     ----------
     p_input (float) : relative momentum given in MeV.
     deg_input (float) : angle measure given in degrees.
     """
-    return (p_input * np.sqrt(2 * (1 - np.cos(np.radians(deg_input))))) ** (2)
+    # return (p_input * np.sqrt(2 * (1 - np.cos(np.radians(deg_input))))) ** (2)
+    try:
+        return np.array(
+            [
+                np.array((p_input * np.sqrt(2 * (1 - np.cos(np.radians(d))))) ** (2))
+                for d in deg_input
+            ]
+        ).T
+    except:
+        return (p_input * np.sqrt(2 * (1 - np.cos(np.radians(deg_input))))) ** (2)
 
 
 def Elab_fn(E_lab, **kwargs):
@@ -159,6 +172,7 @@ def sin_thing(deg_input, **kwargs):
     """
     return 0.6 * (1.6 + np.arctanh(np.radians(deg_input - 90) / 1.7))
 
+
 def softmax_mom(p, q, n=5):
     """
     Two-place softmax function.
@@ -172,6 +186,7 @@ def softmax_mom(p, q, n=5):
     """
     return 1 / n * math.log(1.01 ** (n * p) + 1.01 ** (n * q), 1.01)
 
+
 def Lb_logprior(Lambda_b):
     """
     Uniform log-prior for the breakdown scale (in MeV).
@@ -179,6 +194,7 @@ def Lb_logprior(Lambda_b):
     """
     return np.where((0 <= Lambda_b) & (Lambda_b <= 4000), 0, -np.inf)
     # return np.where((200 <= Lambda_b) & (Lambda_b <= 1000), 0, -np.inf)
+
 
 def mpieff_logprior(m_pi):
     """

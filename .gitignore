@@ -143,3 +143,14 @@ tests/figures/
 notebooks/figures2/
 # figures for paper (ignored for now)
 notebooks/figures/
+# sandbox (for now)
+tests/sandbox.ipynb
+# fixes for large files
+notebooks/out_of_memory_fix.ipynb
+tests/out_of_memory_fix.ipynb
+# old code
+scripts/ChEFT_GP_publication_script.py
+scripts/ChEFT_GP_publication_script_refactored.py
+# figure-generating scripts (for now)
+scripts/diagnostics_script.py
+scripts/posteriors_script.py

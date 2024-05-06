@@ -76,23 +76,23 @@ Middleanglessplit2 = TrainTestSplit(
     "middleangles2",
     [6],
     [3],
-    xmin_train_factor=[1/6],
-    xmax_train_factor=[5/6],
-    xmin_test_factor=[1/6],
-    xmax_test_factor=[5/6],
+    xmin_train_factor=[1 / 6],
+    xmax_train_factor=[5 / 6],
+    xmin_test_factor=[1 / 6],
+    xmax_test_factor=[5 / 6],
 )
 
-traintestsplit_vsangle_array = [
-    Fullspaceanglessplit,
-    Forwardanglessplit,
-    Backwardanglessplit,
-    Forwardanglessplit2,
-    Backwardanglessplit2,
-    Fullspaceanglessplit1,
-    Fullspaceanglessplit2,
-    Middleanglessplit1,
-    Middleanglessplit2
-]
+# traintestsplit_vsangle_array = [
+#     Fullspaceanglessplit,
+#     Forwardanglessplit,
+#     Backwardanglessplit,
+#     Forwardanglessplit2,
+#     Backwardanglessplit2,
+#     Fullspaceanglessplit1,
+#     Fullspaceanglessplit2,
+#     Middleanglessplit1,
+#     Middleanglessplit2
+# ]
 
 # creates the training and testing masks for observables plotted against energy
 # Nolowenergysplit... objects spread training and testing points evenly across the whole input space except omitted
@@ -150,24 +150,24 @@ Midenergysplit = TrainTestSplit(
     "midenergysplit",
     [7],
     [3],
-    xmin_train_factor=[1/7],
-    xmax_train_factor=[6/7],
-    xmin_test_factor=[1/7],
-    xmax_test_factor=[6/7],
+    xmin_train_factor=[1 / 7],
+    xmax_train_factor=[6 / 7],
+    xmin_test_factor=[1 / 7],
+    xmax_test_factor=[6 / 7],
 )
-traintestsplit_vsenergy_array = [
-    Nolowenergysplit,
-    Yeslowenergysplit,
-    Allenergysplit,
-    Allenergysplit1,
-    Allenergysplit2,
-    Midenergysplit,
-]
+# traintestsplit_vsenergy_array = [
+#     Nolowenergysplit,
+#     Yeslowenergysplit,
+#     Allenergysplit,
+#     Allenergysplit1,
+#     Allenergysplit2,
+#     Midenergysplit,
+# ]
 
-All2Dsplit1 = TrainTestSplit("all2d1", [4, 4], [3, 3],
-           xmin_train_factor = [0, 0],
-           xmax_train_factor = [1, 1])
+All2Dsplit1 = TrainTestSplit(
+    "all2d1", [4, 4], [3, 3], xmin_train_factor=[0, 0], xmax_train_factor=[1, 1]
+)
 
-traintestsplit_2d_array = [
-    All2Dsplit1,
-]
+# traintestsplit_2d_array = [
+#     All2Dsplit1,
+# ]

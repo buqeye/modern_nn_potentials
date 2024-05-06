@@ -3,7 +3,7 @@
 # Accompanying works
 
 This repository contains all code and data necessary to generate the results in
-*Fission fragment 1* (https://arxiv.org/abs/2402.13165) and *Fission fragment 2* (arXiv link here).
+*Assessing Correlated Truncation Errors in Modern Nucleon-Nucleon Potentials* (https://arxiv.org/abs/2402.13165) and *Fission fragment 2* (arXiv link here).
 
 ## Installation
 
@@ -29,17 +29,14 @@ this library extracts dimensionless coefficients according to the BUQEYE model.
 
 From here, one can plot the resulting coefficients and test how well they are described as random 
 draws from the same Gaussian process (GP) using statistical diagnostics.
-* The operative script for this functionality is `scripts/diagnostics_script.py`.
-* To generate the figures found in *FF1*, run `notebooks/figures1.ipynb`.
+* To generate the figures found in *Assessing Correlated Truncation Errors in Modern Nucleon-Nucleon Potentials*, run `notebooks/figures1.ipynb`.
 * To generate the figures found in *FF2*, run `notebooks/figures2.ipynb`.
 
 Additionally, one can evaluate the posterior probability distribution functions for parameters of 
 the theory such as the breakdown momentum scale $\Lambda_{b}$ and the soft scale $m_{\mathrm{eff}}$.
-* The operative script for this functionality is `scripts/posteriors_script.py`.
-* To generate the values of these parameters in *FF1*'s Table III, run 
-`scripts/posteriors_script_tab3_x.py` (with `x` replacing the number of the row of interest).
+* To generate the values of these parameters in *Assessing Correlated Truncation Errors in Modern Nucleon-Nucleon Potentials*'s Table III, run 
+`scripts/posteriors_script_tab3_x.py` (with `x` replacing the number of the row of interest in that table).
 * Accompanying data files are included in `scripts/data`.
-
 
 ## Miscellaneous
 
@@ -49,9 +46,15 @@ Unit tests can be found in `tests/unit_tests.ipynb`.
 
 Please cite this work as follows:
 
-FF1 citation goes here.
+```bibtex
+@misc{millican2024assessing,
+      title={Assessing Correlated Truncation Errors in Modern Nucleon-Nucleon Potentials}, 
+      author={P. J. Millican and R. J. Furnstahl and J. A. Melendez and D. R. Phillips and M. T. Pratola},
+      year={2024},
+      eprint={2402.13165},
+      archivePrefix={arXiv},
+      primaryClass={nucl-th}
+}
+```
 
-[arxiv]: https://arxiv.org/abs/2301.05093
-[Furnstahl]: https://www.sciencedirect.com/science/article/pii/S0370269320305220
-[Drischler]: https://www.sciencedirect.com/science/article/pii/S0370269321007176
-[Melendez]: https://www.sciencedirect.com/science/article/pii/S0370269321005487
+[arxiv]: https://arxiv.org/abs/2402.13165

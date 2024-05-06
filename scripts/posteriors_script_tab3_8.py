@@ -71,7 +71,6 @@ log_likelihood_fn_kwargs={
 }
 
 generate_posteriors(
-    # nn_interaction="np",
     scale_scheme_bunch_array=[RKE500MeV],
     Q_param_method_array=["sum"],
     p_param_method_array=["pprel"],
@@ -83,8 +82,8 @@ generate_posteriors(
     orders_excluded=[6],
     orders_names_dict=None,
     orders_labels_dict=None,
-    LengthScaleTlabInput=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
-    LengthScaleDegInput=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
+    length_scale_list=[NSKernelParam(60, [10, 200]),
+                       NSKernelParam(0.4, [0.05, 3])],
     m_pi_eff=120,
     Lambdab=530,
     print_all_classes=False,

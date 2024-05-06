@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from cheftgp.gaussianprocess import ScaleSchemeBunch
 
 # for each choice of scale and scheme, sets the total possible orders and nomenclature

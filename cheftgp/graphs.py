@@ -7,10 +7,11 @@ from .utils import mean_and_stddev, sig_figs, correlation_coefficient
 
 # See: https://ianstormtaylor.com/design-tip-never-use-black/
 # softblack = '#262626'
-softblack = "k" # Looks better when printed on tex file
+softblack = "k"  # Looks better when printed on tex file
 gray = "0.7"
 edgewidth = 0.6
 text_bbox = dict(boxstyle="round", fc=(1, 1, 1, 0.6), ec=softblack, lw=0.8)
+
 
 def setup_rc_params():
     """
@@ -27,7 +28,7 @@ def setup_rc_params():
     mpl.rcParams["axes.labelcolor"] = softblack
     mpl.rcParams["axes.linewidth"]
 
-    mpl.rcParams['lines.markersize'] = 6
+    mpl.rcParams["lines.markersize"] = 6
 
     mpl.rcParams["ytick.direction"] = "in"
     mpl.rcParams["xtick.direction"] = "in"
@@ -40,7 +41,9 @@ def setup_rc_params():
 
     mpl.rcParams["legend.title_fontsize"] = 9
     mpl.rcParams["legend.fontsize"] = 9  # 11
-    mpl.rcParams["legend.edgecolor"] = "inherit"  # inherits from axes.edgecolor, to match
+    mpl.rcParams[
+        "legend.edgecolor"
+    ] = "inherit"  # inherits from axes.edgecolor, to match
     mpl.rcParams["legend.facecolor"] = (
         1,
         1,
@@ -58,10 +61,16 @@ def setup_rc_params():
 
     # mpl.rcParams['lines.markersize'] = 5
     mpl.rc(
-        "savefig", transparent=False, bbox="tight", pad_inches=0.05, dpi=300, format="pdf"
+        "savefig",
+        transparent=False,
+        bbox="tight",
+        pad_inches=0.05,
+        dpi=300,
+        format="pdf",
     )
 
     # return softblack, gray, edgewidth
+
 
 def joint_plot(ratio=1, height=3):
     """
@@ -99,21 +108,23 @@ def joint_plot(ratio=1, height=3):
 
     # Make the grid look nice
     from seaborn import utils
+
     # utils.despine(fig)
     utils.despine(ax=ax_marg_x, left=True)
     utils.despine(ax=ax_marg_y, bottom=True)
     fig.tight_layout(h_pad=0, w_pad=0)
 
     # sets axis ticks
-    ax_marg_y.tick_params(axis='y', which='major', direction='out')
-    ax_marg_x.tick_params(axis='x', which='major', direction='out')
-    ax_marg_y.tick_params(axis='y', which='minor', direction='out')
-    ax_marg_x.tick_params(axis='x', which='minor', direction='out')
-    ax_marg_y.margins(x=0.1, y=0.)
+    ax_marg_y.tick_params(axis="y", which="major", direction="out")
+    ax_marg_x.tick_params(axis="x", which="major", direction="out")
+    ax_marg_y.tick_params(axis="y", which="minor", direction="out")
+    ax_marg_x.tick_params(axis="x", which="minor", direction="out")
+    ax_marg_y.margins(x=0.1, y=0.0)
 
     fig.subplots_adjust(hspace=0, wspace=0)
 
     return fig, ax_joint, ax_marg_x, ax_marg_y
+
 
 def offset_xlabel(ax):
     """
@@ -124,9 +135,10 @@ def offset_xlabel(ax):
     ax (Axes) : the Axes object on which to plot
     """
     ax.set_xticks([0])
-    ax.set_xticklabels(labels=[0], fontdict=dict(color='w'))
-    ax.tick_params(axis='x', length=0)
+    ax.set_xticklabels(labels=[0], fontdict=dict(color="w"))
+    ax.tick_params(axis="x", length=0)
     return ax
+
 
 def corner_plot(n_plots=3, height=9):
     """
@@ -144,37 +156,40 @@ def corner_plot(n_plots=3, height=9):
     # adds and formats subplots
     for i in range(1, n_plots):
         for j in range(1, i + 1):
-            if ((n_plots * i + j - 1) % n_plots != 0) and ((n_plots * i + j - 1) < (n_plots * (n_plots - 1))):
+            if ((n_plots * i + j - 1) % n_plots != 0) and (
+                (n_plots * i + j - 1) < (n_plots * (n_plots - 1))
+            ):
                 # print(n_plots * i + j - 1)
-                fig.add_subplot(gsp[n_plots * i + j - 1],
-                                xticklabels=[],
-                                yticklabels=[])
+                fig.add_subplot(
+                    gsp[n_plots * i + j - 1], xticklabels=[], yticklabels=[]
+                )
             elif (n_plots * i + j - 1) % n_plots != 0:
                 # print(n_plots * i + j - 1)
-                fig.add_subplot(gsp[n_plots * i + j - 1],
-                                yticklabels=[])
+                fig.add_subplot(gsp[n_plots * i + j - 1], yticklabels=[])
             elif (n_plots * i + j - 1) < (n_plots * (n_plots - 1)):
                 # print(n_plots * i + j - 1)
-                fig.add_subplot(gsp[n_plots * i + j - 1],
-                                xticklabels=[])
+                fig.add_subplot(gsp[n_plots * i + j - 1], xticklabels=[])
             else:
                 fig.add_subplot(gsp[n_plots * i + j - 1])
 
     # reshapes the arrays of joint and fully marginalized pdfs
-    ax_joint_array = np.reshape(fig.axes,
-                                int(n_plots * (n_plots - 1) / 2))
+    ax_joint_array = np.reshape(fig.axes, int(n_plots * (n_plots - 1) / 2))
     ax_marg_array = np.reshape(
-        [fig.add_subplot(gsp[i * (n_plots + 1)],
-                         yticklabels=[], yticks=[],
-                         xticklabels=[])
-         for i in range(0, n_plots)],
-        (n_plots))
+        [
+            fig.add_subplot(
+                gsp[i * (n_plots + 1)], yticklabels=[], yticks=[], xticklabels=[]
+            )
+            for i in range(0, n_plots)
+        ],
+        (n_plots),
+    )
 
     # creates a blank space with a title
     ax_title = fig.add_subplot(gsp[n_plots - 1])
-    ax_title.axis('off')
+    ax_title.axis("off")
 
     return fig, ax_joint_array, ax_marg_array, ax_title
+
 
 def draw_summary_statistics(bounds68, bounds95, median, height=0, ax=None):
     """
@@ -192,11 +207,14 @@ def draw_summary_statistics(bounds68, bounds95, median, height=0, ax=None):
     """
     if ax is None:
         ax = plt.gca()
-    ax.plot(bounds68, [height, height], c='gray', lw=6, solid_capstyle='round')
-    ax.plot(bounds95, [height, height], c='gray', lw=2, solid_capstyle='round')
-    ax.plot([median], [height], c='white', marker='o', zorder=10, markersize=3)
+    ax.plot(bounds68, [height, height], c="gray", lw=6, solid_capstyle="round")
+    ax.plot(bounds95, [height, height], c="gray", lw=2, solid_capstyle="round")
+    ax.plot([median], [height], c="white", marker="o", zorder=10, markersize=3)
 
-def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_orders, orders_labels_dict):
+
+def plot_marg_posteriors(
+    variable, result, y_label, colors_array, order_num, nn_orders, orders_labels_dict
+):
     """
     Plots the fully marginalized posteriors.
 
@@ -228,9 +246,11 @@ def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_
         posterior = posterior[posterior > 1e-2]
         # vals_restricted = variable.var
         # Plot and fill posterior, and add summary statistics
-        ax.plot(vals_restricted, posterior - i, c='gray')
+        ax.plot(vals_restricted, posterior - i, c="gray")
 
-        ax.fill_between(vals_restricted, -i, posterior - i, facecolor=colors_array[i % order_num])
+        ax.fill_between(
+            vals_restricted, -i, posterior - i, facecolor=colors_array[i % order_num]
+        )
 
         # calculates and plots the median and 68% and 95% confidence intervals for the pdf
         try:
@@ -248,33 +268,64 @@ def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_
         index_opt = np.where(posterior_raw == np.amax(posterior_raw))
         MAP = variable.var[index_opt]
 
-        print("Observable " + str(y_label[i % len(y_label)]) +
-              # ", order " + str(orders_labels_dict[nn_orders[i % order_num]]) +
-              ", variable " + str(variable.name) + ": MAP value = " + str(MAP[0]))
-        print("Observable " + str(y_label[i % len(y_label)]) +
-              # ", order " + str(orders_labels_dict[nn_orders[i % order_num]]) +
-              ", variable " + str(variable.name) + ": mean = " + str(dist_mean))
-        print("Observable " + str(y_label[i % len(y_label)]) +
-              # ", order " + str(orders_labels_dict[nn_orders[i % order_num]]) +
-              ", variable " + str(variable.name) + ": std. dev. = " + str(dist_stddev))
+        print(
+            "Observable "
+            + str(y_label[i % len(y_label)])
+            +
+            # ", order " + str(orders_labels_dict[nn_orders[i % order_num]]) +
+            ", variable "
+            + str(variable.name)
+            + ": MAP value = "
+            + str(MAP[0])
+        )
+        print(
+            "Observable "
+            + str(y_label[i % len(y_label)])
+            +
+            # ", order " + str(orders_labels_dict[nn_orders[i % order_num]]) +
+            ", variable "
+            + str(variable.name)
+            + ": mean = "
+            + str(dist_mean)
+        )
+        print(
+            "Observable "
+            + str(y_label[i % len(y_label)])
+            +
+            # ", order " + str(orders_labels_dict[nn_orders[i % order_num]]) +
+            ", variable "
+            + str(variable.name)
+            + ": std. dev. = "
+            + str(dist_stddev)
+        )
 
         stats = np.append(stats, np.array([MAP[0], dist_mean, dist_stddev]))
 
     # Plot formatting
     ax.set_yticks(-1 * (order_num * np.arange(len(y_label)) + (order_num - 2)))
     ax.set_yticklabels(y_label)
-    ax.tick_params(axis='both', which='both', direction='in')
-    ax.tick_params(which='major', length=0)
-    ax.tick_params(which='minor', length=7, right=True)
+    ax.tick_params(axis="both", which="both", direction="in")
+    ax.tick_params(which="major", length=0)
+    ax.tick_params(which="minor", length=7, right=True)
     ax.set_xticks(variable.ticks)
-    ax.set_xlabel((r'$' + variable.label + r'$ (' + variable.units + ')').replace('()', ''))
-    ax.legend(title=r'$\mathrm{pr}(' + variable.label + r' \, | \, \vec{\mathbf{y}}_{k}, \mathbf{f})$',
-              handles=[Patch(facecolor=colors_array[o],
-                             edgecolor='gray',
-                             linewidth=1,
-                             label=orders_labels_dict[(np.sort(nn_orders))[-order_num + o]])
-                       for o in range(0, order_num)])
-    ax.grid(axis='x')
+    ax.set_xlabel(
+        (r"$" + variable.label + r"$ (" + variable.units + ")").replace("()", "")
+    )
+    ax.legend(
+        title=r"$\mathrm{pr}("
+        + variable.label
+        + r" \, | \, \vec{\mathbf{y}}_{k}, \mathbf{f})$",
+        handles=[
+            Patch(
+                facecolor=colors_array[o],
+                edgecolor="gray",
+                linewidth=1,
+                label=orders_labels_dict[(np.sort(nn_orders))[-order_num + o]],
+            )
+            for o in range(0, order_num)
+        ],
+    )
+    ax.grid(axis="x")
     ax.set_axisbelow(True)
 
     plt.show()
@@ -283,21 +334,34 @@ def plot_marg_posteriors(variable, result, y_label, colors_array, order_num, nn_
 
     return fig, stats
 
-def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_array,
-                           joint_post_array, FileName, obs_name_corner, whether_save_plots,
-                           nn_orders_array, orders_labels_dict):
+
+def plot_corner_posteriors(
+    variables_array,
+    marg_post_array,
+    joint_post_array,
+    obs_name_corner,
+    cmap_name,
+    order_num,
+    nn_orders_array,
+    orders_labels_dict,
+    FileName,
+    whether_save_plots,
+):
     """
     Plots the fully marginalized posteriors.
 
     Parameters
     ----------
-    cmap_name (str) : name of the cmap for plotting.
-    order_num (int) : number of orders to be plotted.
     variables_array (RandomVariable list) : list of random variables for plotting.
     marg_post_array (array) : array of fully marginalized posterior pdfs.
     joint_post_array (array) : array of fully marginalized joint posterior pdfs.
-    GP (GSUMObj) : GSUMObj with relevant information.
     obs_name_corner (str) : name for the observable, to be printed in the title in the corner.
+    cmap_name (str) : name of the cmap for plotting.
+    order_num (int) : number of orders to be plotted.
+    nn_orders_array (int list) : list of orders.
+    orders_labels_dict (dict) : dictionary for order numbers and markdown labels for each order.
+    FileName (FileNaming) : FileNaming object.
+    whether_save_plots (bool) : whether to save plot.
 
     Returns
     ----------
@@ -306,15 +370,30 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
     cmap = mpl.cm.get_cmap(cmap_name)
 
     # loops through observables
-    for obs_idx in np.arange(0, (np.shape(marg_post_array))[1] // order_num, 1, dtype = int):
+    for obs_idx in np.arange(
+        0, (np.shape(marg_post_array))[1] // order_num, 1, dtype=int
+    ):
         # loops through orders
         for i in range(order_num):
-            joint_post_obs_array = joint_post_array[(i + obs_idx * order_num) * np.shape(variables_array)[0] * (np.shape(variables_array)[0] - 1) // 2 :
-                                                    (1 + i + obs_idx * order_num) * np.shape(variables_array)[0] * (np.shape(variables_array)[0] - 1) // 2]
+            joint_post_obs_array = joint_post_array[
+                (i + obs_idx * order_num)
+                * np.shape(variables_array)[0]
+                * (np.shape(variables_array)[0] - 1)
+                // 2 : (1 + i + obs_idx * order_num)
+                * np.shape(variables_array)[0]
+                * (np.shape(variables_array)[0] - 1)
+                // 2
+            ]
 
             if joint_post_obs_array.ndim == 2:
-                joint_post_obs_array = np.reshape(joint_post_obs_array, (
-                1, np.shape(joint_post_obs_array)[0], np.shape(joint_post_obs_array)[1]))
+                joint_post_obs_array = np.reshape(
+                    joint_post_obs_array,
+                    (
+                        1,
+                        np.shape(joint_post_obs_array)[0],
+                        np.shape(joint_post_obs_array)[1],
+                    ),
+                )
 
             # sets up axes
             n_plots = np.shape(variables_array)[0]
@@ -327,29 +406,52 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
             for variable_idx, variable in enumerate(variables_array):
                 # calculates the mean and standard deviation for the pdf
                 try:
-                    dist_mean, dist_stddev = mean_and_stddev(variable.var, marg_post_array[variable_idx, i + obs_idx * order_num])
+                    dist_mean, dist_stddev = mean_and_stddev(
+                        variable.var,
+                        marg_post_array[variable_idx, i + obs_idx * order_num],
+                    )
                 except:
                     dist_mean, dist_stddev = variable.var[0], 1e-5
-                ax_marg_array[variable_idx].set_xlim(left=np.max([0, dist_mean - 5 * dist_stddev]),
-                                                     right=dist_mean + 5 * dist_stddev)
+                ax_marg_array[variable_idx].set_xlim(
+                    left=np.max([0, dist_mean - 5 * dist_stddev]),
+                    right=dist_mean + 5 * dist_stddev,
+                )
                 mean_list.append(dist_mean)
                 stddev_list.append(dist_stddev)
                 dist_mean = sig_figs(dist_mean, 3)
                 dist_stddev = sig_figs(dist_stddev, 3)
 
                 # plots
-                ax_marg_array[variable_idx].set_title(rf'${variable.label}$ = {dist_mean} $\pm$ {dist_stddev}',
-                                                      fontsize=18)
-                ax_marg_array[variable_idx].plot(variable.var, marg_post_array[variable_idx, i + obs_idx * order_num],
-                                                 c=cmap(0.8), lw=1)
-                ax_marg_array[variable_idx].fill_between(variable.var, np.zeros_like(variable.var),
-                                                         marg_post_array[variable_idx, i + obs_idx * order_num],
-                                                         facecolor=cmap(0.2), lw=1)
+                ax_marg_array[variable_idx].set_title(
+                    rf"${variable.label}$ = {dist_mean} $\pm$ {dist_stddev}",
+                    fontsize=18,
+                )
+                ax_marg_array[variable_idx].plot(
+                    variable.var,
+                    marg_post_array[variable_idx, i + obs_idx * order_num],
+                    c=cmap(0.8),
+                    lw=1,
+                )
+                ax_marg_array[variable_idx].fill_between(
+                    variable.var,
+                    np.zeros_like(variable.var),
+                    marg_post_array[variable_idx, i + obs_idx * order_num],
+                    facecolor=cmap(0.2),
+                    lw=1,
+                )
 
-                if [variable.user_val for variable in variables_array][variable_idx] is not None:
+                if [variable.user_val for variable in variables_array][
+                    variable_idx
+                ] is not None:
                     ax_marg_array[variable_idx].axvline(
-                        [variable.user_val for variable in variables_array][variable_idx], 0, 1,
-                        c=gray, lw=1)
+                        [variable.user_val for variable in variables_array][
+                            variable_idx
+                        ],
+                        0,
+                        1,
+                        c=gray,
+                        lw=1,
+                    )
 
             # creates array needed for properly arranging the fully marginalized posteriors on the grid
             comb_array = []
@@ -360,27 +462,47 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
 
             # plots the joint pdfs
             for joint_idx, joint in enumerate(joint_post_obs_array):
-                ax_joint_array[joint_idx].set_xlim(left=np.max(
-                    [0, mean_list[comb_array[joint_idx, 0]] - 5 * stddev_list[comb_array[joint_idx, 0]]]),
-                    right=mean_list[comb_array[joint_idx, 0]] + 5 * stddev_list[
-                        comb_array[joint_idx, 0]])
+                ax_joint_array[joint_idx].set_xlim(
+                    left=np.max(
+                        [
+                            0,
+                            mean_list[comb_array[joint_idx, 0]]
+                            - 5 * stddev_list[comb_array[joint_idx, 0]],
+                        ]
+                    ),
+                    right=mean_list[comb_array[joint_idx, 0]]
+                    + 5 * stddev_list[comb_array[joint_idx, 0]],
+                )
 
-                ax_joint_array[joint_idx].set_ylim(bottom=np.max(
-                    [0, mean_list[comb_array[joint_idx, 1]] - 5 * stddev_list[comb_array[joint_idx, 1]]]),
-                    top=mean_list[comb_array[joint_idx, 1]] + 5 * stddev_list[
-                        comb_array[joint_idx, 1]])
+                ax_joint_array[joint_idx].set_ylim(
+                    bottom=np.max(
+                        [
+                            0,
+                            mean_list[comb_array[joint_idx, 1]]
+                            - 5 * stddev_list[comb_array[joint_idx, 1]],
+                        ]
+                    ),
+                    top=mean_list[comb_array[joint_idx, 1]]
+                    + 5 * stddev_list[comb_array[joint_idx, 1]],
+                )
 
                 # try:
-                ax_joint_array[joint_idx].contour(variables_array[comb_array[joint_idx, 0]].var,
-                                                  variables_array[comb_array[joint_idx, 1]].var,
-                # ax_joint_array[joint_idx].contour(
-                #                                   np.roll(variables_array, 2)[comb_array[joint_idx, 1]].var,
-                #                                   np.roll(variables_array, 2)[comb_array[joint_idx, 0]].var,
-                                                  joint.T,
-                                                  levels=[np.amax(joint) * level for level in \
-                                                          ([np.exp(-0.5 * r ** 2) for r in
-                                                            np.arange(9, 0, -0.5)] + [0.999])],
-                                                  cmap=cmap_name)
+                ax_joint_array[joint_idx].contour(
+                    variables_array[comb_array[joint_idx, 0]].var,
+                    variables_array[comb_array[joint_idx, 1]].var,
+                    # ax_joint_array[joint_idx].contour(
+                    #                                   np.roll(variables_array, 2)[comb_array[joint_idx, 1]].var,
+                    #                                   np.roll(variables_array, 2)[comb_array[joint_idx, 0]].var,
+                    joint.T,
+                    levels=[
+                        np.amax(joint) * level
+                        for level in (
+                            [np.exp(-0.5 * r**2) for r in np.arange(9, 0, -0.5)]
+                            + [0.999]
+                        )
+                    ],
+                    cmap=cmap_name,
+                )
 
                 # except:
                 #     ax_joint_array[joint_idx].contour(variables_array[comb_array[joint_idx, 0]].var,
@@ -399,41 +521,83 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
                     corr_coeff = correlation_coefficient(
                         variables_array[comb_array[joint_idx, 0]].var,
                         variables_array[comb_array[joint_idx, 1]].var,
-                        joint)
-                    ax_joint_array[joint_idx].text(.99, .99, rf'$\rho$ = {corr_coeff:.2f}',
-                       ha='right', va='top',
-                       transform=ax_joint_array[joint_idx].transAxes,
-                       fontsize=18)
+                        joint,
+                    )
+                    ax_joint_array[joint_idx].text(
+                        0.99,
+                        0.99,
+                        rf"$\rho$ = {corr_coeff:.2f}",
+                        ha="right",
+                        va="top",
+                        transform=ax_joint_array[joint_idx].transAxes,
+                        fontsize=18,
+                    )
                 except:
                     corr_coeff = correlation_coefficient(
                         variables_array[comb_array[joint_idx, 0]].var,
                         variables_array[comb_array[joint_idx, 1]].var,
-                        joint.T)
-                    ax_joint_array[joint_idx].text(.99, .99, rf'$\rho$ = {corr_coeff:.2f}',
-                                                   ha='right', va='top',
-                                                   transform=ax_joint_array[joint_idx].transAxes,
-                                                   fontsize=18)
+                        joint.T,
+                    )
+                    ax_joint_array[joint_idx].text(
+                        0.99,
+                        0.99,
+                        rf"$\rho$ = {corr_coeff:.2f}",
+                        ha="right",
+                        va="top",
+                        transform=ax_joint_array[joint_idx].transAxes,
+                        fontsize=18,
+                    )
 
-                if [variable.user_val for variable in variables_array][comb_array[joint_idx, 0]] is not None:
+                if [variable.user_val for variable in variables_array][
+                    comb_array[joint_idx, 0]
+                ] is not None:
                     ax_joint_array[joint_idx].axvline(
                         [variable.user_val for variable in variables_array][
-                            comb_array[joint_idx, 0]], 0, 1, c=gray, lw=1)
-                if [variable.user_val for variable in variables_array][comb_array[joint_idx, 1]] is not None:
+                            comb_array[joint_idx, 0]
+                        ],
+                        0,
+                        1,
+                        c=gray,
+                        lw=1,
+                    )
+                if [variable.user_val for variable in variables_array][
+                    comb_array[joint_idx, 1]
+                ] is not None:
                     ax_joint_array[joint_idx].axhline(
                         [variable.user_val for variable in variables_array][
-                            comb_array[joint_idx, 1]], 0, 1, c=gray, lw=1)
+                            comb_array[joint_idx, 1]
+                        ],
+                        0,
+                        1,
+                        c=gray,
+                        lw=1,
+                    )
 
             try:
-                ax_title.text(.99, .99,
-                        obs_name_corner[obs_idx] + '\n' +
-                        FileName.scheme + '\,' + FileName.scale + '\n' +
-                        r'' + orders_labels_dict[np.max(nn_orders_array) - order_num + 1 + i] + '\n' +
-                        r'$Q_{\mathrm{' + FileName.Q_param + '}}$' + '\n' +
-                        FileName.p_param + '\n' +
-                        FileName.vs_what,
-                        ha='right', va='top',
-                        transform=ax_title.transAxes,
-                        fontsize=25)
+                ax_title.text(
+                    0.99,
+                    0.99,
+                    obs_name_corner[obs_idx]
+                    + "\n"
+                    + FileName.scheme
+                    + "\,"
+                    + FileName.scale
+                    + "\n"
+                    + r""
+                    + orders_labels_dict[np.max(nn_orders_array) - order_num + 1 + i]
+                    + "\n"
+                    + r"$Q_{\mathrm{"
+                    + FileName.Q_param
+                    + "}}$"
+                    + "\n"
+                    + FileName.p_param
+                    + "\n"
+                    + FileName.vs_what,
+                    ha="right",
+                    va="top",
+                    transform=ax_title.transAxes,
+                    fontsize=25,
+                )
             except:
                 pass
 
@@ -443,12 +607,29 @@ def plot_corner_posteriors(cmap_name, order_num, variables_array, marg_post_arra
             if whether_save_plots:
                 fig.tight_layout()
 
-                fig.savefig(('figures/' + FileName.scheme + '_' + FileName.scale + '/' +
-                # fig.savefig(('figures/' + 'SMS_500MeV' + '/' +
-                             'corner_plot_curvewise' + '_' + obs_name_corner[obs_idx] + '_' +
-                             FileName.scheme + '_' + FileName.scale + '_' +
-                             'Q' + FileName.Q_param + '_' + FileName.p_param + '_' +
-                             FileName.vs_what +
-                             FileName.filename_addendum).replace('_0MeVlab_', '_'))
+                fig.savefig(
+                    (
+                        "figures/"
+                        + FileName.scheme
+                        + "_"
+                        + FileName.scale
+                        + "/"
+                        + "corner_plot_curvewise"
+                        + "_"
+                        + obs_name_corner[obs_idx]
+                        + "_"
+                        + FileName.scheme
+                        + "_"
+                        + FileName.scale
+                        + "_"
+                        + "Q"
+                        + FileName.Q_param
+                        + "_"
+                        + FileName.p_param
+                        + "_"
+                        + FileName.vs_what
+                        + FileName.filename_addendum
+                    ).replace("_0MeVlab_", "_")
+                )
 
     return fig

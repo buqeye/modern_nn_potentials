@@ -5,6 +5,7 @@ mpi_vals = np.linspace(1, 350, 30, dtype=np.dtype('f4'))
 # mpi_vals = 200 * np.array([0.9999, 1.0001])
 ls_tlab_vals = np.linspace(1, 150, 30, dtype=np.dtype('f4'))
 ls_deg_vals = np.linspace(0.01, 4, 30, dtype=np.dtype('f4'))
+# ls_deg_vals = np.linspace(50, 100, 30, dtype=np.dtype('f4'))
 lambda_vals = np.linspace(200, 900, 30, dtype=np.dtype('f4'))
 # lambda_vals = 600 * np.array([0.9999, 1.0001])
 
@@ -13,18 +14,26 @@ mesh_cart_sgt = np.delete(mesh_cart, 2, 1)
 mesh_cart_ang = np.delete(mesh_cart, 1, 1)
 # print(mesh_cart_ang)
 
+# mpi_vals = np.linspace(50, 210, 20, dtype=np.dtype('f4'))
+# ls_tlab_vals = np.linspace(41, 115, 15, dtype=np.dtype('f4'))
+# ls_deg_mag_vals = np.linspace(20, 400, 50, dtype=np.dtype('f4'))
+# ls_deg_exp_vals = np.linspace(0.5, 1.5, 11, dtype=np.dtype('f4'))
+# lambda_vals = np.linspace(200, 900, 30, dtype=np.dtype('f4'))
+#
+# mesh_cart = gm.cartesian(lambda_vals, np.log(ls_tlab_vals), np.log(ls_deg_mag_vals), np.log(ls_deg_exp_vals), mpi_vals)
+
 # # just SGT
 # plot_obs_list = [["SGT"]]
 # obs_name_grouped_list = ["SGT"]
 # obs_labels_grouped_list = [r'$\sigma$']
 # mesh_cart_grouped_list = [[mesh_cart_sgt]]
 
-# # just DSG
-# plot_obs_list = [["DSG"]]
-# obs_name_grouped_list = ["DSG"]
-# obs_labels_grouped_list = [r'$\displaystyle\frac{d\sigma}{d\Omega}$']
-# mesh_cart_grouped_list = [[mesh_cart]]
-# # mesh_cart_grouped_list = [[mesh_cart_q]]
+# just DSG
+plot_obs_list = [["DSG"]]
+obs_name_grouped_list = ["DSG"]
+obs_labels_grouped_list = [r'$\displaystyle\frac{d\sigma}{d\Omega}$']
+mesh_cart_grouped_list = [[mesh_cart]]
+# mesh_cart_grouped_list = [[mesh_cart_q]]
 
 # # just D
 # plot_obs_list = [["D"]]
@@ -36,16 +45,19 @@ mesh_cart_ang = np.delete(mesh_cart, 1, 1)
 # plot_obs_list = [["AXX"]]
 # obs_name_grouped_list = ["AXX"]
 # obs_labels_grouped_list = [r'$A_{xx}$']
+# mesh_cart_grouped_list = [[mesh_cart]]
 
 # # just AYY
 # plot_obs_list = [["AYY"]]
 # obs_name_grouped_list = ["AYY"]
 # obs_labels_grouped_list = [r'$A_{yy}$']
+# mesh_cart_grouped_list = [[mesh_cart]]
 
 # # just A
 # plot_obs_list = [["A"]]
 # obs_name_grouped_list = ["A"]
 # obs_labels_grouped_list = [r'$A$']
+# mesh_cart_grouped_list = [[mesh_cart]]
 
 # # just AY
 # plot_obs_list = [["AY"]]
@@ -236,12 +248,12 @@ mesh_cart_ang = np.delete(mesh_cart, 1, 1)
 #                            mesh_cart_ang]
 #                           ]
 
-# ALLOBS
-plot_obs_list = [["DSG", "D", "AXX", "AYY", "A", "AY"]]
-obs_name_grouped_list = ["ALLOBS"]
-obs_labels_grouped_list = [r'$\Pi$Obs.']
-mesh_cart_grouped_list = [[mesh_cart, mesh_cart, mesh_cart,
-                           mesh_cart, mesh_cart, mesh_cart]]
+# # ALLOBS
+# plot_obs_list = [["DSG", "D", "AXX", "AYY", "A", "AY"]]
+# obs_name_grouped_list = ["ALLOBS"]
+# obs_labels_grouped_list = [r'$\Pi$Obs.']
+# mesh_cart_grouped_list = [[mesh_cart, mesh_cart, mesh_cart,
+#                            mesh_cart, mesh_cart, mesh_cart]]
 
 # sets the RandomVariable objects
 LambdabVariable = RandomVariable(var=lambda_vals,
@@ -261,7 +273,25 @@ LsDegVariable = RandomVariable(var=ls_deg_vals,
                             ticks=[],
                             logprior=np.zeros(len(ls_deg_vals)),
                             logprior_name="noprior",
-                            marg_bool=False)
+                            marg_bool=True)
+# LsDegMagVariable = RandomVariable(var=ls_deg_mag_vals,
+#                             user_val=None,
+#                             name='lsdegmag',
+#                             label="a",
+#                             units="",
+#                             ticks=[],
+#                             logprior=np.zeros(len(ls_deg_mag_vals)),
+#                             logprior_name="noprior",
+#                             marg_bool=True)
+# LsDegExpVariable = RandomVariable(var=ls_deg_exp_vals,
+#                             user_val=None,
+#                             name='lsdegexp',
+#                             label="b",
+#                             units="",
+#                             ticks=[],
+#                             logprior=np.zeros(len(ls_deg_exp_vals)),
+#                             logprior_name="noprior",
+#                             marg_bool=True)
 LsTlabVariable = RandomVariable(var=ls_tlab_vals,
                             user_val=None,
                             name='lstlab',
@@ -270,7 +300,7 @@ LsTlabVariable = RandomVariable(var=ls_tlab_vals,
                             ticks=[],
                             logprior=np.zeros(len(ls_tlab_vals)),
                             logprior_name="noprior",
-                            marg_bool=False)
+                            marg_bool=True)
 MpieffVariable = RandomVariable(var=mpi_vals,
                                 user_val=None,
                                 name='mpieff',
@@ -281,6 +311,7 @@ MpieffVariable = RandomVariable(var=mpi_vals,
                                 logprior_name="uniformprior",
                                 marg_bool = True)
 variables_array = np.array([LambdabVariable, LsTlabVariable, LsDegVariable, MpieffVariable])
+# variables_array = np.array([LambdabVariable, LsTlabVariable, LsDegMagVariable, LsDegExpVariable, MpieffVariable])
 
 # ls_deg_vals = np.linspace(0.01, 4, 100, dtype=np.dtype('f4'))
 # q_vals = np.linspace(0.01, 1.01, 100, dtype=np.dtype('f4'))
@@ -325,6 +356,8 @@ log_likelihood_fn_kwargs={
 def warping_fn(pts_array):
     pts_array_shape = np.shape(pts_array)
     pts_array = np.reshape(pts_array, (np.prod(pts_array_shape[:-1]), ) + (pts_array_shape[-1], ))
+    print("pts_array_shape = " + str(pts_array_shape))
+    print("pts_array has shape " + str(np.shape(pts_array)))
     try:
         pass
         # for pt_idx, pt in enumerate(pts_array):
@@ -349,7 +382,6 @@ def warping_fn(pts_array):
 #                         pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0]**(2) / 500, ])
 #                     for pt_idx, pt in enumerate(pts_array):
 #                         pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0]**(3) / 2, ])
-        print("We warped successfully.")
     except:
         pass
 
@@ -357,7 +389,29 @@ def warping_fn(pts_array):
 
     return pts_array
 
-warping_fn_kwargs={}
+warping_fn_kwargs = {}
+
+def scaling_fn(X,
+               ls_array,
+               ):
+    X_shape = np.shape(X)
+    X = np.reshape(X, (np.prod(X_shape[:-1]), ) + (X_shape[-1], ))
+    ls = np.array([])
+    try:
+        for pt_idx, pt in enumerate(X):
+            # ls = np.append(ls, np.array([ls_array[0], ls_array[1] * X[pt_idx, 0]**(-1. * ls_array[2])
+            #                              ]))
+            ls = np.append(ls, ls_array)
+    except:
+        pass
+
+    ls = np.reshape(ls, X_shape)
+    # print("ls_array = " + str(ls_array))
+    # print("ls = " + str(ls))
+
+    return ls
+
+scaling_fn_kwargs={}
 
 generate_posteriors(
     scale_scheme_bunch_array=[RKE500MeV],
@@ -393,8 +447,13 @@ generate_posteriors(
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
-    LengthScaleTlabInput=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
-    LengthScaleDegInput=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
+    # LengthScaleTlabInput=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
+    # LengthScaleDegInput=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
+    length_scale_list = [NSKernelParam(60, [10, 200]),
+                         NSKernelParam(0.4, [0.05, 3])],
+    # length_scale_list = [NSKernelParam(60, [10, 200]),
+    #                      NSKernelParam(100, [10, 1000]),
+    #                      NSKernelParam(1, [0.2, 2])],
     m_pi_eff=138,
     Lambdab=570,
     print_all_classes=False,
@@ -403,8 +462,8 @@ generate_posteriors(
     plot_posterior_curvewise_bool=True,
     plot_corner_curvewise_bool=True,
     use_data_curvewise_bool=False,
-    save_data_curvewise_bool=True,
-    save_posterior_curvewise_bool=True,
+    save_data_curvewise_bool=False,
+    save_posterior_curvewise_bool=False,
 
     plot_obs_list = plot_obs_list,
     obs_name_grouped_list = obs_name_grouped_list,
@@ -418,11 +477,13 @@ generate_posteriors(
     log_likelihood_fn_kwargs_posterior=log_likelihood_fn_kwargs,
     warping_fn = warping_fn,
     warping_fn_kwargs = warping_fn_kwargs,
+    scaling_fn = scaling_fn,
+    scaling_fn_kwargs = scaling_fn_kwargs,
 
     plot_posterior_pointwise_bool=True,
     save_posterior_pointwise_bool=False,
 
     variables_array_pointwise = np.array([LambdabVariable]),
 
-    filename_addendum="_prewarp",
+    filename_addendum="_nsrbf",
 )
