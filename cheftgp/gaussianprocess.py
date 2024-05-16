@@ -1043,9 +1043,9 @@ class GSUMDiagnostics:
                 fig, ax = plt.subplots(figsize=(3.2, 2.2))
 
             for i, n in enumerate(self.nn_orders_full[self.mask_restricted]):
-                print(np.shape(np.squeeze(self.x)))
-                print(np.shape(self.pred[:, i]))
-                print(np.shape(self.std))
+                # print(np.shape(np.squeeze(self.x)))
+                # print(np.shape(self.pred[:, i]))
+                # print(np.shape(self.std))
                 ax.fill_between(
                     np.squeeze(self.x),
                     self.pred[:, i] + 2 * self.std,
@@ -1132,9 +1132,9 @@ class GSUMDiagnostics:
                 #     self.gp.cov(self.X) -
                 #     self.gp.cov(self.X, dX) @ np.linalg.solve(self.gp.cov(dX, dX), self.gp.cov(dX, self.X))
                 # ))
-                print(np.shape(self.x))
-                print(np.shape(dX))
-                print(np.shape(np.array(self.constraint[1])))
+                # print(np.shape(self.x))
+                # print(np.shape(dX))
+                # print(np.shape(np.array(self.constraint[1])))
                 _, std_interp = self.gp.predict(
                     self.x, Xc=dX, y=np.array(self.constraint[1]), return_std=True
                 )
@@ -2575,16 +2575,16 @@ def make_likelihood_filename(
         + str(FileNameObj.vs_what)
     )
 
-    for logprior, random_var in zip(logpriors_names, random_vars_array):
-        filename += (
-            "_"
-            + str(random_var.name)
-            + "_"
-            + str(logprior)
-            + "_"
-            + str(len(random_var.var))
-            + "pts"
-        )
+    # for logprior, random_var in zip(logpriors_names, random_vars_array):
+    #     filename += (
+    #         "_"
+    #         + str(random_var.name)
+    #         + "_"
+    #         + str(logprior)
+    #         + "_"
+    #         + str(len(random_var.var))
+    #         + "pts"
+    #     )
 
     print(filename)
 
@@ -2820,6 +2820,7 @@ def plot_posteriors_curvewise(
     degrees_train_pts,
     InputSpaceDeg,
     length_scale_list,
+    cbar_list,
     variables_array,
     mom_fn,
     mom_fn_kwargs,
@@ -2829,6 +2830,8 @@ def plot_posteriors_curvewise(
     log_likelihood_fn_kwargs,
     warping_fn=None,
     warping_fn_kwargs=None,
+    cbar_fn=None,
+    cbar_fn_kwargs=None,
     scaling_fn=None,
     scaling_fn_kwargs=None,
     orders=2,
@@ -2990,6 +2993,14 @@ def plot_posteriors_curvewise(
                         ),
                         length_scale_fn=scaling_fn,
                         length_scale_fn_kwargs=scaling_fn_kwargs,
+                        cbar=tuple(
+                            [CB.param_guess for CB in cbar_list]
+                        ),
+                        cbar_bounds=tuple(
+                            [tuple(CB.param_bounds) for CB in cbar_list]
+                        ),
+                        cbar_fn=cbar_fn,
+                        cbar_fn_kwargs=cbar_fn_kwargs,
                     ) + NSWhiteKernel(1e-6, noise_level_bounds="fixed")
 
                     if len(np.shape(obs_data_full)) == 2:
@@ -4335,6 +4346,10 @@ class NSRBF(NontationaryKernelMixin, NormalizedKernelMixin, NSKernel):
         length_scale_bounds=(1e-5, 1e5),
         length_scale_fn=None,
         length_scale_fn_kwargs=None,
+        cbar=1.0,
+        cbar_bounds=(1e-5, 1e5),
+        cbar_fn=None,
+        cbar_fn_kwargs=None,
     ):
         self.length_scale = length_scale
         self.length_scale_bounds = length_scale_bounds
@@ -4342,13 +4357,38 @@ class NSRBF(NontationaryKernelMixin, NormalizedKernelMixin, NSKernel):
         self.length_scale_fn = length_scale_fn
         self.length_scale_fn_kwargs = length_scale_fn_kwargs
 
-    @property
-    def anisotropic(self):
-        return np.iterable(self.length_scale) and len(self.length_scale) > 1
+        if cbar is not None:
+            self.cbar = cbar
+        else:
+            self.cbar = 1.0
+        self.cbar_bounds = cbar_bounds
+
+        self.cbar_fn = cbar_fn
+        self.cbar_fn_kwargs = cbar_fn_kwargs
 
     @property
+    def anisotropic_cbar(self):
+        return np.iterable(self.cbar) and len(self.cbar) > 1
+
+    @property
+    def hyperparameter_cbar(self):
+        if self.anisotropic_cbar:
+            # print("The variance is anisotropic.")
+            return Hyperparameter(
+                "cbar",
+                "numeric",
+                self.cbar_bounds,
+                len(self.cbar),
+            )
+        return Hyperparameter("cbar", "numeric", self.cbar_bounds)
+
+    @property
+    def anisotropic_length_scale(self):
+        return np.iterable(self.length_scale) and len(self.length_scale) > 1
+    @property
     def hyperparameter_length_scale(self):
-        if self.anisotropic:
+        if self.anisotropic_length_scale:
+            # print("The length scale is anisotropic.")
             return Hyperparameter(
                 "length_scale",
                 "numeric",
@@ -4392,6 +4432,11 @@ class NSRBF(NontationaryKernelMixin, NormalizedKernelMixin, NSKernel):
         else:
             length_scale_fn_kwargs = self.length_scale_fn_kwargs
 
+        if self.cbar_fn_kwargs is None:
+            cbar_fn_kwargs = {}
+        else:
+            cbar_fn_kwargs = self.cbar_fn_kwargs
+
         if Y is None:
             if callable(self.length_scale_fn):
                 # if length scale(s) is/are nonstationary, calculate them
@@ -4404,12 +4449,24 @@ class NSRBF(NontationaryKernelMixin, NormalizedKernelMixin, NSKernel):
                 # otherwise, behave like a stationary kernel
                 length_scale = self.length_scale
 
+            if callable(self.cbar_fn):
+                # if length scale(s) is/are nonstationary, calculate them
+                cbar_fn_kwargs = {
+                    **cbar_fn_kwargs,
+                    **{"cbar_array": self.cbar},
+                }
+                cbar = self.cbar_fn(X, **cbar_fn_kwargs)
+            else:
+                # otherwise, behave like a stationary kernel
+                cbar = self.cbar
+
         if Y is None:
             dists = pdist(X / length_scale, metric="sqeuclidean")
             K = np.exp(-0.5 * dists)
             # convert from upper-triangular matrix to square matrix
             K = squareform(K)
             np.fill_diagonal(K, 1)
+            K = K * cbar**(2)
         else:
             if eval_gradient:
                 raise ValueError("Gradient can only be evaluated when Y is None.")
@@ -4423,6 +4480,15 @@ class NSRBF(NontationaryKernelMixin, NormalizedKernelMixin, NSKernel):
 
             dists = cdist(X / length_scale_X, Y / length_scale_Y, metric="sqeuclidean")
             K = np.exp(-0.5 * dists)
+
+            if callable(self.cbar_fn):
+                cbar_X = self.cbar_fn(X, **self.cbar_fn_kwargs)
+                cbar_Y = self.cbar_fn(Y, **self.cbar_fn_kwargs)
+            else:
+                cbar_X = cbar
+                cbar_Y = cbar
+
+            K = cbar_X * cbar_Y * K
 
         if eval_gradient:
             if self.hyperparameter_length_scale.fixed:

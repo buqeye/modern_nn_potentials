@@ -25,7 +25,7 @@ def Q_approx(p, Q_parametrization, Lambda_b, m_pi=138, single_expansion=False):
         # of polynomials
         n = 8
         q = (m_pi**n + p**n) / (m_pi ** (n - 1) + p ** (n - 1)) / Lambda_b
-        return q
+        return np.array(q, dtype = np.float64)
 
     elif Q_parametrization == "max":
         # Transition from m_pi to p with a maximum function
