@@ -2828,6 +2828,8 @@ def plot_posteriors_curvewise(
     ratio_fn_kwargs,
     log_likelihood_fn,
     log_likelihood_fn_kwargs,
+    length_scale_fixed=False,
+    cbar_fixed=False,
     warping_fn=None,
     warping_fn_kwargs=None,
     cbar_fn=None,
@@ -2836,7 +2838,7 @@ def plot_posteriors_curvewise(
     scaling_fn_kwargs=None,
     orders=2,
     FileName=None,
-    whether_plot_posteriors=True,
+    whether_plot_marg=True,
     whether_plot_corner=True,
     whether_use_data=True,
     whether_save_data=True,
@@ -2985,20 +2987,27 @@ def plot_posteriors_curvewise(
 
                     # initializes kernel
                     kernel_posterior = NSRBF(
-                        length_scale=tuple(
+                        length_scale=
                             [LS.param_guess for LS in length_scale_list]
-                        ),
-                        length_scale_bounds=tuple(
+                        ,
+                        length_scale_bounds=
                             [tuple(LS.param_bounds) for LS in length_scale_list]
-                        ),
+                        ,
+                        length_scale_fixed=length_scale_fixed
+                        ,
+
                         length_scale_fn=scaling_fn,
                         length_scale_fn_kwargs=scaling_fn_kwargs,
-                        cbar=tuple(
+
+                        cbar=
                             [CB.param_guess for CB in cbar_list]
-                        ),
-                        cbar_bounds=tuple(
+                        ,
+                        cbar_bounds=
                             [tuple(CB.param_bounds) for CB in cbar_list]
-                        ),
+                        ,
+                        cbar_fixed=cbar_fixed
+                        ,
+
                         cbar_fn=cbar_fn,
                         cbar_fn_kwargs=cbar_fn_kwargs,
                     ) + NSWhiteKernel(1e-6, noise_level_bounds="fixed")
@@ -3526,7 +3535,7 @@ def plot_posteriors_curvewise(
         np.shape(like_list),
     )
 
-    if whether_plot_posteriors or whether_plot_corner:
+    if whether_plot_marg or whether_plot_corner:
         # calculates all joint and fully marginalized posterior pdfs
         marg_post_array, joint_post_array = marginalize_likelihoods(
             variables_array[marg_bool_array], like_list
@@ -3535,7 +3544,7 @@ def plot_posteriors_curvewise(
     # array of stats (MAP, mean, and stddev)
     fit_stats_array = np.array([])
 
-    if whether_plot_posteriors:
+    if whether_plot_marg:
         # plots and saves all fully marginalized posterior pdfs
         for variable, result in zip(variables_array[marg_bool_array], marg_post_array):
             fig, fit_stats = plot_marg_posteriors(
@@ -4107,7 +4116,9 @@ class NSKernel(metaclass=ABCMeta):
         """
         theta = []
         params = self.get_params()
+        # print("self.hyperparameters = " + str(self.hyperparameters))
         for hyperparameter in self.hyperparameters:
+            # print(hyperparameter.fixed)
             if not hyperparameter.fixed:
                 theta.append(params[hyperparameter.name])
         if len(theta) > 0:
@@ -4344,24 +4355,39 @@ class NSRBF(NontationaryKernelMixin, NormalizedKernelMixin, NSKernel):
         self,
         length_scale=1.0,
         length_scale_bounds=(1e-5, 1e5),
+        length_scale_fixed=False,
         length_scale_fn=None,
         length_scale_fn_kwargs=None,
         cbar=1.0,
         cbar_bounds=(1e-5, 1e5),
+        cbar_fixed = False,
         cbar_fn=None,
         cbar_fn_kwargs=None,
     ):
         self.length_scale = length_scale
         self.length_scale_bounds = length_scale_bounds
+        self.length_scale_fixed = length_scale_fixed
+
+        # for i, lsf in enumerate(self.length_scale_fixed):
+        #     if lsf == True:
+        #         self.length_scale_bounds[i] = "fixed"
 
         self.length_scale_fn = length_scale_fn
         self.length_scale_fn_kwargs = length_scale_fn_kwargs
 
-        if cbar is not None:
-            self.cbar = cbar
-        else:
-            self.cbar = 1.0
+        # if cbar is not None:
+        #     self.cbar = cbar
+        # else:
+        #     self.cbar = 1.0
+        # print("self.cbar = " + str(self.cbar))
+        self.cbar = cbar
         self.cbar_bounds = cbar_bounds
+        self.cbar_fixed = cbar_fixed
+
+        # for i, cbf in enumerate(self.cbar_fixed):
+        #     if cbf == True:
+        #         self.cbar_bounds[i] = "fixed"
+        # print(self.cbar_bounds)
 
         self.cbar_fn = cbar_fn
         self.cbar_fn_kwargs = cbar_fn_kwargs
@@ -4373,14 +4399,16 @@ class NSRBF(NontationaryKernelMixin, NormalizedKernelMixin, NSKernel):
     @property
     def hyperparameter_cbar(self):
         if self.anisotropic_cbar:
-            # print("The variance is anisotropic.")
+        # if not all(self.cbar_fixed):
+        #     print("Inside the if-statement.")
             return Hyperparameter(
                 "cbar",
                 "numeric",
                 self.cbar_bounds,
                 len(self.cbar),
+                fixed = self.cbar_fixed
             )
-        return Hyperparameter("cbar", "numeric", self.cbar_bounds)
+        return Hyperparameter("cbar", "numeric", self.cbar_bounds, fixed = self.cbar_fixed)
 
     @property
     def anisotropic_length_scale(self):
@@ -4394,8 +4422,9 @@ class NSRBF(NontationaryKernelMixin, NormalizedKernelMixin, NSKernel):
                 "numeric",
                 self.length_scale_bounds,
                 len(self.length_scale),
+                fixed = self.length_scale_fixed
             )
-        return Hyperparameter("length_scale", "numeric", self.length_scale_bounds)
+        return Hyperparameter("length_scale", "numeric", self.length_scale_bounds, fixed = self.length_scale_fixed)
 
     def __call__(self, X, Y=None, eval_gradient=False):
         """Return the kernel k(X, Y) and optionally its gradient.
@@ -4466,6 +4495,7 @@ class NSRBF(NontationaryKernelMixin, NormalizedKernelMixin, NSKernel):
             # convert from upper-triangular matrix to square matrix
             K = squareform(K)
             np.fill_diagonal(K, 1)
+            # print("cbar = " + str(cbar))
             K = K * cbar**(2)
         else:
             if eval_gradient:
