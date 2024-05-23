@@ -1302,6 +1302,12 @@ class GSUMDiagnostics:
         if "fig" in locals() and whether_save:
             fig.tight_layout()
 
+            for xq_idx, xq in enumerate(self.x_quantity_array):
+                if len(xq) == 1:
+                    self.fixed_quantity_value = xq[0]
+                    break
+            self.fixed_quantity_units = self.x_quantity_units[xq_idx]
+
             fig.savefig(
                 (
                     "figures/"
@@ -1322,7 +1328,7 @@ class GSUMDiagnostics:
                     + "_Q"
                     + self.Q_param
                     + "_"
-                    + self.vs_what
+                    + self.vs_what[0]
                     + "_"
                     + str(self.n_train_pts)
                     + "_"
@@ -1429,7 +1435,7 @@ class GSUMDiagnostics:
                         + "_Q"
                         + self.Q_param
                         + "_"
-                        + self.vs_what
+                        + self.vs_what[0]
                         + "_"
                         + str(self.n_train_pts)
                         + "_"
@@ -1568,7 +1574,7 @@ class GSUMDiagnostics:
                             + "_Q"
                             + self.Q_param
                             + "_"
-                            + self.vs_what
+                            + self.vs_what[0]
                             + "_"
                             + str(self.n_train_pts)
                             + "_"
@@ -1770,7 +1776,7 @@ class GSUMDiagnostics:
                             + "_Q"
                             + self.Q_param
                             + "_"
-                            + self.vs_what
+                            + self.vs_what[0]
                             + "_"
                             + str(self.n_train_pts)
                             + "_"
@@ -2061,7 +2067,7 @@ class GSUMDiagnostics:
                         + "_Q"
                         + self.Q_param
                         + "_"
-                        + self.vs_what
+                        + self.vs_what[0]
                         + "_"
                         + str(self.n_train_pts)
                         + "_"
@@ -2094,7 +2100,7 @@ class GSUMDiagnostics:
                         + "_Q"
                         + self.Q_param
                         + "_"
-                        + self.vs_what
+                        + self.vs_what[0]
                         + "_"
                         + str(self.n_train_pts)
                         + "_"
@@ -2214,7 +2220,7 @@ class GSUMDiagnostics:
                     + "_Q"
                     + self.Q_param
                     + "_"
-                    + self.vs_what
+                    + self.vs_what[0]
                     + "_"
                     + str(self.n_train_pts)
                     + "_"
@@ -2317,7 +2323,7 @@ class GSUMDiagnostics:
                         + "_Q"
                         + self.Q_param
                         + "_"
-                        + self.vs_what
+                        + self.vs_what[0]
                         + "_"
                         + str(self.n_train_pts)
                         + "_"
@@ -2403,7 +2409,7 @@ class GSUMDiagnostics:
             + "}},\,\mathrm{"
             + self.p_param
             + "},\,\mathrm{"
-            + self.vs_what
+            + self.vs_what[0]
             + "})$",
             size=30,
         )
@@ -2429,7 +2435,7 @@ class GSUMDiagnostics:
                     + "_Q"
                     + self.Q_param
                     + "_"
-                    + self.vs_what
+                    + self.vs_what[0]
                     + "_"
                     + str(self.n_train_pts)
                     + "_"
@@ -2586,7 +2592,7 @@ def make_likelihood_filename(
     #         + "pts"
     #     )
 
-    print(filename)
+    # print(filename)
 
     return str(filename.replace("__", "_") + FileNameObj.filename_addendum + ".txt")
 
@@ -2968,8 +2974,10 @@ def plot_posteriors_curvewise(
                             ),
                         )
                     )
+                # print("We found the file.")
 
             except:
+                # print("There was no save data.")
                 # failing that, generates new data and saves it (if the user chooses)
                 obs_loglike_sum = np.zeros(
                     tuple(
