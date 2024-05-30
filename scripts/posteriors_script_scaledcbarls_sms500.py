@@ -2,7 +2,7 @@ from generator_fns import *
 
 # sets the meshes for the random variable arrays
 mpi_vals = np.linspace(1, 301, 150, dtype=np.dtype('f4'))
-ls_tlab_vals = np.linspace(26, 100, 75, dtype=np.dtype('f4'))
+ls_tlab_vals = np.linspace(1, 100, 100, dtype=np.dtype('f4'))
 ls_deg_mag_vals = np.linspace(1, 601, 150, dtype=np.dtype('f4'))
 lambda_vals = np.linspace(200, 900, 150, dtype=np.dtype('f4'))
 
@@ -33,7 +33,7 @@ LsTlabVariable = RandomVariable(var=ls_tlab_vals,
                             ticks=[],
                             logprior=np.zeros(len(ls_tlab_vals)),
                             logprior_name="noprior",
-                            marg_bool=False)
+                            marg_bool=True)
 LsDegMagVariable = RandomVariable(var=ls_deg_mag_vals,
                             user_val=None,
                             name='lsdegmag',
@@ -42,7 +42,7 @@ LsDegMagVariable = RandomVariable(var=ls_deg_mag_vals,
                             ticks=[],
                             logprior=np.zeros(len(ls_deg_mag_vals)),
                             logprior_name="noprior",
-                            marg_bool=False)
+                            marg_bool=True)
 MpieffVariable = RandomVariable(var=mpi_vals,
                                 user_val=None,
                                 name='mpieff',
@@ -110,7 +110,9 @@ def cbar_fn(X,
     cbar = np.array([])
     try:
         for pt_idx, pt in enumerate(X):
-            cbar = np.append(cbar, cbar_array)
+            R = np.max(X[:, 0]) - np.min(X[:, 0])
+            cbar = np.append(cbar, np.array([(1 + (1.7 / R * (pt[0] - 0.71 * R)) ** (2)) ** (-0.5)
+                                             ]))
     except:
         pass
 
@@ -128,7 +130,7 @@ generate_posteriors(
     input_space_tlab=["prel"],
     t_lab_train_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]),
     degrees_train_pts=np.array([41, 60, 76, 90, 104, 120, 139]),
-    orders_from_ho=4,
+    orders_from_ho=1,
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
@@ -143,11 +145,11 @@ generate_posteriors(
     savefile_type="png",
 
     plot_posterior_curvewise_bool=True,
-    plot_marg_curvewise_bool=True,
-    plot_corner_curvewise_bool=True,
-    use_data_curvewise_bool=True,
+    plot_marg_curvewise_bool=False,
+    plot_corner_curvewise_bool=False,
+    use_data_curvewise_bool=False,
     save_data_curvewise_bool=True,
-    save_posterior_curvewise_bool=True,
+    save_posterior_curvewise_bool=False,
 
     plot_obs_list=plot_obs_list,
     obs_name_grouped_list=obs_name_grouped_list,
@@ -172,5 +174,5 @@ generate_posteriors(
 
     variables_array_pointwise=np.array([LambdabVariable]),
 
-    filename_addendum="_cluster2",
+    filename_addendum="_cluster3",
 )

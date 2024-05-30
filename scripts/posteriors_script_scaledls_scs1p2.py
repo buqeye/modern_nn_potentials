@@ -4,7 +4,7 @@ from generator_fns import *
 mpi_vals = np.linspace(1, 301, 150, dtype=np.dtype('f4'))
 ls_tlab_vals = np.linspace(26, 100, 75, dtype=np.dtype('f4'))
 ls_deg_mag_vals = np.linspace(1, 601, 150, dtype=np.dtype('f4'))
-lambda_vals = np.linspace(200, 900, 150, dtype=np.dtype('f4'))
+lambda_vals = np.linspace(200, 1200, 200, dtype=np.dtype('f4'))
 
 mesh_cart = gm.cartesian(lambda_vals, np.log(ls_tlab_vals), np.log(ls_deg_mag_vals), mpi_vals)
 
@@ -147,11 +147,11 @@ generate_posteriors(
     savefile_type="png",
 
     plot_posterior_curvewise_bool=True,
-    plot_marg_curvewise_bool=False,
-    plot_corner_curvewise_bool=False,
-    use_data_curvewise_bool=False,
+    plot_marg_curvewise_bool=True,
+    plot_corner_curvewise_bool=True,
+    use_data_curvewise_bool=True,
     save_data_curvewise_bool=True,
-    save_posterior_curvewise_bool=False,
+    save_posterior_curvewise_bool=True,
 
     plot_obs_list=plot_obs_list,
     obs_name_grouped_list=obs_name_grouped_list,

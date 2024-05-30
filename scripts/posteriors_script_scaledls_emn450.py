@@ -143,11 +143,11 @@ generate_posteriors(
     savefile_type="png",
 
     plot_posterior_curvewise_bool=True,
-    plot_marg_curvewise_bool=False,
-    plot_corner_curvewise_bool=False,
-    use_data_curvewise_bool=False,
+    plot_marg_curvewise_bool=True,
+    plot_corner_curvewise_bool=True,
+    use_data_curvewise_bool=True,
     save_data_curvewise_bool=True,
-    save_posterior_curvewise_bool=False,
+    save_posterior_curvewise_bool=True,
 
     plot_obs_list=plot_obs_list,
     obs_name_grouped_list=obs_name_grouped_list,

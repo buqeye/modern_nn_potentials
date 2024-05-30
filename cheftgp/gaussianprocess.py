@@ -4532,10 +4532,10 @@ class NSRBF(NontationaryKernelMixin, NormalizedKernelMixin, NSKernel):
             if self.hyperparameter_length_scale.fixed:
                 # Hyperparameter l kept fixed
                 return K, np.empty((X.shape[0], X.shape[0], 0))
-            elif not self.anisotropic or length_scale.shape[0] == 1:
+            elif not (self.anisotropic_cbar or self.anisotropic_length_scale) or length_scale.shape[0] == 1:
                 K_gradient = (K * squareform(dists))[:, :, np.newaxis]
                 return K, K_gradient
-            elif self.anisotropic:
+            elif (self.anisotropic_cbar or self.anisotropic_length_scale):
                 # We need to recompute the pairwise dimension-wise distances
                 K_gradient = (X[:, np.newaxis, :] - X[np.newaxis, :, :]) ** 2 / (
                     length_scale**2
