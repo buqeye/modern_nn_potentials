@@ -1,12 +1,11 @@
 from generator_fns import *
 
 # sets the meshes for the random variable arrays
-mpi_vals = np.linspace(1, 301, 150, dtype=np.dtype('f4'))
-ls_tlab_vals = np.linspace(26, 100, 75, dtype=np.dtype('f4'))
-ls_deg_mag_vals = np.linspace(1, 601, 150, dtype=np.dtype('f4'))
-lambda_vals = np.linspace(200, 900, 150, dtype=np.dtype('f4'))
+mpi_vals = 212 * np.array([0.999, 1.001])
+ls_deg_mag_vals = np.linspace(1, 601, 1001, dtype=np.dtype('f4'))
+lambda_vals = 634 * np.array([0.999, 1.001])
 
-mesh_cart = gm.cartesian(lambda_vals, np.log(ls_tlab_vals), np.log(ls_deg_mag_vals), mpi_vals)
+mesh_cart = gm.cartesian(lambda_vals, np.log(ls_deg_mag_vals), mpi_vals)
 
 # ALLOBS
 plot_obs_list = [["DSG", "D", "AXX", "AYY", "A", "AY"]]
@@ -14,10 +13,6 @@ obs_name_grouped_list = ["ALLOBS"]
 obs_labels_grouped_list = [r'$\Pi$Obs.']
 mesh_cart_grouped_list = [[mesh_cart, mesh_cart, mesh_cart,
                            mesh_cart, mesh_cart, mesh_cart]]
-# plot_obs_list = [["DSG",]]
-# obs_name_grouped_list = ["ALLOBS"]
-# obs_labels_grouped_list = [r'$\Pi$Obs.']
-# mesh_cart_grouped_list = [[mesh_cart,]]
 
 # sets the RandomVariable objects
 LambdabVariable = RandomVariable(var=lambda_vals,
@@ -28,16 +23,16 @@ LambdabVariable = RandomVariable(var=lambda_vals,
                                  ticks=[300, 450, 600, 750],
                                  logprior=Lb_logprior(lambda_vals),
                                  logprior_name="uniformprior",
-                                 marg_bool = True)
-LsTlabVariable = RandomVariable(var=ls_tlab_vals,
-                            user_val=None,
-                            name='lstlab',
-                            label="\ell_{T}",
-                            units="MeV",
-                            ticks=[],
-                            logprior=np.zeros(len(ls_tlab_vals)),
-                            logprior_name="noprior",
-                            marg_bool=False)
+                                 marg_bool = False)
+# LsTlabVariable = RandomVariable(var=ls_tlab_vals,
+#                             user_val=None,
+#                             name='lstlab',
+#                             label="\ell_{T}",
+#                             units="MeV",
+#                             ticks=[],
+#                             logprior=np.zeros(len(ls_tlab_vals)),
+#                             logprior_name="noprior",
+#                             marg_bool=False)
 LsDegMagVariable = RandomVariable(var=ls_deg_mag_vals,
                             user_val=None,
                             name='lsdegmag',
@@ -46,7 +41,7 @@ LsDegMagVariable = RandomVariable(var=ls_deg_mag_vals,
                             ticks=[],
                             logprior=np.zeros(len(ls_deg_mag_vals)),
                             logprior_name="noprior",
-                            marg_bool=False)
+                            marg_bool=True)
 MpieffVariable = RandomVariable(var=mpi_vals,
                                 user_val=None,
                                 name='mpieff',
@@ -55,15 +50,15 @@ MpieffVariable = RandomVariable(var=mpi_vals,
                                 ticks=[50, 100, 150, 200, 250, 300],
                                 logprior=mpieff_logprior(mpi_vals),
                                 logprior_name="uniformprior",
-                                marg_bool = True)
-variables_array = np.array([LambdabVariable, LsTlabVariable, LsDegMagVariable, MpieffVariable])
+                                marg_bool = False)
+variables_array = np.array([LambdabVariable, LsDegMagVariable, MpieffVariable])
 
 ratio_fn=ratio_fn_curvewise
 ratio_fn_kwargs={
     "p_param": "pprel",
     "Q_param": "sum",
-    "mpi_var": 63,
-    "lambda_var": 510,
+    "mpi_var": 138,
+    "lambda_var": 570,
     "single_expansion": False,
 }
 log_likelihood_fn=log_likelihood
@@ -91,15 +86,19 @@ def scaling_fn(X,
                ls_array,
                ):
     X_shape = np.shape(X)
+    # print("X_shape = " + str(X_shape))
     X = np.reshape(X, (np.prod(X_shape[:-1]), ) + (X_shape[-1], ))
+    # print("X = " + str(X))
     ls = np.array([])
-    try:
-        for pt_idx, pt in enumerate(X):
-            ls = np.append(ls, np.array([ls_array[0], ls_array[1] * X[pt_idx, 0]**(-0.66)
-                                         ]))
-    except:
-        pass
 
+    for pt_idx, pt in enumerate(X):
+        # print("I'm in the for-loop.")
+        # print([49.0, ls_array[0] * X[pt_idx, 0]**(-0.99)])
+        ls = np.append(ls, np.array([49.0, ls_array * X[pt_idx, 0]**(-0.99)
+                                     ]))
+        # print("ls = " + str(ls))
+
+    # print("ls = " + str(ls))
     ls = np.reshape(ls, X_shape)
 
     return ls
@@ -125,32 +124,31 @@ def cbar_fn(X,
 cbar_fn_kwargs={}
 
 generate_posteriors(
-    scale_scheme_bunch_array=[EMN500MeV],
+    scale_scheme_bunch_array=[RKE500MeV],
     Q_param_method_array=["sum"],
     p_param_method_array=["pprel"],
     input_space_deg=["cos"],
     input_space_tlab=["prel"],
     t_lab_train_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]),
     degrees_train_pts=np.array([41, 60, 76, 90, 104, 120, 139]),
-    orders_from_ho=3,
+    orders_from_ho=1,
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
-    length_scale_list=[NSKernelParam(60, [10, 200]),
-                       NSKernelParam(100, [10, 1000])],
+    length_scale_list=[NSKernelParam(100, [10, 1000])],
     length_scale_fixed=False,
     cbar_list=[NSKernelParam(1.0, [0.1, 10])],
     cbar_fixed=True,
-    m_pi_eff=63,
-    Lambdab=510,
+    m_pi_eff=138,
+    Lambdab=570,
     print_all_classes=False,
     savefile_type="png",
 
     plot_posterior_curvewise_bool=True,
-    plot_marg_curvewise_bool=False,
+    plot_marg_curvewise_bool=True,
     plot_corner_curvewise_bool=False,
     use_data_curvewise_bool=False,
-    save_data_curvewise_bool=True,
+    save_data_curvewise_bool=False,
     save_posterior_curvewise_bool=False,
 
     plot_obs_list=plot_obs_list,
@@ -176,5 +174,5 @@ generate_posteriors(
 
     variables_array_pointwise=np.array([LambdabVariable]),
 
-    filename_addendum="_cluster2",
+    filename_addendum="_cluster_spikes",
 )

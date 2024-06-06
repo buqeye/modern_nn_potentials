@@ -1040,7 +1040,7 @@ class GSUMDiagnostics:
         if np.shape(self.x)[-1] == 1:
             # plots the coefficients against the given input space in 1D
             if ax is None:
-                fig, ax = plt.subplots(figsize=(3.2, 2.2))
+                fig, ax = plt.subplots(figsize=(3.0, 2.2))
 
             for i, n in enumerate(self.nn_orders_full[self.mask_restricted]):
                 # print(np.shape(np.squeeze(self.x)))
@@ -1398,7 +1398,7 @@ class GSUMDiagnostics:
             )
 
             if ax is None:
-                fig, ax = plt.subplots(figsize=(1.0, 2.2))
+                fig, ax = plt.subplots(figsize=(0.3, 2.2))
 
             self.gr_dgn.md_squared(
                 type="box",
@@ -1509,7 +1509,7 @@ class GSUMDiagnostics:
 
             with plt.rc_context({"text.usetex": True}):
                 if ax is None:
-                    fig, ax = plt.subplots(figsize=(3.2, 2.2))
+                    fig, ax = plt.subplots(figsize=(3.0, 2.2))
 
                 self.gr_dgn.pivoted_cholesky_errors(ax=ax, title=None)
                 ax.set_xticks(np.arange(2, self.n_test_pts + 1, 2))
@@ -2592,7 +2592,7 @@ def make_likelihood_filename(
     #         + "pts"
     #     )
 
-    # print(filename)
+    print(filename)
 
     return str(filename.replace("__", "_") + FileNameObj.filename_addendum + ".txt")
 
@@ -2977,7 +2977,7 @@ def plot_posteriors_curvewise(
                 # print("We found the file.")
 
             except:
-                # print("There was no save data.")
+                print("There was no save data.")
                 # failing that, generates new data and saves it (if the user chooses)
                 obs_loglike_sum = np.zeros(
                     tuple(

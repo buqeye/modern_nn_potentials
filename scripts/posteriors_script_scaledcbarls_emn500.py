@@ -2,7 +2,7 @@ from generator_fns import *
 
 # sets the meshes for the random variable arrays
 mpi_vals = np.linspace(1, 301, 150, dtype=np.dtype('f4'))
-ls_tlab_vals = np.linspace(26, 100, 75, dtype=np.dtype('f4'))
+ls_tlab_vals = np.linspace(1, 100, 100, dtype=np.dtype('f4'))
 ls_deg_mag_vals = np.linspace(1, 601, 150, dtype=np.dtype('f4'))
 lambda_vals = np.linspace(200, 900, 150, dtype=np.dtype('f4'))
 
@@ -89,13 +89,13 @@ warping_fn_kwargs = {}
 
 def scaling_fn(X,
                ls_array,
-               ):
+               exponent = 0):
     X_shape = np.shape(X)
     X = np.reshape(X, (np.prod(X_shape[:-1]), ) + (X_shape[-1], ))
     ls = np.array([])
     try:
         for pt_idx, pt in enumerate(X):
-            ls = np.append(ls, np.array([ls_array[0], ls_array[1] * X[pt_idx, 0]**(-0.66)
+            ls = np.append(ls, np.array([ls_array[0], ls_array[1] * X[pt_idx, 0]**(-1. * exponent)
                                          ]))
     except:
         pass
@@ -104,17 +104,20 @@ def scaling_fn(X,
 
     return ls
 
-scaling_fn_kwargs={}
+scaling_fn_kwargs={"exponent" : 0.66}
 
 def cbar_fn(X,
                cbar_array = np.array([1]),
-               ):
+               scaling = 1,
+               offset = 0.5):
     X_shape = np.shape(X)
     X = np.reshape(X, (np.prod(X_shape[:-1]), ) + (X_shape[-1], ))
     cbar = np.array([])
     try:
         for pt_idx, pt in enumerate(X):
-            cbar = np.append(cbar, cbar_array)
+            R = np.max(X[:, 0]) - np.min(X[:, 0])
+            cbar = np.append(cbar, np.array([(1 + (scaling / R * (pt[0] - offset * R)) ** (2)) ** (-0.5)
+                                             ]))
     except:
         pass
 
@@ -122,7 +125,8 @@ def cbar_fn(X,
 
     return cbar
 
-cbar_fn_kwargs={}
+cbar_fn_kwargs={"scaling" : 3.0,
+                "offset" : 0.69}
 
 generate_posteriors(
     scale_scheme_bunch_array=[EMN500MeV],
@@ -176,5 +180,5 @@ generate_posteriors(
 
     variables_array_pointwise=np.array([LambdabVariable]),
 
-    filename_addendum="_cluster2",
+    filename_addendum="_cluster3",
 )

@@ -56,7 +56,7 @@ MpieffVariable = RandomVariable(var=mpi_vals,
                                 logprior=mpieff_logprior(mpi_vals),
                                 logprior_name="uniformprior",
                                 marg_bool = True)
-variables_array = np.array([LambdabVariable, LsDegMagVariable, LsTlabVariable, MpieffVariable])
+variables_array = np.array([LambdabVariable, LsTlabVariable, LsDegMagVariable, MpieffVariable])
 
 ratio_fn=ratio_fn_curvewise
 ratio_fn_kwargs={
@@ -147,11 +147,11 @@ generate_posteriors(
     savefile_type="png",
 
     plot_posterior_curvewise_bool=True,
-    plot_marg_curvewise_bool=True,
-    plot_corner_curvewise_bool=True,
-    use_data_curvewise_bool=True,
+    plot_marg_curvewise_bool=False,
+    plot_corner_curvewise_bool=False,
+    use_data_curvewise_bool=False,
     save_data_curvewise_bool=True,
-    save_posterior_curvewise_bool=True,
+    save_posterior_curvewise_bool=False,
 
     plot_obs_list=plot_obs_list,
     obs_name_grouped_list=obs_name_grouped_list,

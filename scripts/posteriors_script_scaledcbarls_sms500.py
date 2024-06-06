@@ -33,7 +33,7 @@ LsTlabVariable = RandomVariable(var=ls_tlab_vals,
                             ticks=[],
                             logprior=np.zeros(len(ls_tlab_vals)),
                             logprior_name="noprior",
-                            marg_bool=True)
+                            marg_bool=False)
 LsDegMagVariable = RandomVariable(var=ls_deg_mag_vals,
                             user_val=None,
                             name='lsdegmag',
@@ -42,7 +42,7 @@ LsDegMagVariable = RandomVariable(var=ls_deg_mag_vals,
                             ticks=[],
                             logprior=np.zeros(len(ls_deg_mag_vals)),
                             logprior_name="noprior",
-                            marg_bool=True)
+                            marg_bool=False)
 MpieffVariable = RandomVariable(var=mpi_vals,
                                 user_val=None,
                                 name='mpieff',
@@ -52,7 +52,7 @@ MpieffVariable = RandomVariable(var=mpi_vals,
                                 logprior=mpieff_logprior(mpi_vals),
                                 logprior_name="uniformprior",
                                 marg_bool = True)
-variables_array = np.array([LambdabVariable, LsDegMagVariable, LsTlabVariable, MpieffVariable])
+variables_array = np.array([LambdabVariable, LsTlabVariable, LsDegMagVariable, MpieffVariable])
 
 ratio_fn=ratio_fn_curvewise
 ratio_fn_kwargs={
@@ -85,13 +85,13 @@ warping_fn_kwargs = {}
 
 def scaling_fn(X,
                ls_array,
-               ):
+               exponent = 0):
     X_shape = np.shape(X)
     X = np.reshape(X, (np.prod(X_shape[:-1]), ) + (X_shape[-1], ))
     ls = np.array([])
     try:
         for pt_idx, pt in enumerate(X):
-            ls = np.append(ls, np.array([ls_array[0], ls_array[1] * X[pt_idx, 0]**(-0.99)
+            ls = np.append(ls, np.array([ls_array[0], ls_array[1] * X[pt_idx, 0]**(-1. * exponent)
                                          ]))
     except:
         pass
@@ -100,18 +100,19 @@ def scaling_fn(X,
 
     return ls
 
-scaling_fn_kwargs={}
+scaling_fn_kwargs={"exponent" : 0.99}
 
 def cbar_fn(X,
                cbar_array = np.array([1]),
-               ):
+               scaling = 1,
+               offset = 0.5):
     X_shape = np.shape(X)
     X = np.reshape(X, (np.prod(X_shape[:-1]), ) + (X_shape[-1], ))
     cbar = np.array([])
     try:
         for pt_idx, pt in enumerate(X):
             R = np.max(X[:, 0]) - np.min(X[:, 0])
-            cbar = np.append(cbar, np.array([(1 + (1.7 / R * (pt[0] - 0.71 * R)) ** (2)) ** (-0.5)
+            cbar = np.append(cbar, np.array([(1 + (scaling / R * (pt[0] - offset * R)) ** (2)) ** (-0.5)
                                              ]))
     except:
         pass
@@ -120,7 +121,8 @@ def cbar_fn(X,
 
     return cbar
 
-cbar_fn_kwargs={}
+cbar_fn_kwargs={"scaling" : 1.7,
+                "offset" : 0.71}
 
 generate_posteriors(
     scale_scheme_bunch_array=[RKE500MeV],
@@ -130,7 +132,7 @@ generate_posteriors(
     input_space_tlab=["prel"],
     t_lab_train_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]),
     degrees_train_pts=np.array([41, 60, 76, 90, 104, 120, 139]),
-    orders_from_ho=1,
+    orders_from_ho=4,
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,

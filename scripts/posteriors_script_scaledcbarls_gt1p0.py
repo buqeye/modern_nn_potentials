@@ -2,7 +2,7 @@ from generator_fns import *
 
 # sets the meshes for the random variable arrays
 mpi_vals = np.linspace(1, 301, 150, dtype=np.dtype('f4'))
-ls_tlab_vals = np.linspace(26, 100, 75, dtype=np.dtype('f4'))
+ls_tlab_vals = np.linspace(1, 100, 100, dtype=np.dtype('f4'))
 ls_deg_mag_vals = np.linspace(1, 601, 150, dtype=np.dtype('f4'))
 lambda_vals = np.linspace(200, 900, 150, dtype=np.dtype('f4'))
 
@@ -62,8 +62,8 @@ ratio_fn=ratio_fn_curvewise
 ratio_fn_kwargs={
     "p_param": "pprel",
     "Q_param": "sum",
-    "mpi_var": 63,
-    "lambda_var": 510,
+    "mpi_var": 22,
+    "lambda_var": 720,
     "single_expansion": False,
 }
 log_likelihood_fn=log_likelihood
@@ -89,13 +89,13 @@ warping_fn_kwargs = {}
 
 def scaling_fn(X,
                ls_array,
-               ):
+               exponent = 0):
     X_shape = np.shape(X)
     X = np.reshape(X, (np.prod(X_shape[:-1]), ) + (X_shape[-1], ))
     ls = np.array([])
     try:
         for pt_idx, pt in enumerate(X):
-            ls = np.append(ls, np.array([ls_array[0], ls_array[1] * X[pt_idx, 0]**(-0.66)
+            ls = np.append(ls, np.array([ls_array[0], ls_array[1] * X[pt_idx, 0]**(-1. * exponent)
                                          ]))
     except:
         pass
@@ -104,17 +104,20 @@ def scaling_fn(X,
 
     return ls
 
-scaling_fn_kwargs={}
+scaling_fn_kwargs={"exponent" : 0.96}
 
 def cbar_fn(X,
                cbar_array = np.array([1]),
-               ):
+               scaling = 1,
+               offset = 0.5):
     X_shape = np.shape(X)
     X = np.reshape(X, (np.prod(X_shape[:-1]), ) + (X_shape[-1], ))
     cbar = np.array([])
     try:
         for pt_idx, pt in enumerate(X):
-            cbar = np.append(cbar, cbar_array)
+            R = np.max(X[:, 0]) - np.min(X[:, 0])
+            cbar = np.append(cbar, np.array([(1 + (scaling / R * (pt[0] - offset * R)) ** (2)) ** (-0.5)
+                                             ]))
     except:
         pass
 
@@ -122,17 +125,18 @@ def cbar_fn(X,
 
     return cbar
 
-cbar_fn_kwargs={}
+cbar_fn_kwargs={"scaling" : 1.6,
+                "offset" : 0.32}
 
 generate_posteriors(
-    scale_scheme_bunch_array=[EMN500MeV],
+    scale_scheme_bunch_array=[GT1p0fm],
     Q_param_method_array=["sum"],
     p_param_method_array=["pprel"],
     input_space_deg=["cos"],
     input_space_tlab=["prel"],
     t_lab_train_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]),
     degrees_train_pts=np.array([41, 60, 76, 90, 104, 120, 139]),
-    orders_from_ho=3,
+    orders_from_ho=1,
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
@@ -141,8 +145,8 @@ generate_posteriors(
     length_scale_fixed=False,
     cbar_list=[NSKernelParam(1.0, [0.1, 10])],
     cbar_fixed=True,
-    m_pi_eff=63,
-    Lambdab=510,
+    m_pi_eff=22,
+    Lambdab=720,
     print_all_classes=False,
     savefile_type="png",
 
@@ -176,5 +180,5 @@ generate_posteriors(
 
     variables_array_pointwise=np.array([LambdabVariable]),
 
-    filename_addendum="_cluster2",
+    filename_addendum="_cluster3",
 )
