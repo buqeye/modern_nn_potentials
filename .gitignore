@@ -140,9 +140,9 @@ scripts/figures/
 # figures from tests
 tests/figures/
 ## figures from tests
-#notebooks/figures2/
+notebooks/figures2/
 ## figures for paper (ignored for now)
-#notebooks/figures/
+notebooks/figures/
 # sandbox (for now)
 tests/sandbox.ipynb
 # fixes for large files
