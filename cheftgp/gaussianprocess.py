@@ -1043,9 +1043,6 @@ class GSUMDiagnostics:
                 fig, ax = plt.subplots(figsize=(3.0, 2.2))
 
             for i, n in enumerate(self.nn_orders_full[self.mask_restricted]):
-                # print(np.shape(np.squeeze(self.x)))
-                # print(np.shape(self.pred[:, i]))
-                # print(np.shape(self.std))
                 ax.fill_between(
                     np.squeeze(self.x),
                     self.pred[:, i] + 2 * self.std,
@@ -1132,9 +1129,6 @@ class GSUMDiagnostics:
                 #     self.gp.cov(self.X) -
                 #     self.gp.cov(self.X, dX) @ np.linalg.solve(self.gp.cov(dX, dX), self.gp.cov(dX, self.X))
                 # ))
-                # print(np.shape(self.x))
-                # print(np.shape(dX))
-                # print(np.shape(np.array(self.constraint[1])))
                 _, std_interp = self.gp.predict(
                     self.x, Xc=dX, y=np.array(self.constraint[1]), return_std=True
                 )
@@ -1816,7 +1810,6 @@ class GSUMDiagnostics:
         """
         # sets up the data from PWA93 to which we'll compare
         self.online_data = online_data
-        print("self.online_data = " + str(self.online_data))
 
         # functions for reference scale and dimensionless expansion parameter (ratio)
         # def lambda_interp_f_ref(x_):
@@ -1837,7 +1830,6 @@ class GSUMDiagnostics:
 
         # try:
         # creates the TruncationGP object
-        print("self.ratio has shape " + str(np.shape(self.ratio)))
         self.gp_trunc = gm.TruncationGP(
             self.kernel,
             ref=interp_f_ref,
@@ -1858,8 +1850,6 @@ class GSUMDiagnostics:
         #                       dX=np.array([[self.x[i]] for i in self.constraint[0]]),
         #                       dy=[j for j in self.constraint[1]])
         # else:
-        print("self.x_train = " + str(self.x_train))
-        print("self.y_train = " + str(self.y_train))
         self.gp_trunc.fit(
             self.x_train,
             self.y_train.T,
@@ -1889,11 +1879,9 @@ class GSUMDiagnostics:
 
         for i, n in enumerate(self.nn_orders_full[self.mask_restricted]):
             # calculates the standard deviation of the truncation error
-            # print("self.X has shape " + str(np.shape(self.X)))
             _, self.std_trunc = self.gp_trunc.predict(
                 self.x, order=n, return_std=True, kind="trunc"
             )
-            print("self.std_trunc = " + str(self.std_trunc))
             if i == 0:
                 std_trunc0 = self.std_trunc
 
@@ -1905,9 +1893,7 @@ class GSUMDiagnostics:
             #         data_true = self.online_data
             #     else:
             #         data_true = self.online_data[:, self.fixed_quantity_value]
-            print("self.online_data has shape " + str(np.shape(self.online_data)))
             data_true = self.online_data
-            print("data_true has shape " + str(np.shape(data_true)))
 
             for j in range(i, len(self.nn_orders_full[self.mask_restricted])):
                 ax = axes.ravel()[j]
@@ -1918,14 +1904,8 @@ class GSUMDiagnostics:
 
                 if residual_plot:
                     # calculates and plots the residuals
-                    print("self.data has shape " + str(np.shape(self.data)))
-                    print(
-                        "self.mask_restricted has shape "
-                        + str(np.shape(self.mask_restricted))
-                    )
                     # residual = data_true - (self.data[:, self.mask_restricted])[:, i]
                     residual = data_true - (self.data[self.mask_restricted, :])[i, :]
-                    # print("residual = " + str(residual))
                     ax.plot(
                         np.squeeze(self.x), residual, zorder=i - 4, c=self.colors[i]
                     )
@@ -2125,13 +2105,6 @@ class GSUMDiagnostics:
 
         # norms the residuals by factors of the ratio
         # self.norm_residuals_wp = data_true_interp(self.X_test) - data_interp(self.X_test)
-        print("self.x has shape " + str(np.shape(self.x)))
-        print("self.x_test has shape " + str(np.shape(self.x_test)))
-        print("data_true has shape " + str(np.shape(data_true)))
-        print("self.data has shape " + str(np.shape(self.data)))
-        print("self.mask_restricted has shape " + str(np.shape(self.mask_restricted)))
-        # print(np.shape(griddata(self.x, data_true, self.x_test)))
-        # print(np.shape(griddata(self.x, self.data, self.x_test)))
         self.norm_residuals_wp = np.array([])
         for i in range(len(self.nn_orders_full[self.mask_restricted])):
             self.norm_residuals_wp = np.append(
@@ -2141,9 +2114,6 @@ class GSUMDiagnostics:
                     self.x, self.data[self.mask_restricted, :][i, :], self.x_test
                 ),
             )
-        print(
-            "self.norm_residuals_wp has shape " + str(np.shape(self.norm_residuals_wp))
-        )
         self.norm_residuals_wp = np.reshape(
             self.norm_residuals_wp,
             (len(self.nn_orders_full[self.mask_restricted]),)
@@ -2495,10 +2465,8 @@ def ratio_fn_curvewise(
     single_expansion (bool) : if True, then mpi_var is set to 0 within Q_approx
         Default : False
     """
-    # print("p_grid_train in ratio_fn = " + str(p_grid_train))
     p = np.array([])
     for pt in p_grid_train:
-        # print("pt = " + str(pt))
         try:
             # p = np.append(p, p_approx(p_name = p_param, degrees = np.array([pt[0]]), prel = np.array([pt[1]])))
             p = np.append(
@@ -2591,8 +2559,6 @@ def make_likelihood_filename(
     #         + str(len(random_var.var))
     #         + "pts"
     #     )
-
-    print(filename)
 
     return str(filename.replace("__", "_") + FileNameObj.filename_addendum + ".txt")
 
@@ -2974,11 +2940,9 @@ def plot_posteriors_curvewise(
                             ),
                         )
                     )
-                # print("We found the file.")
 
             except:
-                print("There was no save data.")
-                # failing that, generates new data and saves it (if the user chooses)
+                # failing to find saved data, generates new data and saves it (if the user chooses)
                 obs_loglike_sum = np.zeros(
                     tuple(
                         len(random_var.var)
@@ -4124,9 +4088,7 @@ class NSKernel(metaclass=ABCMeta):
         """
         theta = []
         params = self.get_params()
-        # print("self.hyperparameters = " + str(self.hyperparameters))
         for hyperparameter in self.hyperparameters:
-            # print(hyperparameter.fixed)
             if not hyperparameter.fixed:
                 theta.append(params[hyperparameter.name])
         if len(theta) > 0:
@@ -4383,19 +4345,9 @@ class NSRBF(NontationaryKernelMixin, NormalizedKernelMixin, NSKernel):
         self.length_scale_fn = length_scale_fn
         self.length_scale_fn_kwargs = length_scale_fn_kwargs
 
-        # if cbar is not None:
-        #     self.cbar = cbar
-        # else:
-        #     self.cbar = 1.0
-        # print("self.cbar = " + str(self.cbar))
         self.cbar = cbar
         self.cbar_bounds = cbar_bounds
         self.cbar_fixed = cbar_fixed
-
-        # for i, cbf in enumerate(self.cbar_fixed):
-        #     if cbf == True:
-        #         self.cbar_bounds[i] = "fixed"
-        # print(self.cbar_bounds)
 
         self.cbar_fn = cbar_fn
         self.cbar_fn_kwargs = cbar_fn_kwargs
@@ -4408,7 +4360,6 @@ class NSRBF(NontationaryKernelMixin, NormalizedKernelMixin, NSKernel):
     def hyperparameter_cbar(self):
         if self.anisotropic_cbar:
         # if not all(self.cbar_fixed):
-        #     print("Inside the if-statement.")
             return Hyperparameter(
                 "cbar",
                 "numeric",
@@ -4424,7 +4375,6 @@ class NSRBF(NontationaryKernelMixin, NormalizedKernelMixin, NSKernel):
     @property
     def hyperparameter_length_scale(self):
         if self.anisotropic_length_scale:
-            # print("The length scale is anisotropic.")
             return Hyperparameter(
                 "length_scale",
                 "numeric",
@@ -4498,13 +4448,14 @@ class NSRBF(NontationaryKernelMixin, NormalizedKernelMixin, NSKernel):
                 cbar = self.cbar
 
         if Y is None:
+            # with np.printoptions(threshold=np.inf):
             dists = pdist(X / length_scale, metric="sqeuclidean")
             K = np.exp(-0.5 * dists)
             # convert from upper-triangular matrix to square matrix
             K = squareform(K)
             np.fill_diagonal(K, 1)
-            # print("cbar = " + str(cbar))
-            K = K * cbar**(2)
+            # K = K * cbar**(2)
+            K = K * np.outer(cbar, cbar)
         else:
             if eval_gradient:
                 raise ValueError("Gradient can only be evaluated when Y is None.")
@@ -4526,7 +4477,10 @@ class NSRBF(NontationaryKernelMixin, NormalizedKernelMixin, NSKernel):
                 cbar_X = cbar
                 cbar_Y = cbar
 
-            K = cbar_X * cbar_Y * K
+            # try:
+            #     K = cbar_X * cbar_Y * K
+            # except:
+            K = np.outer(cbar_X, cbar_Y) * K
 
         if eval_gradient:
             if self.hyperparameter_length_scale.fixed:

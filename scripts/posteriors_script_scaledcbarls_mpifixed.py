@@ -1,7 +1,8 @@
 from generator_fns import *
 
 # sets the meshes for the random variable arrays
-mpi_vals = np.linspace(1, 301, 150, dtype=np.dtype('f4'))
+mpi_fixed_val = 200
+mpi_vals = mpi_fixed_val * np.array([0.999, 1.001])
 ls_tlab_vals = np.linspace(1, 100, 100, dtype=np.dtype('f4'))
 ls_deg_mag_vals = np.linspace(1, 601, 150, dtype=np.dtype('f4'))
 lambda_vals = np.linspace(200, 900, 150, dtype=np.dtype('f4'))
@@ -14,10 +15,6 @@ obs_name_grouped_list = ["ALLOBS"]
 obs_labels_grouped_list = [r'$\Pi$Obs.']
 mesh_cart_grouped_list = [[mesh_cart, mesh_cart, mesh_cart,
                            mesh_cart, mesh_cart, mesh_cart]]
-# plot_obs_list = [["DSG",]]
-# obs_name_grouped_list = ["ALLOBS"]
-# obs_labels_grouped_list = [r'$\Pi$Obs.']
-# mesh_cart_grouped_list = [[mesh_cart,]]
 
 # sets the RandomVariable objects
 LambdabVariable = RandomVariable(var=lambda_vals,
@@ -55,15 +52,15 @@ MpieffVariable = RandomVariable(var=mpi_vals,
                                 ticks=[50, 100, 150, 200, 250, 300],
                                 logprior=mpieff_logprior(mpi_vals),
                                 logprior_name="uniformprior",
-                                marg_bool = True)
+                                marg_bool = False)
 variables_array = np.array([LambdabVariable, LsTlabVariable, LsDegMagVariable, MpieffVariable])
 
 ratio_fn=ratio_fn_curvewise
 ratio_fn_kwargs={
     "p_param": "pprel",
     "Q_param": "sum",
-    "mpi_var": 63,
-    "lambda_var": 510,
+    "mpi_var": 138,
+    "lambda_var": 570,
     "single_expansion": False,
 }
 log_likelihood_fn=log_likelihood
@@ -104,7 +101,7 @@ def scaling_fn(X,
 
     return ls
 
-scaling_fn_kwargs={"exponent" : 0.66}
+scaling_fn_kwargs={"exponent" : 0.93}
 
 def cbar_fn(X,
                cbar_array = np.array([1]),
@@ -125,18 +122,18 @@ def cbar_fn(X,
 
     return cbar
 
-cbar_fn_kwargs={"scaling" : 3.0,
-                "offset" : 0.69}
+cbar_fn_kwargs={"scaling" : 1.9,
+                "offset" : 0.68}
 
 generate_posteriors(
-    scale_scheme_bunch_array=[EMN500MeV],
+    scale_scheme_bunch_array=[RKE400MeV, RKE450MeV, RKE500MeV, RKE550MeV],
     Q_param_method_array=["sum"],
     p_param_method_array=["pprel"],
     input_space_deg=["cos"],
     input_space_tlab=["prel"],
     t_lab_train_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]),
     degrees_train_pts=np.array([41, 60, 76, 90, 104, 120, 139]),
-    orders_from_ho=3,
+    orders_from_ho=4,
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
@@ -145,17 +142,17 @@ generate_posteriors(
     length_scale_fixed=False,
     cbar_list=[NSKernelParam(1.0, [0.1, 10])],
     cbar_fixed=True,
-    m_pi_eff=63,
-    Lambdab=510,
+    m_pi_eff=138,
+    Lambdab=570,
     print_all_classes=False,
     savefile_type="png",
 
     plot_posterior_curvewise_bool=True,
     plot_marg_curvewise_bool=True,
-    plot_corner_curvewise_bool=True,
+    plot_corner_curvewise_bool=False,
     use_data_curvewise_bool=True,
     save_data_curvewise_bool=True,
-    save_posterior_curvewise_bool=True,
+    save_posterior_curvewise_bool=False,
 
     plot_obs_list=plot_obs_list,
     obs_name_grouped_list=obs_name_grouped_list,
@@ -180,5 +177,5 @@ generate_posteriors(
 
     variables_array_pointwise=np.array([LambdabVariable]),
 
-    filename_addendum="_cluster3",
+    filename_addendum="_cluster_mpi" + str(mpi_fixed_val),
 )

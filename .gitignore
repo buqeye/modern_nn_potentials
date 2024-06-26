@@ -139,10 +139,10 @@ scripts/figures/
 #observables_data/
 # figures from tests
 tests/figures/
-# figures from tests
-notebooks/figures2/
-# figures for paper (ignored for now)
-notebooks/figures/
+## figures from tests
+#notebooks/figures2/
+## figures for paper (ignored for now)
+#notebooks/figures/
 # sandbox (for now)
 tests/sandbox.ipynb
 # fixes for large files
@@ -154,3 +154,9 @@ scripts/ChEFT_GP_publication_script_refactored.py
 # figure-generating scripts (for now)
 scripts/diagnostics_script.py
 scripts/posteriors_script.py
+# test scripts
+scripts/posteriors_script_scaledcbarls_mpifixed.py
+scripts/posteriors_script_scaledls_sms500_spikes.py
+scripts/posteriors_script_unscaled_sms500_test.py
+scripts/posteriors_script_scaledls_sms500_test.py
+scripts/posteriors_script_scaledcbarls_sms500_test.py

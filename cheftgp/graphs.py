@@ -140,7 +140,7 @@ def offset_xlabel(ax):
     return ax
 
 
-def corner_plot(n_plots=3, height=9):
+def corner_plot(n_plots=3, height=6.5):
     """
     Creates a square corner plot (of side length height) for n_plots random variables.
 
@@ -424,7 +424,7 @@ def plot_corner_posteriors(
                 # plots
                 ax_marg_array[variable_idx].set_title(
                     rf"${variable.label}$ = {dist_mean} $\pm$ {dist_stddev}",
-                    fontsize=18,
+                    fontsize=10,
                 )
                 ax_marg_array[variable_idx].plot(
                     variable.var,
@@ -530,7 +530,7 @@ def plot_corner_posteriors(
                         ha="right",
                         va="top",
                         transform=ax_joint_array[joint_idx].transAxes,
-                        fontsize=18,
+                        fontsize=17,
                     )
                 except:
                     corr_coeff = correlation_coefficient(
@@ -545,7 +545,7 @@ def plot_corner_posteriors(
                         ha="right",
                         va="top",
                         transform=ax_joint_array[joint_idx].transAxes,
-                        fontsize=18,
+                        fontsize=17,
                     )
 
                 if [variable.user_val for variable in variables_array][
@@ -596,7 +596,7 @@ def plot_corner_posteriors(
                     ha="right",
                     va="top",
                     transform=ax_title.transAxes,
-                    fontsize=25,
+                    fontsize=22,
                 )
             except:
                 pass

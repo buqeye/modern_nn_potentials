@@ -2,22 +2,25 @@ from generator_fns import *
 
 # sets the meshes for the random variable arrays
 mpi_vals = np.linspace(1, 301, 150, dtype=np.dtype('f4'))
-ls_tlab_vals = np.linspace(1, 100, 100, dtype=np.dtype('f4'))
+ls_tlab_vals = np.linspace(26, 100, 75, dtype=np.dtype('f4'))
 ls_deg_mag_vals = np.linspace(1, 601, 150, dtype=np.dtype('f4'))
 lambda_vals = np.linspace(200, 900, 150, dtype=np.dtype('f4'))
 
 mesh_cart = gm.cartesian(lambda_vals, np.log(ls_tlab_vals), np.log(ls_deg_mag_vals), mpi_vals)
 
-# ALLOBS
-plot_obs_list = [["DSG", "D", "AXX", "AYY", "A", "AY"]]
-obs_name_grouped_list = ["ALLOBS"]
-obs_labels_grouped_list = [r'$\Pi$Obs.']
-mesh_cart_grouped_list = [[mesh_cart, mesh_cart, mesh_cart,
-                           mesh_cart, mesh_cart, mesh_cart]]
-# plot_obs_list = [["DSG",]]
+# # ALLOBS
+# plot_obs_list = [["DSG", "D", "AXX", "AYY", "A", "AY"]]
 # obs_name_grouped_list = ["ALLOBS"]
 # obs_labels_grouped_list = [r'$\Pi$Obs.']
-# mesh_cart_grouped_list = [[mesh_cart,]]
+# mesh_cart_grouped_list = [[mesh_cart, mesh_cart, mesh_cart,
+#                            mesh_cart, mesh_cart, mesh_cart]]
+# EACHOBS for energy input spaces
+plot_obs_list = [["DSG"], ["D"], ["AXX"], ["AYY"], ["A"], ["AY"]]
+obs_name_grouped_list = ["DSG", "D", "AXX", "AYY", "A", "AY"]
+obs_labels_grouped_list = [r'$\displaystyle\frac{d\sigma}{d\Omega}$',
+                           r'$D$', r'$A_{xx}$', r'$A_{yy}$', r'$A$', r'$A_{y}$']
+mesh_cart_grouped_list = [[mesh_cart], [mesh_cart], [mesh_cart], [mesh_cart],
+                          [mesh_cart], [mesh_cart]]
 
 # sets the RandomVariable objects
 LambdabVariable = RandomVariable(var=lambda_vals,
@@ -62,8 +65,8 @@ ratio_fn=ratio_fn_curvewise
 ratio_fn_kwargs={
     "p_param": "pprel",
     "Q_param": "sum",
-    "mpi_var": 63,
-    "lambda_var": 510,
+    "mpi_var": 138,
+    "lambda_var": 570,
     "single_expansion": False,
 }
 log_likelihood_fn=log_likelihood
@@ -89,13 +92,13 @@ warping_fn_kwargs = {}
 
 def scaling_fn(X,
                ls_array,
-               exponent = 0):
+               ):
     X_shape = np.shape(X)
     X = np.reshape(X, (np.prod(X_shape[:-1]), ) + (X_shape[-1], ))
     ls = np.array([])
     try:
         for pt_idx, pt in enumerate(X):
-            ls = np.append(ls, np.array([ls_array[0], ls_array[1] * X[pt_idx, 0]**(-1. * exponent)
+            ls = np.append(ls, np.array([ls_array[0], ls_array[1] * X[pt_idx, 0]**(-0.99)
                                          ]))
     except:
         pass
@@ -104,20 +107,17 @@ def scaling_fn(X,
 
     return ls
 
-scaling_fn_kwargs={"exponent" : 0.66}
+scaling_fn_kwargs={}
 
 def cbar_fn(X,
                cbar_array = np.array([1]),
-               scaling = 1,
-               offset = 0.5):
+               ):
     X_shape = np.shape(X)
     X = np.reshape(X, (np.prod(X_shape[:-1]), ) + (X_shape[-1], ))
     cbar = np.array([])
     try:
         for pt_idx, pt in enumerate(X):
-            R = np.max(X[:, 0]) - np.min(X[:, 0])
-            cbar = np.append(cbar, np.array([(1 + (scaling / R * (pt[0] - offset * R)) ** (2)) ** (-0.5)
-                                             ]))
+            cbar = np.append(cbar, cbar_array)
     except:
         pass
 
@@ -125,18 +125,17 @@ def cbar_fn(X,
 
     return cbar
 
-cbar_fn_kwargs={"scaling" : 3.0,
-                "offset" : 0.69}
+cbar_fn_kwargs={}
 
 generate_posteriors(
-    scale_scheme_bunch_array=[EMN500MeV],
+    scale_scheme_bunch_array=[RKE500MeV],
     Q_param_method_array=["sum"],
     p_param_method_array=["pprel"],
     input_space_deg=["cos"],
     input_space_tlab=["prel"],
     t_lab_train_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]),
     degrees_train_pts=np.array([41, 60, 76, 90, 104, 120, 139]),
-    orders_from_ho=3,
+    orders_from_ho=4,
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
@@ -145,17 +144,17 @@ generate_posteriors(
     length_scale_fixed=False,
     cbar_list=[NSKernelParam(1.0, [0.1, 10])],
     cbar_fixed=True,
-    m_pi_eff=63,
-    Lambdab=510,
+    m_pi_eff=138,
+    Lambdab=570,
     print_all_classes=False,
     savefile_type="png",
 
     plot_posterior_curvewise_bool=True,
-    plot_marg_curvewise_bool=True,
-    plot_corner_curvewise_bool=True,
-    use_data_curvewise_bool=True,
+    plot_marg_curvewise_bool=False,
+    plot_corner_curvewise_bool=False,
+    use_data_curvewise_bool=False,
     save_data_curvewise_bool=True,
-    save_posterior_curvewise_bool=True,
+    save_posterior_curvewise_bool=False,
 
     plot_obs_list=plot_obs_list,
     obs_name_grouped_list=obs_name_grouped_list,
@@ -180,5 +179,5 @@ generate_posteriors(
 
     variables_array_pointwise=np.array([LambdabVariable]),
 
-    filename_addendum="_cluster3",
+    filename_addendum="_cluster2",
 )
