@@ -436,30 +436,57 @@ def versatile_train_test_split_nd(tts):
         of x
     """
     # creates initial sets of training and testing x points
-    x_train = gm.cartesian(
-        *[
-            np.linspace(
-                np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)))[idx]
-                + tts.offset_train_min[idx],
-                np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1)))[idx]
-                - tts.offset_train_max[idx],
-                tts.n_train[idx] + 1,
-            )
-            for idx in range(tts.y.ndim - 1)
-        ]
-    )
-    x_test = gm.cartesian(
-        *[
-            np.linspace(
-                np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)))[idx]
-                + tts.offset_test_min[idx],
-                np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1)))[idx]
-                - tts.offset_test_max[idx],
-                tts.n_train[idx] * tts.n_test_inter[idx] + 1,
-            )
-            for idx in range(tts.y.ndim - 1)
-        ]
-    )
+    if tts.warp_bool == False:
+        x_train = gm.cartesian(
+            *[
+                np.linspace(
+                    np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)))[idx]
+                    + tts.offset_train_min[idx],
+                    np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1)))[idx]
+                    - tts.offset_train_max[idx],
+                    tts.n_train[idx] + 1,
+                )
+                for idx in range(tts.y.ndim - 1)
+            ]
+        )
+        x_test = gm.cartesian(
+            *[
+                np.linspace(
+                    np.amin(tts.x, axis=tuple(range(tts.x.ndim - 1)))[idx]
+                    + tts.offset_test_min[idx],
+                    np.amax(tts.x, axis=tuple(range(tts.x.ndim - 1)))[idx]
+                    - tts.offset_test_max[idx],
+                    tts.n_train[idx] * tts.n_test_inter[idx] + 1,
+                )
+                for idx in range(tts.y.ndim - 1)
+            ]
+        )
+    else:
+        x_train = tts.warping_fn(gm.cartesian(
+            *[
+                np.linspace(
+                    np.amin(tts.x_unwarped, axis=tuple(range(tts.x_unwarped.ndim - 1)))[idx]
+                    + tts.offset_train_min[idx],
+                    np.amax(tts.x_unwarped, axis=tuple(range(tts.x_unwarped.ndim - 1)))[idx]
+                    - tts.offset_train_max[idx],
+                    tts.n_train[idx] + 1,
+                )
+                for idx in range(tts.y.ndim - 1)
+            ]
+        ), **tts.warping_fn_kwargs)
+        x_test = tts.warping_fn(gm.cartesian(
+            *[
+                np.linspace(
+                    np.amin(tts.x_unwarped, axis=tuple(range(tts.x_unwarped.ndim - 1)))[idx]
+                    + tts.offset_test_min[idx],
+                    np.amax(tts.x_unwarped, axis=tuple(range(tts.x_unwarped.ndim - 1)))[idx]
+                    - tts.offset_test_max[idx],
+                    tts.n_train[idx] * tts.n_test_inter[idx] + 1,
+                )
+                for idx in range(tts.y.ndim - 1)
+            ]
+        ), **tts.warping_fn_kwargs)
+    # print("x_train in the function is " + str(x_train))
 
     # eliminates, using a mask, all values for the training and testing x points outside of...
     if np.shape(tts.x)[-1] == 2:
@@ -535,9 +562,15 @@ def versatile_train_test_split_nd(tts):
     mask_filter_array = np.sum(mask_filter_array, axis=-1, dtype=bool)
     x_test = x_test[mask_filter_array]
 
+    # print("x_train before interpolation is " + str(x_train))
+    # print("The reshaped x = " + str(np.reshape(
+    #                 tts.x, (np.prod(np.shape(tts.x)[0:-1]),) + (np.shape(tts.x)[-1],)
+    #             )))
     # evaluates the interpolater at the training and testing x points
     y_train = np.array([])
     y_test = np.array([])
+    # print("tts.x has shape " + str(np.shape(tts.x)))
+    # print("tts.x_unwarped has shape " + str(np.shape(tts.x_unwarped)))
     for norder in tts.y:
         y_train = np.append(
             y_train,
@@ -547,6 +580,7 @@ def versatile_train_test_split_nd(tts):
                 ),
                 np.reshape(norder, np.prod(np.shape(norder))),
                 x_train,
+                # method='nearest'
             ),
         )
         y_test = np.append(
@@ -557,9 +591,12 @@ def versatile_train_test_split_nd(tts):
                 ),
                 np.reshape(norder, np.prod(np.shape(norder))),
                 x_test,
+                # method='nearest'
             ),
         )
+    # print("y_train in the function = " + str(y_train))
     y_train = np.reshape(y_train, (np.shape(tts.y)[0],) + (np.shape(x_train)[0],))
+    # print("y_train after reshaping = " + str(y_train))
     y_test = np.reshape(y_test, (np.shape(tts.y)[0],) + (np.shape(x_test)[0],))
 
     return x_train, x_test, y_train, y_test

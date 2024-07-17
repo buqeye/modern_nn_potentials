@@ -492,8 +492,8 @@ def generate_diagnostics(
                                     [0] + orders_excluded,
                                     ScaleScheme.colors,
                                     ScaleScheme.light_colors,
-                                    orders_names_dict=orders_names_dict,
-                                    orders_labels_dict=orders_labels_dict,
+                                    orders_names_dict=ScaleScheme.orders_names_dict,
+                                    orders_labels_dict=ScaleScheme.orders_labels_dict,
                                 )
 
                                 # creates the object used to generate and plot statistical diagnostics
@@ -1221,8 +1221,8 @@ def generate_posteriors(
                             [0] + orders_excluded,
                             ScaleScheme.colors,
                             ScaleScheme.light_colors,
-                            orders_names_dict=orders_names_dict,
-                            orders_labels_dict=orders_labels_dict,
+                            orders_names_dict=ScaleScheme.orders_names_dict,
+                            orders_labels_dict=ScaleScheme.orders_labels_dict,
                         )
 
                         if (
@@ -1275,20 +1275,8 @@ def generate_posteriors(
                                         nn_orders_array=Orders.orders_restricted,
                                         nn_orders_full_array=Orders.orders_full,
                                         excluded=Orders.excluded,
-                                        orders_labels_dict={
-                                            6: r"N$^{4}$LO$^{+}$",
-                                            5: r"N$^{4}$LO",
-                                            4: r"N$^{3}$LO",
-                                            3: r"N$^{2}$LO",
-                                            2: r"NLO",
-                                        },
-                                        orders_names_dict={
-                                            6: "N4LO+",
-                                            5: "N4LO",
-                                            4: "N3LO",
-                                            3: "N2LO",
-                                            2: "NLO",
-                                        },
+                                        orders_labels_dict=Orders.orders_labels_dict,
+                                        orders_names_dict=Orders.orders_names_dict,
                                         # strings
                                         nn_interaction="np",
                                         # hyperparameters
@@ -1348,6 +1336,13 @@ def generate_posteriors(
                                             4: r"N$^{3}$LO",
                                             3: r"N$^{2}$LO",
                                             2: r"NLO",
+                                        },
+                                        orders_names_dict={
+                                            6: "N4LO+",
+                                            5: "N4LO",
+                                            4: "N3LO",
+                                            3: "N2LO",
+                                            2: "NLO",
                                         },
                                         # strings
                                         # filename stuff

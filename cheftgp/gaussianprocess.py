@@ -191,8 +191,22 @@ class OrderInfo:
         excluded,
         colors_array,
         lightcolors_array,
-        orders_names_dict=None,
-        orders_labels_dict=None,
+        orders_names_dict={
+            5: "N5LO",
+            4: "N4LO",
+            3: "N3LO",
+            2: "N2LO",
+            1: "NLO",
+            0: "LO"
+        },
+        orders_labels_dict={
+            5: r"N$^{5}$LO",
+            4: r"N$^{4}$LO",
+            3: r"N$^{3}$LO",
+            2: r"N$^{2}$LO",
+            1: r"NLO",
+            0: r"LO"
+        },
     ):
         """
         Class for the number of orders under consideration and the color for each.
@@ -378,7 +392,7 @@ class TrainTestSplit:
         self.train_at_ends = train_at_ends * np.ones(len(self.n_train), dtype=bool)
         self.test_at_ends = test_at_ends * np.ones(len(self.n_train), dtype=bool)
 
-    def make_masks(self, x, y):
+    def make_masks(self, x, y, warp_bool = False, x_unwarped = None, warping_fn = None, warping_fn_kwargs = None):
         """Returns the training and testing points in the input space and the corresponding
         (interpolated) data values after calculating the actual values for xmin, xmax, and
         offsets using the corresponding factors and the input space
@@ -391,6 +405,10 @@ class TrainTestSplit:
         """
         self.x = x
         self.y = y
+        self.warp_bool = warp_bool
+        self.x_unwarped = x_unwarped
+        self.warping_fn = warping_fn
+        self.warping_fn_kwargs = warping_fn_kwargs
 
         # calculates the actual value for each offset, xmin, and xmax
         self.offset_train_min = self.offset_train_min_factor * (
@@ -454,6 +472,22 @@ class ScaleSchemeBunch:
         cmaps_str,
         potential_string,
         cutoff_string,
+        orders_names_dict={
+            5: "N5LO",
+            4: "N4LO",
+            3: "N3LO",
+            2: "N2LO",
+            1: "NLO",
+            0: "LO"
+        },
+        orders_labels_dict={
+            5: r"N$^{5}$LO",
+            4: r"N$^{4}$LO",
+            3: r"N$^{3}$LO",
+            2: r"N$^{2}$LO",
+            1: r"NLO",
+            0: r"LO"
+        },
         dir_path="",
     ):
         """
@@ -475,6 +509,8 @@ class ScaleSchemeBunch:
         self.potential_string = potential_string
         self.cutoff_string = cutoff_string
         self.name = self.potential_string + self.cutoff_string
+        self.orders_names_dict = orders_names_dict
+        self.orders_labels_dict = orders_labels_dict
         self.dir_path = dir_path
 
         self.full_path = self.dir_path + self.file_name
@@ -2880,7 +2916,6 @@ def plot_posteriors_curvewise(
     whether_save_plots (bool) : whether to save plots.
         Default : True
     """
-
     # sets the number of orders and the corresponding colors
     order_num = int(orders)
     Lb_colors = light_colors[-1 * order_num :]
@@ -3528,6 +3563,7 @@ def plot_posteriors_curvewise(
                 # self.nn_orders, self.orders_labels_dict, self, whether_save_plots, obs_name_grouped_list)
                 nn_orders_array,
                 orders_labels_dict,
+                orders_names_dict
             )
 
             fit_stats_array = np.append(fit_stats_array, fit_stats)
@@ -3588,6 +3624,7 @@ def plot_posteriors_pointwise(
     nn_orders_full_array,
     excluded,
     orders_labels_dict,
+    orders_names_dict,
     obs_data_grouped_list,
     obs_name_grouped_list,
     obs_labels_grouped_list,
@@ -3621,6 +3658,7 @@ def plot_posteriors_pointwise(
     nn_orders_full_array (int array) : array of orders corresponding to all possible orders of data.
     excluded (int list) : list of orders excluded from nn_orders_full_array, along with 0.
     orders_labels_dict (dict) : dictionary for linking order numbers and markdown strings for plotting.
+    orders_names_dict (dict) : dictionary for linking order numbers and plain-text strings for output.
 
     obs_data_grouped_list (array list) : list of arrays of observable data grouped together as decided by user.
     obs_name_grouped_list (str list) : list of strings for observables for file-naming as decided by user.
@@ -3900,6 +3938,7 @@ def plot_posteriors_pointwise(
                 order_num,
                 nn_orders_array,
                 orders_labels_dict,
+                orders_names_dict
             )
 
             fit_stats_array = np.append(fit_stats_array, fit_stats)

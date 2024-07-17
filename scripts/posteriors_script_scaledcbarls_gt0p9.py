@@ -180,5 +180,5 @@ generate_posteriors(
 
     variables_array_pointwise=np.array([LambdabVariable]),
 
-    filename_addendum="_cluster3",
+    filename_addendum="_cluster3_newcbar",
 )

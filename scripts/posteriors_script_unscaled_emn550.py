@@ -6,8 +6,8 @@ ls_deg_vals = np.linspace(0.01, 4, 150, dtype=np.dtype('f4'))
 ls_tlab_vals = np.linspace(1, 150, 150, dtype=np.dtype('f4'))
 lambda_vals = np.linspace(200, 900, 150, dtype=np.dtype('f4'))
 
-mesh_cart = gm.cartesian(lambda_vals, np.log(ls_deg_vals), np.log(ls_tlab_vals), mpi_vals)
-mesh_cart_sgt = np.delete(mesh_cart, 1, 1)
+mesh_cart = gm.cartesian(lambda_vals, np.log(ls_tlab_vals), np.log(ls_deg_vals), mpi_vals)
+mesh_cart_sgt = np.delete(mesh_cart, 2, 1)
 
 # ALLOBS
 plot_obs_list = [["DSG", "D", "AXX", "AYY", "A", "AY"]]
@@ -53,7 +53,7 @@ MpieffVariable = RandomVariable(var=mpi_vals,
                                 logprior=mpieff_logprior(mpi_vals),
                                 logprior_name="uniformprior",
                                 marg_bool = True)
-variables_array = np.array([LambdabVariable, LsDegVariable, LsTlabVariable, MpieffVariable])
+variables_array = np.array([LambdabVariable, LsTlabVariable, LsDegVariable, MpieffVariable])
 
 ratio_fn=ratio_fn_curvewise
 ratio_fn_kwargs={
@@ -71,7 +71,6 @@ log_likelihood_fn_kwargs={
 }
 
 generate_posteriors(
-    nn_interaction="np",
     scale_scheme_bunch_array=[EMN550MeV],
     Q_param_method_array=["sum"],
     p_param_method_array=["pprel"],
@@ -83,14 +82,18 @@ generate_posteriors(
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
-    LengthScaleTlabInput=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
-    LengthScaleDegInput=LengthScale("1/16-1_fitted", 0.25, 0.25, 4, whether_fit=True),
+    length_scale_list=[NSKernelParam(60, [10, 200]),
+                       NSKernelParam(0.4, [0.05, 3])],
+    length_scale_fixed=False,
+    cbar_list=[NSKernelParam(1.0, [0.1, 10])],
+    cbar_fixed=True,
     m_pi_eff=141,
     Lambdab=480,
     print_all_classes=False,
     savefile_type="png",
 
     plot_posterior_curvewise_bool=True,
+    plot_marg_curvewise_bool=True,
     plot_corner_curvewise_bool=True,
     use_data_curvewise_bool=True,
     save_data_curvewise_bool=True,

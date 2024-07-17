@@ -213,7 +213,7 @@ def draw_summary_statistics(bounds68, bounds95, median, height=0, ax=None):
 
 
 def plot_marg_posteriors(
-    variable, result, y_label, colors_array, order_num, nn_orders, orders_labels_dict
+    variable, result, y_label, colors_array, order_num, nn_orders, orders_labels_dict, orders_names_dict
 ):
     """
     Plots the fully marginalized posteriors.
@@ -226,14 +226,15 @@ def plot_marg_posteriors(
     colors_array (cmaps list) : list of colors for the orders plotted; of dimension (len(order_num)).
     order_num (int) : number of orders plotted for each observable.
     nn_orders (int list) : list of all orders for the potential of interest.
-    orders_labels_dict (str list) : list of markdown-formatted labels for nn_orders.
+    orders_labels_dict (str dict) : dict of markdown-formatted labels for nn_orders.
+    orders_names_dict (str dict) : dict of plain-text names for nn_orders.
 
     Returns
     ----------
     fig (Figure) : figure with plots.
     """
     # Plot each posterior and its summary statistics
-    fig, ax = plt.subplots(1, 1, figsize=(3.4, 3.4 * order_num))
+    fig, ax = plt.subplots(1, 1, figsize=(3, 2 * order_num))
 
     # array of stats (MAP, mean, and stddev)
     stats = np.array([])
@@ -272,7 +273,7 @@ def plot_marg_posteriors(
             "Observable "
             + str(y_label[i % len(y_label)])
             +
-            # ", order " + str(orders_labels_dict[nn_orders[i % order_num]]) +
+            ", order " + str(orders_names_dict[nn_orders[i % order_num] + 1]) +
             ", variable "
             + str(variable.name)
             + ": MAP value = "
@@ -282,7 +283,7 @@ def plot_marg_posteriors(
             "Observable "
             + str(y_label[i % len(y_label)])
             +
-            # ", order " + str(orders_labels_dict[nn_orders[i % order_num]]) +
+            ", order " + str(orders_names_dict[nn_orders[i % order_num] + 1]) +
             ", variable "
             + str(variable.name)
             + ": mean = "
@@ -292,7 +293,7 @@ def plot_marg_posteriors(
             "Observable "
             + str(y_label[i % len(y_label)])
             +
-            # ", order " + str(orders_labels_dict[nn_orders[i % order_num]]) +
+            ", order " + str(orders_names_dict[nn_orders[i % order_num] + 1]) +
             ", variable "
             + str(variable.name)
             + ": std. dev. = "

@@ -6,8 +6,8 @@ ls_deg_vals = np.linspace(0.01, 810, 150, dtype=np.dtype('f4'))
 ls_tlab_vals = np.linspace(1, 150, 150, dtype=np.dtype('f4'))
 lambda_vals = np.linspace(200, 900, 150, dtype=np.dtype('f4'))
 
-mesh_cart = gm.cartesian(lambda_vals, np.log(ls_deg_vals), np.log(ls_tlab_vals), mpi_vals)
-mesh_cart_sgt = np.delete(mesh_cart, 1, 1)
+mesh_cart = gm.cartesian(lambda_vals, np.log(ls_tlab_vals), np.log(ls_deg_vals), mpi_vals)
+mesh_cart_sgt = np.delete(mesh_cart, 2, 1)
 
 # ALLOBS
 plot_obs_list = [["DSG", "D", "AXX", "AYY", "A", "AY"]]
@@ -53,7 +53,7 @@ MpieffVariable = RandomVariable(var=mpi_vals,
                                 logprior=mpieff_logprior(mpi_vals),
                                 logprior_name="uniformprior",
                                 marg_bool = True)
-variables_array = np.array([LambdabVariable, LsDegVariable, LsTlabVariable, MpieffVariable])
+variables_array = np.array([LambdabVariable, LsTlabVariable, LsDegVariable, MpieffVariable])
 
 ratio_fn=ratio_fn_curvewise
 ratio_fn_kwargs={
@@ -93,6 +93,7 @@ generate_posteriors(
     savefile_type="png",
 
     plot_posterior_curvewise_bool=True,
+    plot_marg_curvewise_bool=True,
     plot_corner_curvewise_bool=True,
     use_data_curvewise_bool=True,
     save_data_curvewise_bool=True,
