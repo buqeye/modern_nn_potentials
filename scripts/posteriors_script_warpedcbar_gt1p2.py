@@ -22,7 +22,7 @@ LambdabVariable = RandomVariable(var=lambda_vals,
                                  name='Lambdab',
                                  label="\Lambda_{b}",
                                  units="MeV",
-                                 ticks=[300, 450, 600, 750],
+                                 ticks=[750, 900, 1050, 1200],
                                  logprior=Lb_logprior(lambda_vals),
                                  logprior_name="uniformprior",
                                  marg_bool = True)
@@ -152,9 +152,9 @@ generate_posteriors(
     savefile_type="png",
 
     plot_posterior_curvewise_bool=True,
-    plot_marg_curvewise_bool=False,
-    plot_corner_curvewise_bool=False,
-    use_data_curvewise_bool=False,
+    plot_marg_curvewise_bool=True,
+    plot_corner_curvewise_bool=True,
+    use_data_curvewise_bool=True,
     save_data_curvewise_bool=True,
     save_posterior_curvewise_bool=False,
 

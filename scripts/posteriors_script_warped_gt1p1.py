@@ -4,7 +4,7 @@ from generator_fns import *
 mpi_vals = np.linspace(1, 301, 150, dtype=np.dtype('f4'))
 ls_tlab_vals = np.linspace(25, 125, 100, dtype=np.dtype('f4'))
 ls_deg_vals = np.linspace(0.01, 4.01, 150, dtype=np.dtype('f4'))
-lambda_vals = np.linspace(250, 850, 150, dtype=np.dtype('f4'))
+lambda_vals = np.linspace(650, 1250, 150, dtype=np.dtype('f4'))
 
 mesh_cart = gm.cartesian(lambda_vals, np.log(ls_tlab_vals), np.log(ls_deg_vals), mpi_vals)
 mesh_cart_sgt = np.delete(mesh_cart, 1, 1)
@@ -89,7 +89,7 @@ def warping_fn(pts_array,
 
     return pts_array
 
-warping_fn_kwargs = {"magnitude" : 110, "exponent" : 0.99}
+warping_fn_kwargs = {"magnitude" : 90, "exponent" : 0.97}
 
 def scaling_fn(X,
                ls_array = np.array([1]),
@@ -105,21 +105,17 @@ def scaling_fn(X,
 
     return ls
 
-scaling_fn_kwargs={"exponent" : 0.99}
+scaling_fn_kwargs={}
 
 def cbar_fn(X,
                cbar_array = np.array([1]),
-               scaling = 1,
-               offset = 0.5):
+               ):
     X_shape = np.shape(X)
     X = np.reshape(X, (np.prod(X_shape[:-1]), ) + (X_shape[-1], ))
     cbar = np.array([])
     try:
         for pt_idx, pt in enumerate(X):
-            R = np.max(X[:, 0]) - np.min(X[:, 0])
-            # cbar = np.append(cbar, cbar_array)
-            cbar = np.append(cbar, np.array([(1 + (scaling / R * (pt[0] - offset * R)) ** (2)) ** (-0.5)
-                                             ]))
+            cbar = np.append(cbar, cbar_array)
     except:
         pass
 
@@ -127,18 +123,17 @@ def cbar_fn(X,
 
     return cbar
 
-cbar_fn_kwargs={"scaling" : 1.7,
-                "offset" : 0.71}
+cbar_fn_kwargs={}
 
 generate_posteriors(
-    scale_scheme_bunch_array=[RKE500MeV],
+    scale_scheme_bunch_array=[GT1p1fm],
     Q_param_method_array=["sum"],
     p_param_method_array=["pprel"],
     input_space_deg=["cos"],
     input_space_tlab=["prel"],
     t_lab_train_pts=np.array([1, 12, 33, 65, 108, 161, 225, 300]),
     degrees_train_pts=np.array([41, 60, 76, 90, 104, 120, 139]),
-    orders_from_ho=4,
+    orders_from_ho=1,
     orders_excluded=[],
     orders_names_dict=None,
     orders_labels_dict=None,
@@ -182,5 +177,5 @@ generate_posteriors(
 
     variables_array_pointwise=np.array([LambdabVariable]),
 
-    filename_addendum="_cluster4",
+    filename_addendum="_cluster5",
 )

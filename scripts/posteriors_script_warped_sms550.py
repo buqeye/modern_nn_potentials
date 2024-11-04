@@ -89,7 +89,7 @@ def warping_fn(pts_array,
 
     return pts_array
 
-warping_fn_kwargs = {"magnitude" : 110, "exponent" : 0.99}
+warping_fn_kwargs = {"magnitude" : 140, "exponent" : 1.04}
 
 def scaling_fn(X,
                ls_array = np.array([1]),
@@ -105,21 +105,17 @@ def scaling_fn(X,
 
     return ls
 
-scaling_fn_kwargs={"exponent" : 0.99}
+scaling_fn_kwargs={}
 
 def cbar_fn(X,
                cbar_array = np.array([1]),
-               scaling = 1,
-               offset = 0.5):
+               ):
     X_shape = np.shape(X)
     X = np.reshape(X, (np.prod(X_shape[:-1]), ) + (X_shape[-1], ))
     cbar = np.array([])
     try:
         for pt_idx, pt in enumerate(X):
-            R = np.max(X[:, 0]) - np.min(X[:, 0])
-            # cbar = np.append(cbar, cbar_array)
-            cbar = np.append(cbar, np.array([(1 + (scaling / R * (pt[0] - offset * R)) ** (2)) ** (-0.5)
-                                             ]))
+            cbar = np.append(cbar, cbar_array)
     except:
         pass
 
@@ -127,11 +123,10 @@ def cbar_fn(X,
 
     return cbar
 
-cbar_fn_kwargs={"scaling" : 1.7,
-                "offset" : 0.71}
+cbar_fn_kwargs={}
 
 generate_posteriors(
-    scale_scheme_bunch_array=[RKE500MeV],
+    scale_scheme_bunch_array=[RKE550MeV],
     Q_param_method_array=["sum"],
     p_param_method_array=["pprel"],
     input_space_deg=["cos"],
@@ -182,5 +177,5 @@ generate_posteriors(
 
     variables_array_pointwise=np.array([LambdabVariable]),
 
-    filename_addendum="_cluster4",
+    filename_addendum="_cluster5",
 )

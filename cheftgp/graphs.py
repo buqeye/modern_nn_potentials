@@ -273,7 +273,7 @@ def plot_marg_posteriors(
             "Observable "
             + str(y_label[i % len(y_label)])
             +
-            ", order " + str(orders_names_dict[nn_orders[i % order_num] + 1]) +
+            # ", order " + str(orders_names_dict[nn_orders[i % order_num] + 1]) +
             ", variable "
             + str(variable.name)
             + ": MAP value = "
@@ -283,7 +283,7 @@ def plot_marg_posteriors(
             "Observable "
             + str(y_label[i % len(y_label)])
             +
-            ", order " + str(orders_names_dict[nn_orders[i % order_num] + 1]) +
+            # ", order " + str(orders_names_dict[nn_orders[i % order_num] + 1]) +
             ", variable "
             + str(variable.name)
             + ": mean = "
@@ -293,7 +293,7 @@ def plot_marg_posteriors(
             "Observable "
             + str(y_label[i % len(y_label)])
             +
-            ", order " + str(orders_names_dict[nn_orders[i % order_num] + 1]) +
+            # ", order " + str(orders_names_dict[nn_orders[i % order_num] + 1]) +
             ", variable "
             + str(variable.name)
             + ": std. dev. = "

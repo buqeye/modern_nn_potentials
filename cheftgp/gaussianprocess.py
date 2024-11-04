@@ -2190,7 +2190,7 @@ class GSUMDiagnostics:
             #     self.fixed_quantity_units) + ')\,' + \
             #       '\,for\,' + self.scheme + '\,' + self.scale + '}' + '\,(Q_{\mathrm{' + self.Q_param + \
             #       '}},\,\mathrm{' + self.p_param + '},\,\mathrm{' + self.vs_what + '})$',
-            xlabel=r"Credible Interval ($100\alpha\%$)",
+            xlabel=r"Credible Interval ($\%$)",
             # ylabel=r'Empirical Coverage ($\%$)\,(N = ' + str(len(self.X_test)) + r')')
             ylabel=r"Empirical Coverage ($\%$)",
         )
@@ -2293,7 +2293,7 @@ class GSUMDiagnostics:
                 band_perc=[0.68, 0.95],
                 ax=ax,
                 title=None,
-                xlabel=r"Credible Interval ($100\alpha\%$)",
+                xlabel=r"Credible Interval ($\%$)",
                 # ylabel=r'Empirical Coverage ($\%$)\,(N = ' + str(len(self.X_test)) + r')')
                 ylabel=r"Empirical Coverage ($\%$)",
             )
