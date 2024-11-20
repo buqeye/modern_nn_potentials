@@ -126,7 +126,7 @@ def cbar_fn(X,
 cbar_fn_kwargs={}
 
 generate_posteriors(
-    scale_scheme_bunch_array=[EKM1p1fm],
+    scale_scheme_bunch_array=[EKM1p2fm],
     Q_param_method_array=["sum"],
     p_param_method_array=["pprel"],
     input_space_deg=["cos"],
@@ -148,9 +148,9 @@ generate_posteriors(
     savefile_type="png",
 
     plot_posterior_curvewise_bool=True,
-    plot_marg_curvewise_bool=False,
-    plot_corner_curvewise_bool=False,
-    use_data_curvewise_bool=False,
+    plot_marg_curvewise_bool=True,
+    plot_corner_curvewise_bool=True,
+    use_data_curvewise_bool=True,
     save_data_curvewise_bool=True,
     save_posterior_curvewise_bool=False,
 

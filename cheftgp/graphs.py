@@ -234,7 +234,7 @@ def plot_marg_posteriors(
     fig (Figure) : figure with plots.
     """
     # Plot each posterior and its summary statistics
-    fig, ax = plt.subplots(1, 1, figsize=(3, 2 * order_num))
+    fig, ax = plt.subplots(1, 1, figsize=(3, 0.5 * order_num))
 
     # array of stats (MAP, mean, and stddev)
     stats = np.array([])
