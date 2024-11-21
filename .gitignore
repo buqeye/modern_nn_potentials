@@ -131,20 +131,25 @@ dmypy.json
 # IDE file
 .idea/
 
+# all junk
+junk/
+# random SLURM batch script
+slurm_submit_mnnp.sh
 # data files for posterior pdfs and corner plots
 scripts/data/
 # figures
 scripts/figures/
-## observables data
-#observables_data/
 # figures from tests
 tests/figures/
 ## figures from tests
 notebooks/figures2/
-## figures for paper (ignored for now)
+# figures for paper (ignored for now)
 notebooks/figures/
-# sandbox (for now)
-tests/sandbox.ipynb
+# various figures in notebooks/
+notebooks/legend.png
+notebooks/sgt_coeff_assumption_grid_RKE_L-500MeV_mpi138.png
+notebooks/sgt_coeff_assumption_grid_RKE_L-500MeV_mpi200.png
+notebooks/sgt_coeff_assumption_grid_RKE_L-500MeV_mpiopt.png
 # fixes for large files
 notebooks/out_of_memory_fix.ipynb
 tests/out_of_memory_fix.ipynb
