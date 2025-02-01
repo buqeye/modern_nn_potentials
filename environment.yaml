@@ -8,7 +8,7 @@ dependencies:
   - scipy=1.10.0
   - matplotlib=3.7.0
   - seaborn=0.11.2
-  - scikit-learn=1.2.1
+#  - scikit-learn=1.2.1
   - pandas=1.5.3
   - gsum=0.3
   - h5py=3.8.0
