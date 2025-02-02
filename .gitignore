@@ -166,3 +166,5 @@ scripts/posteriors_script_scaledls_sms500_spikes.py
 scripts/posteriors_script_unscaled_sms500_test.py
 scripts/posteriors_script_scaledls_sms500_test.py
 scripts/posteriors_script_scaledcbarls_sms500_test.py
+scripts/posteriors_script_scaledcbar*.py
+scripts/posteriors_script_warpedcbar*.py
