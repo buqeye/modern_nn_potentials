@@ -3,7 +3,6 @@ import os.path
 import numpy as np
 from scipy.interpolate import interp1d, interpn, griddata
 from .utils import (
-    versatile_train_test_split,
     versatile_train_test_split_nd,
     compute_posterior_intervals,
 )
