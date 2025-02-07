@@ -55,7 +55,7 @@ from .utils import compute_posterior_intervals
 from .utils import find_nearest_val
 from .utils import find_nearest_idx
 from .utils import mask_mapper
-from .utils import versatile_train_test_split
+# from .utils import versatile_train_test_split
 from .utils import versatile_train_test_split_nd
 from .utils import get_nn_online_data
 

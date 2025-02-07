@@ -139,7 +139,6 @@ def deg_to_qcm2(p_input, deg_input, **kwargs):
     p_input (float) : relative momentum given in MeV.
     deg_input (float) : angle measure given in degrees.
     """
-    # return (p_input * np.sqrt(2 * (1 - np.cos(np.radians(deg_input))))) ** (2)
     try:
         return np.array(
             [

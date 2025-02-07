@@ -69,9 +69,6 @@ def setup_rc_params():
         format="pdf",
     )
 
-    # return softblack, gray, edgewidth
-
-
 def joint_plot(ratio=1, height=3):
     """
     Makes a plot for two random variables (two fully marginalized pdfs, one joint pdf).
@@ -125,7 +122,6 @@ def joint_plot(ratio=1, height=3):
 
     return fig, ax_joint, ax_marg_x, ax_marg_y
 
-
 def offset_xlabel(ax):
     """
     Sets x-axis ticklabels according to a certain style.
@@ -138,7 +134,6 @@ def offset_xlabel(ax):
     ax.set_xticklabels(labels=[0], fontdict=dict(color="w"))
     ax.tick_params(axis="x", length=0)
     return ax
-
 
 def corner_plot(n_plots=3, height=6.5):
     """
@@ -213,7 +208,7 @@ def draw_summary_statistics(bounds68, bounds95, median, height=0, ax=None):
 
 
 def plot_marg_posteriors(
-    variable, result, y_label, colors_array, order_num, nn_orders, orders_labels_dict, orders_names_dict
+    variable, result, y_label, colors_array, order_num, nn_orders, orders_labels_dict
 ):
     """
     Plots the fully marginalized posteriors.
@@ -227,7 +222,6 @@ def plot_marg_posteriors(
     order_num (int) : number of orders plotted for each observable.
     nn_orders (int list) : list of all orders for the potential of interest.
     orders_labels_dict (str dict) : dict of markdown-formatted labels for nn_orders.
-    orders_names_dict (str dict) : dict of plain-text names for nn_orders.
 
     Returns
     ----------
@@ -265,6 +259,7 @@ def plot_marg_posteriors(
         except:
             pass
 
+        # calculates and prints statistical information on each observable's posterior
         dist_mean, dist_stddev = mean_and_stddev(variable.var, posterior_raw)
         index_opt = np.where(posterior_raw == np.amax(posterior_raw))
         MAP = variable.var[index_opt]
@@ -341,12 +336,12 @@ def plot_corner_posteriors(
     marg_post_array,
     joint_post_array,
     obs_name_corner,
-    cmap_name,
     order_num,
     nn_orders_array,
     orders_labels_dict,
     FileName,
-    whether_save_plots,
+    cmap_name = 'Blues',
+    whether_save_plots = False,
 ):
     """
     Plots the fully marginalized posteriors.
@@ -357,12 +352,14 @@ def plot_corner_posteriors(
     marg_post_array (array) : array of fully marginalized posterior pdfs.
     joint_post_array (array) : array of fully marginalized joint posterior pdfs.
     obs_name_corner (str) : name for the observable, to be printed in the title in the corner.
-    cmap_name (str) : name of the cmap for plotting.
     order_num (int) : number of orders to be plotted.
     nn_orders_array (int list) : list of orders.
     orders_labels_dict (dict) : dictionary for order numbers and markdown labels for each order.
     FileName (FileNaming) : FileNaming object.
+    cmap_name (str) : name of the cmap for plotting.
+        default: 'Blues'
     whether_save_plots (bool) : whether to save plot.
+        default: False
 
     Returns
     ----------

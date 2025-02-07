@@ -103,7 +103,7 @@ def sig_figs(number, n_figs):
         np.float64(np.format_float_scientific(number, precision=n_figs - 1))
     )
 
-    # eliminates any unncessary zeros and decimal points
+    # eliminates any unnecessary zeros and decimal points
     if (np.float64(number_string) > 10 ** (n_figs - 1)) and (number_string[-1] == "."):
         number_string = number_string[:-1]
         return np.int(number_string)
@@ -230,173 +230,173 @@ def mask_mapper(array_from, array_to, mask_from):
     return np.array(mask.astype(int), dtype=bool)
 
 
-def versatile_train_test_split(
-    interp_obj,
-    n_train,
-    n_test_inter=1,
-    isclose_factor=0.01,
-    offset_train_min=0,
-    offset_train_max=0,
-    xmin_train=None,
-    xmax_train=None,
-    offset_test_min=0,
-    offset_test_max=0,
-    xmin_test=None,
-    xmax_test=None,
-    train_at_ends=True,
-    test_at_ends=False,
-):
-    """
-    Now obsolete.
-
-    Returns the training and testing points in the input space and the corresponding
-    (interpolated) data values
-
-    Parameters
-    ----------
-    interp_obj (InterpObj) : function generated with scipy.interpolate.interp1d(x, y), plus
-        x and y
-    n_train (int) : number of intervals into which to split x, with training points at the
-        edges of each interval
-    n_test_inter (int) : number of subintervals into which to split the intervals between
-        training points, with testing points at the edges of each subinterval
-    isclose_factor (float) : fraction of the total input space for the tolerance of making
-        sure that training and testing points don't coincide
-    offset_train_min (float) : value above the minimum of the input space where the first
-        potential training point ought to go
-    offset_train_max (float) : value below the maximum of the input space where the last
-        potential training point ought to go
-    xmin_train (float) : minimum value within the input space below which there ought not to
-        be training points
-    xmax_train (float) : maximum value within the input space above which there ought not to
-        be training points
-    offset_test_min (float) : value above the minimum of the input space where the first
-        potential testing point ought to go
-    offset_test_max (float) : value below the maximum of the input space where the last
-        potential testing point ought to go
-    xmin_test (float) : minimum value within the input space below which there ought not to
-        be testing points
-    xmax_test (float) : maximum value within the input space above which there ought not to
-        be testing points
-    train_at_ends (bool) : whether training points should be allowed at or near the
-        endpoints of x
-    test_at_ends (bool) : whether testing points should be allowed at or near the endpoints
-        of x
-    """
-    # gets information from the InterpObj
-    x = interp_obj.x
-    y = interp_obj.y
-    kind_interp = interp_obj.kind
-    f_interp = interp_obj.f_interp
-
-    # creates initial sets of training and testing x points
-    x_train = np.linspace(
-        np.min(x) + offset_train_min, np.max(x) - offset_train_max, n_train + 1
-    )
-    x_test = np.linspace(
-        np.min(x) + offset_test_min,
-        np.max(x) - offset_test_max,
-        n_train * n_test_inter + 1,
-    )
-
-    # sets the xmin and xmax values to the minima and maxima, respectively, of the
-    # input space if no other value is given
-    if xmin_train == None:
-        xmin_train = np.min(x)
-    if xmax_train == None:
-        xmax_train = np.max(x)
-    if xmin_test == None:
-        xmin_test = np.min(x)
-    if xmax_test == None:
-        xmax_test = np.max(x)
-
-    # eliminates, using a mask, all values for the training and testing x points outside of
-    # x
-    x_train = x_train[
-        np.invert(
-            [
-                (x_train[i] < np.min(x) or x_train[i] > np.max(x))
-                for i in range(len(x_train))
-            ]
-        )
-    ]
-    x_test = x_test[
-        np.invert(
-            [
-                (x_test[i] < np.min(x) or x_test[i] > np.max(x))
-                for i in range(len(x_test))
-            ]
-        )
-    ]
-
-    # eliminates, using a mask, all values for the training and testing x points outside of
-    # the bounds specified by xmin and xmax
-    x_train = x_train[
-        np.invert(
-            [
-                (x_train[i] < xmin_train or x_train[i] > xmax_train)
-                for i in range(len(x_train))
-            ]
-        )
-    ]
-    x_test = x_test[
-        np.invert(
-            [
-                (x_test[i] < xmin_test or x_test[i] > xmax_test)
-                for i in range(len(x_test))
-            ]
-        )
-    ]
-
-    # eliminates, using a mask, all values in the testing x points that are close enough
-    # (within some tolerance) to any value in the training x points
-    mask_filter_array = [
-        [
-            np.isclose(
-                x_test[i], x_train[j], atol=isclose_factor * (np.max(x) - np.min(x))
-            )
-            for i in range(len(x_test))
-        ]
-        for j in range(len(x_train))
-    ]
-    mask_filter_list = np.invert(np.sum(mask_filter_array, axis=0, dtype=bool))
-    x_test = x_test[mask_filter_list]
-
-    # evaluates the interpolater at the training and testing x points
-    y_train = f_interp(x_train)
-    y_test = f_interp(x_test)
-
-    # eliminates training and/or testing points if they lie at the edges of the input space
-    if not train_at_ends:
-        if np.isclose(x_train[0], x[0], atol=isclose_factor * (np.max(x) - np.min(x))):
-            x_train = x_train[1:]
-            if y_train.ndim == 3:
-                y_train = y_train[:, :, 1:]
-            elif y_train.ndim == 2:
-                y_train = y_train[:, 1:]
-        if np.isclose(
-            x_train[-1], x[-1], atol=isclose_factor * (np.max(x) - np.min(x))
-        ):
-            x_train = x_train[:-1]
-            if y_train.ndim == 3:
-                y_train = y_train[:, :, :-1]
-            elif y_train.ndim == 2:
-                y_train = y_train[:, :-1]
-    if not test_at_ends:
-        if np.isclose(x_test[0], x[0], atol=isclose_factor * (np.max(x) - np.min(x))):
-            x_test = x_test[1:]
-            if y_test.ndim == 3:
-                y_test = y_test[:, :, 1:]
-            elif y_test.ndim == 2:
-                y_test = y_test[:, 1:]
-        if np.isclose(x_test[-1], x[-1], atol=isclose_factor * (np.max(x) - np.min(x))):
-            x_test = x_test[:-1]
-            if y_test.ndim == 3:
-                y_test = y_test[:, :, :-1]
-            elif y_test.ndim == 2:
-                y_test = y_test[:, :-1]
-
-    return x_train, x_test, y_train, y_test
+# def versatile_train_test_split(
+#     interp_obj,
+#     n_train,
+#     n_test_inter=1,
+#     isclose_factor=0.01,
+#     offset_train_min=0,
+#     offset_train_max=0,
+#     xmin_train=None,
+#     xmax_train=None,
+#     offset_test_min=0,
+#     offset_test_max=0,
+#     xmin_test=None,
+#     xmax_test=None,
+#     train_at_ends=True,
+#     test_at_ends=False,
+# ):
+#     """
+#     Now obsolete.
+#
+#     Returns the training and testing points in the input space and the corresponding
+#     (interpolated) data values
+#
+#     Parameters
+#     ----------
+#     interp_obj (InterpObj) : function generated with scipy.interpolate.interp1d(x, y), plus
+#         x and y
+#     n_train (int) : number of intervals into which to split x, with training points at the
+#         edges of each interval
+#     n_test_inter (int) : number of subintervals into which to split the intervals between
+#         training points, with testing points at the edges of each subinterval
+#     isclose_factor (float) : fraction of the total input space for the tolerance of making
+#         sure that training and testing points don't coincide
+#     offset_train_min (float) : value above the minimum of the input space where the first
+#         potential training point ought to go
+#     offset_train_max (float) : value below the maximum of the input space where the last
+#         potential training point ought to go
+#     xmin_train (float) : minimum value within the input space below which there ought not to
+#         be training points
+#     xmax_train (float) : maximum value within the input space above which there ought not to
+#         be training points
+#     offset_test_min (float) : value above the minimum of the input space where the first
+#         potential testing point ought to go
+#     offset_test_max (float) : value below the maximum of the input space where the last
+#         potential testing point ought to go
+#     xmin_test (float) : minimum value within the input space below which there ought not to
+#         be testing points
+#     xmax_test (float) : maximum value within the input space above which there ought not to
+#         be testing points
+#     train_at_ends (bool) : whether training points should be allowed at or near the
+#         endpoints of x
+#     test_at_ends (bool) : whether testing points should be allowed at or near the endpoints
+#         of x
+#     """
+#     # gets information from the InterpObj
+#     x = interp_obj.x
+#     y = interp_obj.y
+#     kind_interp = interp_obj.kind
+#     f_interp = interp_obj.f_interp
+#
+#     # creates initial sets of training and testing x points
+#     x_train = np.linspace(
+#         np.min(x) + offset_train_min, np.max(x) - offset_train_max, n_train + 1
+#     )
+#     x_test = np.linspace(
+#         np.min(x) + offset_test_min,
+#         np.max(x) - offset_test_max,
+#         n_train * n_test_inter + 1,
+#     )
+#
+#     # sets the xmin and xmax values to the minima and maxima, respectively, of the
+#     # input space if no other value is given
+#     if xmin_train == None:
+#         xmin_train = np.min(x)
+#     if xmax_train == None:
+#         xmax_train = np.max(x)
+#     if xmin_test == None:
+#         xmin_test = np.min(x)
+#     if xmax_test == None:
+#         xmax_test = np.max(x)
+#
+#     # eliminates, using a mask, all values for the training and testing x points outside of
+#     # x
+#     x_train = x_train[
+#         np.invert(
+#             [
+#                 (x_train[i] < np.min(x) or x_train[i] > np.max(x))
+#                 for i in range(len(x_train))
+#             ]
+#         )
+#     ]
+#     x_test = x_test[
+#         np.invert(
+#             [
+#                 (x_test[i] < np.min(x) or x_test[i] > np.max(x))
+#                 for i in range(len(x_test))
+#             ]
+#         )
+#     ]
+#
+#     # eliminates, using a mask, all values for the training and testing x points outside of
+#     # the bounds specified by xmin and xmax
+#     x_train = x_train[
+#         np.invert(
+#             [
+#                 (x_train[i] < xmin_train or x_train[i] > xmax_train)
+#                 for i in range(len(x_train))
+#             ]
+#         )
+#     ]
+#     x_test = x_test[
+#         np.invert(
+#             [
+#                 (x_test[i] < xmin_test or x_test[i] > xmax_test)
+#                 for i in range(len(x_test))
+#             ]
+#         )
+#     ]
+#
+#     # eliminates, using a mask, all values in the testing x points that are close enough
+#     # (within some tolerance) to any value in the training x points
+#     mask_filter_array = [
+#         [
+#             np.isclose(
+#                 x_test[i], x_train[j], atol=isclose_factor * (np.max(x) - np.min(x))
+#             )
+#             for i in range(len(x_test))
+#         ]
+#         for j in range(len(x_train))
+#     ]
+#     mask_filter_list = np.invert(np.sum(mask_filter_array, axis=0, dtype=bool))
+#     x_test = x_test[mask_filter_list]
+#
+#     # evaluates the interpolater at the training and testing x points
+#     y_train = f_interp(x_train)
+#     y_test = f_interp(x_test)
+#
+#     # eliminates training and/or testing points if they lie at the edges of the input space
+#     if not train_at_ends:
+#         if np.isclose(x_train[0], x[0], atol=isclose_factor * (np.max(x) - np.min(x))):
+#             x_train = x_train[1:]
+#             if y_train.ndim == 3:
+#                 y_train = y_train[:, :, 1:]
+#             elif y_train.ndim == 2:
+#                 y_train = y_train[:, 1:]
+#         if np.isclose(
+#             x_train[-1], x[-1], atol=isclose_factor * (np.max(x) - np.min(x))
+#         ):
+#             x_train = x_train[:-1]
+#             if y_train.ndim == 3:
+#                 y_train = y_train[:, :, :-1]
+#             elif y_train.ndim == 2:
+#                 y_train = y_train[:, :-1]
+#     if not test_at_ends:
+#         if np.isclose(x_test[0], x[0], atol=isclose_factor * (np.max(x) - np.min(x))):
+#             x_test = x_test[1:]
+#             if y_test.ndim == 3:
+#                 y_test = y_test[:, :, 1:]
+#             elif y_test.ndim == 2:
+#                 y_test = y_test[:, 1:]
+#         if np.isclose(x_test[-1], x[-1], atol=isclose_factor * (np.max(x) - np.min(x))):
+#             x_test = x_test[:-1]
+#             if y_test.ndim == 3:
+#                 y_test = y_test[:, :, :-1]
+#             elif y_test.ndim == 2:
+#                 y_test = y_test[:, :-1]
+#
+#     return x_train, x_test, y_train, y_test
 
 
 def versatile_train_test_split_nd(tts):
@@ -406,34 +406,7 @@ def versatile_train_test_split_nd(tts):
 
     Parameters
     ----------
-    interp_obj (InterpObj) : function generated with scipy.interpolate.interp1d(x, y), plus
-        x and y
-    n_train (int array) : number of intervals into which to split x, with training points at the
-        edges of each interval
-    n_test_inter (int array) : number of subintervals into which to split the intervals between
-        training points, with testing points at the edges of each subinterval
-    isclose_factor (float array) : fraction of the total input space for the tolerance of making
-        sure that training and testing points don't coincide
-    offset_train_min (float array) : value above the minimum of the input space where the first
-        potential training point ought to go
-    offset_train_max (float array) : value below the maximum of the input space where the last
-        potential training point ought to go
-    xmin_train (float array) : minimum value within the input space below which there ought not to
-        be training points
-    xmax_train (float array) : maximum value within the input space above which there ought not to
-        be training points
-    offset_test_min (float array) : value above the minimum of the input space where the first
-        potential testing point ought to go
-    offset_test_max (float array) : value below the maximum of the input space where the last
-        potential testing point ought to go
-    xmin_test (float array) : minimum value within the input space below which there ought not to
-        be testing points
-    xmax_test (float array) : maximum value within the input space above which there ought not to
-        be testing points
-    train_at_ends (bool array) : whether training points should be allowed at or near the
-        endpoints of x
-    test_at_ends (bool array) : whether testing points should be allowed at or near the endpoints
-        of x
+    tts (TrainTestSplit) : object encoding information on the train/test split for fitting/validating a GP model
     """
     # creates initial sets of training and testing x points
     if tts.warp_bool == False:
@@ -603,7 +576,7 @@ def versatile_train_test_split_nd(tts):
 
 
 def get_nn_online_data():
-    # We get the NN data from a separate place in our github respository.
+    # We get the NN data from a separate GitHub respository.
     nn_online_pot = "pwa93"
     nn_online_url = "https://github.com/buqeye/buqeyebox/blob/master/nn_scattering/NN-online-Observables.h5?raw=true"
     nno_response = urllib.request.urlopen(nn_online_url)
