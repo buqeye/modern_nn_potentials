@@ -1,5 +1,3 @@
-import os.path
-
 import numpy as np
 from scipy.interpolate import interp1d, interpn, griddata
 from .utils import (
@@ -55,7 +53,7 @@ setup_rc_params()
 class GPHyperparameters:
     def __init__(
         self,
-        ls_class,
+        LS_class,
         center,
         ratio,
         nugget=1e-10,
@@ -70,7 +68,7 @@ class GPHyperparameters:
 
         Parameters
         ----------
-        ls_class (LengthScale array) : LengthScale object with relevant information.
+        LS_class (LengthScale array) : LengthScale object with relevant information.
         center (float) : initial guess for the mean of the distribution.
         ratio (array) : array of values for the dimensionless expansion parameter
         nugget (float) : small number used for allowing white-noise error into fitting procedures.
@@ -90,7 +88,7 @@ class GPHyperparameters:
         self.ls_lower_array = np.array([])
         self.ls_upper_array = np.array([])
         self.whether_fit_array = np.array([])
-        for lsc in ls_class:
+        for lsc in LS_class:
             self.ls_array = np.append(self.ls_array, lsc.ls_guess)
             self.ls_lower_array = np.append(self.ls_lower_array, lsc.ls_bound_lower)
             self.ls_upper_array = np.append(self.ls_upper_array, lsc.ls_bound_upper)
@@ -1184,7 +1182,7 @@ class GSUMDiagnostics:
                     lw=1,
                 )
 
-            # draws length scales
+            # # draws length scales
             # ax.annotate("", xy=(np.min(self.x), -0.65 * 2 * self.underlying_std),
             #             xytext=(np.min(self.x) + self.ls, -0.65 * 2 * self.underlying_std),
             #             arrowprops=dict(arrowstyle="<->", capstyle='projecting', lw=1,
@@ -1218,7 +1216,7 @@ class GSUMDiagnostics:
                 zorder=5 * i,
             )
 
-            # draws standard deviations
+            # # draws standard deviations
             # ax.annotate("", xy=(np.min(self.x) + 0.90 * (np.max(self.x) - np.min(self.x)), 0),
             #             xytext=(np.min(self.x) + 0.90 * (np.max(self.x) - np.min(self.x)),
             #                     -1. * self.std_est),
@@ -1845,15 +1843,6 @@ class GSUMDiagnostics:
         """
         # sets up the data from PWA93 to which we'll compare
         self.online_data = online_data
-
-        # functions for reference scale and dimensionless expansion parameter (ratio)
-        # def lambda_interp_f_ref(x_):
-        #     X = np.ravel(x_)
-        #     return self.interp_f_ref(X)
-        #
-        # def lambda_interp_f_ratio(x_, lambda_var):
-        #     X = np.ravel(x_)
-        #     return self.interp_f_ratio(X) * self.Lambda_b / lambda_var
 
         def interp_f_ratio(x_interp):
             X = np.reshape(x_interp, (np.prod(np.shape(x_interp)[:-1]),))
@@ -3559,10 +3548,9 @@ def plot_posteriors_curvewise(
                 obs_labels_grouped_list,
                 Lb_colors,
                 order_num,
-                # self.nn_orders, self.orders_labels_dict, self, whether_save_plots, obs_name_grouped_list)
                 nn_orders_array,
                 orders_labels_dict,
-                orders_names_dict
+                # orders_names_dict
             )
 
             fit_stats_array = np.append(fit_stats_array, fit_stats)
@@ -3606,12 +3594,12 @@ def plot_posteriors_curvewise(
                 marg_post_array,
                 joint_post_array,
                 obs_name_grouped_list,
-                "Blues",
                 order_num,
                 nn_orders_array,
                 orders_labels_dict,
                 FileName,
-                whether_save_plots,
+                cmap_name = "Blues",
+                whether_save_plots = whether_save_plots,
             )
 
     return fit_stats_array
@@ -3937,7 +3925,7 @@ def plot_posteriors_pointwise(
                 order_num,
                 nn_orders_array,
                 orders_labels_dict,
-                orders_names_dict
+                # orders_names_dict
             )
 
             fit_stats_array = np.append(fit_stats_array, fit_stats)
