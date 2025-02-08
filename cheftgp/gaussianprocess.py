@@ -607,7 +607,15 @@ class GSUMDiagnostics:
         x_quantity,
         warping_fn=None,
         warping_fn_kwargs=None,
-    ):
+
+        length_scale_list=None,
+        length_scale_fixed=False,
+        cbar_list=None,
+        cbar_fixed=False,
+        scaling_fn=None,
+        scaling_fn_kwargs=None,
+        cbar_fn=None,
+        cbar_fn_kwargs=None):
         """
         Class for everything involving Jordan Melendez's GSUM library for observables that
         can be plotted against angle.

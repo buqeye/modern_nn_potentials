@@ -154,15 +154,12 @@ def corner_plot(n_plots=3, height=6.5):
             if ((n_plots * i + j - 1) % n_plots != 0) and (
                 (n_plots * i + j - 1) < (n_plots * (n_plots - 1))
             ):
-                # print(n_plots * i + j - 1)
                 fig.add_subplot(
                     gsp[n_plots * i + j - 1], xticklabels=[], yticklabels=[]
                 )
             elif (n_plots * i + j - 1) % n_plots != 0:
-                # print(n_plots * i + j - 1)
                 fig.add_subplot(gsp[n_plots * i + j - 1], yticklabels=[])
             elif (n_plots * i + j - 1) < (n_plots * (n_plots - 1)):
-                # print(n_plots * i + j - 1)
                 fig.add_subplot(gsp[n_plots * i + j - 1], xticklabels=[])
             else:
                 fig.add_subplot(gsp[n_plots * i + j - 1])
