@@ -605,9 +605,9 @@ class GSUMDiagnostics:
         orderinfo,
         filenaming,
         x_quantity,
+        whether_stationary = True,
         warping_fn=None,
         warping_fn_kwargs=None,
-
         length_scale_list=None,
         length_scale_fixed=False,
         cbar_list=None,
@@ -863,6 +863,7 @@ class GSUMDiagnostics:
         self.train_pts_loc = self.traintestsplit.name
         # creates the train/test split
         self.traintestsplit.make_masks(self.x, self.data)
+        interp_method = 'linear'
         self.x_train = self.traintestsplit.x_train
         self.X_train = self.x_train
         self.n_train_pts = np.shape(self.x_train)[0]
@@ -871,6 +872,61 @@ class GSUMDiagnostics:
         self.n_test_pts = np.shape(self.x_test)[0]
         self.y_train = self.traintestsplit.y_train
         self.y_test = self.traintestsplit.y_test
+
+        # # KEEP THIS
+        # self.x_full = np.reshape(self.x_full,
+        #                          tuple(len(xq) for xq in self.x_quantity_array if len(xq) > 1) + \
+        #                          (self.x_quantity_num,))
+        # self.train_pts_loc = self.traintestsplit.name
+        # self.traintestsplit.make_masks(self.x, self.data,
+        #       warp_bool = True,
+        #       x_unwarped = np.reshape(self.x_full,
+        #            tuple(len(xq) for xq in self.x_quantity_array if len(xq) > 1) + \
+        #            (self.x_quantity_num, )),
+        #       warping_fn = warping_fn,
+        #       warping_fn_kwargs = warping_fn_kwargs
+        #     )
+        # interp_method = 'nearest'
+        # self.x_train = self.traintestsplit.x_train
+        # self.X_train = self.x_train
+        # self.n_train_pts = np.shape(self.x_train)[0]
+        # self.x_test = self.traintestsplit.x_test
+        # self.X_test = self.x_test
+        # self.n_test_pts = np.shape(self.x_test)[0]
+        # self.y_train = self.traintestsplit.y_train
+        # self.y_test = self.traintestsplit.y_test
+        #
+        # # KEEP THIS
+        # self.x_full = np.reshape(self.x_full,
+        #                          tuple(len(xq) for xq in self.x_quantity_array if len(xq) > 1) + \
+        #                          (self.x_quantity_num,))
+        # self.train_pts_loc = self.traintestsplit.name
+        # self.traintestsplit.make_masks(self.x, self.data,
+        #       warp_bool = False,
+        #       x_unwarped = np.reshape(self.x_full,
+        #            tuple(len(xq) for xq in self.x_quantity_array if len(xq) > 1) + \
+        #            (self.x_quantity_num, )), )
+        # interp_method = 'nearest'
+        # self.x_train = reverse_warping_fn(self.traintestsplit.x_train)
+        # self.X_train = self.x_train
+        # self.n_train_pts = np.shape(self.x_train)[0]
+        # self.x_test = reverse_warping_fn(self.traintestsplit.x_test)
+        # self.X_test = self.x_test
+        # self.n_test_pts = np.shape(self.x_test)[0]
+        # self.y_train = self.traintestsplit.y_train
+        # self.y_test = self.traintestsplit.y_test
+        # self.x = self.x_full
+        #
+        # # for Jordan
+        # self.x = np.reshape(self.x_full, np.shape(self.x))
+        #
+        # fig_trash, ax_trash = plt.subplots()
+        # x_trash, y_trash = np.concatenate([
+        #     self.x[0, :, ...], self.x[:, -1, ...],
+        #     self.x[-1, :, ...],
+        #     np.flip(self.x[:, 0, ...], axis = 0),
+        #                 ]).T
+        # ax_trash.plot(x_trash, y_trash)
 
         # information on the GP hyperparameters
         self.gphyperparameters = gphyperparameters
@@ -1027,13 +1083,51 @@ class GSUMDiagnostics:
             orders=self.nn_orders_full,
         )
 
+        # initializes kernel
+        self.length_scale_list = length_scale_list
+        self.length_scale_fixed = length_scale_fixed
+        self.cbar_list = cbar_list
+        self.cbar_fixed = cbar_fixed
+        self.scaling_fn = scaling_fn
+        self.scaling_fn_kwargs = scaling_fn_kwargs
+        self.cbar_fn = cbar_fn
+        self.cbar_fn_kwargs = cbar_fn_kwargs
+
+        self.whether_stationary = whether_stationary
         # defines the kernel
-        self.kernel = RBF(
-            length_scale=self.ls_array,
-            length_scale_bounds=np.array(
-                [[lsl, lsu] for (lsl, lsu) in zip(self.ls_lower, self.ls_upper)]
-            ),
-        ) + WhiteKernel(1e-6, noise_level_bounds="fixed")
+        if self.whether_stationary:
+            self.kernel = RBF(
+                length_scale=self.ls_array,
+                length_scale_bounds=np.array(
+                    [[lsl, lsu] for (lsl, lsu) in zip(self.ls_lower, self.ls_upper)]
+                ),
+            ) + WhiteKernel(1e-6, noise_level_bounds="fixed")
+        else:
+            self.kernel = NSRBF(
+                length_scale=
+                [LS.param_guess for LS in length_scale_list]
+                ,
+                length_scale_bounds=
+                [tuple(LS.param_bounds) for LS in length_scale_list]
+                ,
+                length_scale_fixed=length_scale_fixed
+                ,
+
+                length_scale_fn=scaling_fn,
+                length_scale_fn_kwargs=scaling_fn_kwargs,
+
+                cbar=
+                [CB.param_guess for CB in cbar_list]
+                ,
+                cbar_bounds=
+                [tuple(CB.param_bounds) for CB in cbar_list]
+                ,
+                cbar_fixed=cbar_fixed
+                ,
+
+                cbar_fn=cbar_fn,
+                cbar_fn_kwargs=cbar_fn_kwargs,
+            ) + NSWhiteKernel(1e-6, noise_level_bounds="fixed")
 
         # defines the Gaussian process (GP) object
         self.gp = gm.ConjugateGaussianProcess(
@@ -1070,6 +1164,10 @@ class GSUMDiagnostics:
         # length scale
         self.gp.fit(self.X_train, self.coeffs_train)
         self.ls_true = np.exp(self.gp.kernel_.theta)
+
+        if not self.whether_stationary:
+            # from warping_playground
+            self.gp.kernel_.k1.length_scale_fn_kwargs.update({"ls_array": self.ls_true})
 
         # predicts the GP over specified x values, with error bars
         if np.squeeze(self.x).ndim == 1:
