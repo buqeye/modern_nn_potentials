@@ -71,16 +71,16 @@ log_likelihood_fn_kwargs={
 }
 
 def warping_fn(pts_array,
-               magnitude = 1,
-               exponent = -1):
+               exponent = 1):
     pts_array_shape = np.shape(pts_array)
     pts_array = np.reshape(pts_array, (np.prod(pts_array_shape[:-1]), ) + (pts_array_shape[-1], ))
 
-    norm_factor = magnitude * (406)**(-exponent)
     try:
         for pt_idx, pt in enumerate(pts_array):
+            # pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0],
+            #                                  pts_array[pt_idx, 1]])
             pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0],
-                    pts_array[pt_idx, 1] * norm_factor / (magnitude * (pts_array[pt_idx, 0])**(-exponent)),])
+                    pts_array[pt_idx, 1] * (pts_array[pt_idx, 0] / 405)**(exponent),])
 
     except:
         pass
@@ -89,7 +89,7 @@ def warping_fn(pts_array,
 
     return pts_array
 
-warping_fn_kwargs = {"magnitude" : 130, "exponent" : 1.02}
+warping_fn_kwargs = {"exponent" : 1.}
 
 def scaling_fn(X,
                ls_array = np.array([1]),
@@ -177,5 +177,5 @@ generate_posteriors(
 
     variables_array_pointwise=np.array([LambdabVariable]),
 
-    filename_addendum="_cluster5",
+    filename_addendum="_cluster2",
 )

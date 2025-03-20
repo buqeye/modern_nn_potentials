@@ -463,64 +463,64 @@ lambdab_meff_data_warpedcbar = [
 # Warping; the kernel is treated as fully stationary with respect to variance and length scale.
 lambdab_meff_data_warped = [
 ["SMS" , "550MeV" , "N4LO+" , "ALL2DOBS" , 670 , 20 , 155 , 5 ,], 
-["SMS" , "550MeV" , "N4LO" , "ALL2DOBS" , 560 , 20 , 140 , 6 ,], 
-["SMS" , "550MeV" , "N3LO" , "ALL2DOBS" , 430 , 20 , 61 , 5 ,], 
-["SMS" , "550MeV" , "N2LO" , "ALL2DOBS" , 400 , 20 , 62 , 9 ,], 
+["SMS" , "550MeV" , "N4LO" , "ALL2DOBS" , 550 , 20 , 139 , 6 ,], 
+["SMS" , "550MeV" , "N3LO" , "ALL2DOBS" , 420 , 20 , 61 , 5 ,], 
+["SMS" , "550MeV" , "N2LO" , "ALL2DOBS" , 400 , 20 , 63 , 8 ,], 
     
 ["SMS" , "500MeV" , "N4LO+" , "ALL2DOBS" , 670 , 20 , 168 , 6 ,], 
 ["SMS" , "500MeV" , "N4LO" , "ALL2DOBS" , 640 , 20 , 154 , 7 ,], 
 ["SMS" , "500MeV" , "N3LO" , "ALL2DOBS" , 530 , 20 , 85 , 6 ,], 
 ["SMS" , "500MeV" , "N2LO" , "ALL2DOBS" , 450 , 30 , 59 , 8 ,], 
     
-["SMS" , "450MeV" , "N4LO+" , "ALL2DOBS" , 670 , 20 , 198 , 7 ,], 
-["SMS" , "450MeV" , "N4LO" , "ALL2DOBS" , 670 , 20 , 179 , 8 ,], 
-["SMS" , "450MeV" , "N3LO" , "ALL2DOBS" , 540 , 20 , 136 , 9 ,], 
-["SMS" , "450MeV" , "N2LO" , "ALL2DOBS" , 540 , 30 , 80 , 10 ,], 
+["SMS" , "450MeV" , "N4LO+" , "ALL2DOBS" , 680 , 20 , 193 , 8 ,], 
+["SMS" , "450MeV" , "N4LO" , "ALL2DOBS" , 700 , 30 , 180 , 10 ,], 
+["SMS" , "450MeV" , "N3LO" , "ALL2DOBS" , 550 , 30 , 140 , 10 ,], 
+["SMS" , "450MeV" , "N2LO" , "ALL2DOBS" , 530 , 30 , 61 , 9 ,], 
     
-["SMS" , "400MeV" , "N4LO+" , "ALL2DOBS" , 720 , 20 , 213 , 9 ,], 
-["SMS" , "400MeV" , "N4LO" , "ALL2DOBS" , 620 , 30 , 182 , 12 ,],
-["SMS" , "400MeV" , "N3LO" , "ALL2DOBS" , 450 , 20 , 165 , 14 ,], 
-["SMS" , "400MeV" , "N2LO" , "ALL2DOBS" , 670 , 50 , 89 , 13 ,], 
+["SMS" , "400MeV" , "N4LO+" , "ALL2DOBS" , 740 , 20 , 210 , 10 ,], 
+["SMS" , "400MeV" , "N4LO" , "ALL2DOBS" , 630 , 30 , 190 , 10 ,],
+["SMS" , "400MeV" , "N3LO" , "ALL2DOBS" , 460 , 20 , 170 , 20 ,], 
+["SMS" , "400MeV" , "N2LO" , "ALL2DOBS" , 670 , 50 , 90 , 10 ,], 
     
 ["SCS" , "0.8fm" , "N4LO" , "ALL2DOBS" , 740 , 30 , 126 , 5 ,], 
 ["SCS" , "0.8fm" , "N3LO" , "ALL2DOBS" , 500 , 20 , 63 , 5 ,], 
 ["SCS" , "0.8fm" , "N2LO" , "ALL2DOBS" , 420 , 30 , 59 , 8 ,], 
     
 ["SCS" , "0.9fm" , "N4LO" , "ALL2DOBS" , 880 , 30 , 151 , 7 ,], 
-["SCS" , "0.9fm" , "N3LO" , "ALL2DOBS" , 680 , 30 , 94 , 7 ,], 
-["SCS" , "0.9fm" , "N2LO" , "ALL2DOBS" , 500 , 30 , 69 , 10 ,], 
+["SCS" , "0.9fm" , "N3LO" , "ALL2DOBS" , 670 , 30 , 94 , 7 ,], 
+["SCS" , "0.9fm" , "N2LO" , "ALL2DOBS" , 490 , 30 , 70 , 10 ,], 
     
-["SCS" , "1.0fm" , "N4LO" , "ALL2DOBS" , 760 , 30 , 147 , 7 ,], 
-["SCS" , "1.0fm" , "N3LO" , "ALL2DOBS" , 550 , 20 , 109 , 9 ,], 
-["SCS" , "1.0fm" , "N2LO" , "ALL2DOBS" , 580 , 40 , 86 , 11 ,], 
+["SCS" , "1.0fm" , "N4LO" , "ALL2DOBS" , 790 , 30 , 149 , 7 ,], 
+["SCS" , "1.0fm" , "N3LO" , "ALL2DOBS" , 570 , 20 , 111 , 9 ,], 
+["SCS" , "1.0fm" , "N2LO" , "ALL2DOBS" , 590 , 40 , 80 , 10 ,], 
     
-["SCS" , "1.1fm" , "N4LO" , "ALL2DOBS" , 680 , 30 , 145 , 8 ,], 
-["SCS" , "1.1fm" , "N3LO" , "ALL2DOBS" , 480 , 20 , 116 , 9 ,], 
-["SCS" , "1.1fm" , "N2LO" , "ALL2DOBS" , 690 , 50 , 87 , 12 ,], 
+["SCS" , "1.1fm" , "N4LO" , "ALL2DOBS" , 670 , 30 , 145 , 8 ,], 
+["SCS" , "1.1fm" , "N3LO" , "ALL2DOBS" , 470 , 20 , 115 , 9 ,], 
+["SCS" , "1.1fm" , "N2LO" , "ALL2DOBS" , 700 , 50 , 90 , 10 ,], 
     
-["SCS" , "1.2fm" , "N4LO" , "ALL2DOBS" , 600 , 20 , 144 , 9 ,], 
-["SCS" , "1.2fm" , "N3LO" , "ALL2DOBS" , 420 , 20 , 116 , 11 ,], 
-["SCS" , "1.2fm" , "N2LO" , "ALL2DOBS" , 770 , 50 , 88 , 11 ,], 
+["SCS" , "1.2fm" , "N4LO" , "ALL2DOBS" , 600 , 20 , 143 , 9 ,], 
+["SCS" , "1.2fm" , "N3LO" , "ALL2DOBS" , 420 , 20 , 120 , 10 ,], 
+["SCS" , "1.2fm" , "N2LO" , "ALL2DOBS" , 780 , 50 , 90 , 10 ,], 
     
-["EMN" , "550MeV" , "N4LO" , "ALL2DOBS" , 800 , 30 , 104 , 4 ,], 
-["EMN" , "550MeV" , "N3LO" , "ALL2DOBS" , 520 , 20 , 65 , 4 ,], 
-["EMN" , "550MeV" , "N2LO" , "ALL2DOBS" , 490 , 30 , 38 , 5 ,], 
+["EMN" , "550MeV" , "N4LO" , "ALL2DOBS" , 810 , 30 , 112 , 5 ,], 
+["EMN" , "550MeV" , "N3LO" , "ALL2DOBS" , 530 , 20 , 75 , 6 ,], 
+["EMN" , "550MeV" , "N2LO" , "ALL2DOBS" , 490 , 30 , 48 , 7 ,], 
     
 ["EMN" , "500MeV" , "N4LO" , "ALL2DOBS" , 700 , 20 , 84 , 4 ,], 
 ["EMN" , "500MeV" , "N3LO" , "ALL2DOBS" , 500 , 20 , 55 , 4 ,], 
 ["EMN" , "500MeV" , "N2LO" , "ALL2DOBS" , 480 , 30 , 44 , 5 ,], 
     
-["EMN" , "450MeV" , "N4LO" , "ALL2DOBS" , 670 , 20 , 93 , 4 ,], 
-["EMN" , "450MeV" , "N3LO" , "ALL2DOBS" , 500 , 20 , 57 , 4 ,], 
-["EMN" , "450MeV" , "N2LO" , "ALL2DOBS" , 480 , 30 , 48 , 5 ,], 
+["EMN" , "450MeV" , "N4LO" , "ALL2DOBS" , 700 , 30 , 102 , 5 ,], 
+["EMN" , "450MeV" , "N3LO" , "ALL2DOBS" , 520 , 20 , 63 , 6 ,], 
+["EMN" , "450MeV" , "N2LO" , "ALL2DOBS" , 500 , 40 , 56 , 7 ,], 
     
-["GT+" , "0.9fm" , "N2LO" , "ALL2DOBS" , 570 , 40 , 28 , 4 ,], 
+["GT+" , "0.9fm" , "N2LO" , "ALL2DOBS" , 570 , 40 , 29 , 5 ,], 
     
-["GT+" , "1.0fm" , "N2LO" , "ALL2DOBS" , 730 , 50 , 32 , 6 ,], 
+["GT+" , "1.0fm" , "N2LO" , "ALL2DOBS" , 730 , 50 , 32 , 5 ,], 
     
-["GT+" , "1.1fm" , "N2LO" , "ALL2DOBS" , 870 , 70 , 38 , 7 ,], 
+["GT+" , "1.1fm" , "N2LO" , "ALL2DOBS" , 870 , 70 , 39 , 7 ,], 
     
-["GT+" , "1.2fm" , "N2LO" , "ALL2DOBS" , 960 , 80 ,38 , 7,], 
+["GT+" , "1.2fm" , "N2LO" , "ALL2DOBS" , 950 , 70 , 37 , 6 ,], 
     
 # ["Norfolk" , "(0.8,0.6)fm" , "N2LO" , , , , ,], 
 # ["Norfolk" , "(1.0,0.7)fm" , "N2LO" , , , , ,], 
