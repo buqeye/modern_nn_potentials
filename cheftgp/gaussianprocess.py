@@ -896,6 +896,26 @@ class GSUMDiagnostics:
         # self.y_train = self.traintestsplit.y_train
         # self.y_test = self.traintestsplit.y_test
         #
+
+        # # reverse-warping function
+        # def reverse_warping_fn(pts_array):
+        #     pts_array_shape = np.shape(pts_array)
+        #     pts_array = np.reshape(pts_array, (np.prod(pts_array_shape[:-1]),) + (pts_array_shape[-1],))
+        #     try:
+        #         # for pt_idx, pt in enumerate(pts_array):
+        #         #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0],
+        #         #                                      pts_array[pt_idx, 1]])
+        #         # SMS 500 MeV
+        #         for pt_idx, pt in enumerate(pts_array):
+        #             pts_array[pt_idx, :] = np.array([ pts_array[pt_idx, 0],
+        #                     pts_array[pt_idx, 1] / (pts_array[pt_idx, 0] / 405)**(1.0) ])
+        #     except:
+        #         pass
+        #
+        #     pts_array = np.reshape(pts_array, pts_array_shape)
+        #
+        #     return pts_array
+        #
         # # KEEP THIS
         # self.x_full = np.reshape(self.x_full,
         #                          tuple(len(xq) for xq in self.x_quantity_array if len(xq) > 1) + \
@@ -995,6 +1015,7 @@ class GSUMDiagnostics:
                         self.x[mymask.astype(bool)],
                         np.reshape(self.ref, (np.prod(np.shape(self.ref)),)),
                         self.x_train,
+                        method=interp_method
                     )
                 )
                 self.ref_test = np.squeeze(
@@ -1002,6 +1023,7 @@ class GSUMDiagnostics:
                         self.x[mymask.astype(bool)],
                         np.reshape(self.ref, (np.prod(np.shape(self.ref)),)),
                         self.x_test,
+                        method=interp_method
                     )
                 )
 
@@ -1011,6 +1033,7 @@ class GSUMDiagnostics:
                         self.x,
                         np.reshape(self.ref, (np.prod(np.shape(self.ref)),)),
                         self.x_train,
+                        method=interp_method
                     )
                 )
                 self.ref_test = np.squeeze(
@@ -1018,6 +1041,7 @@ class GSUMDiagnostics:
                         self.x,
                         np.reshape(self.ref, (np.prod(np.shape(self.ref)),)),
                         self.x_test,
+                        method=interp_method
                     )
                 )
 
@@ -1031,6 +1055,7 @@ class GSUMDiagnostics:
                     self.x[mymask.astype(bool)],
                     np.reshape(self.ratio, (np.prod(np.shape(self.ratio)),)),
                     self.x_train,
+                    method=interp_method
                 )
             )
 
@@ -1039,6 +1064,7 @@ class GSUMDiagnostics:
                     self.x[mymask.astype(bool)],
                     np.reshape(self.ratio, (np.prod(np.shape(self.ratio)),)),
                     self.x_test,
+                    method=interp_method
                 )
             )
 
@@ -1049,6 +1075,8 @@ class GSUMDiagnostics:
                     self.x,
                     np.reshape(self.ratio, (np.prod(np.shape(self.ratio)),)),
                     self.x_train,
+                    method=interp_method
+
                 )
             )
 
@@ -1057,6 +1085,7 @@ class GSUMDiagnostics:
                     self.x,
                     np.reshape(self.ratio, (np.prod(np.shape(self.ratio)),)),
                     self.x_test,
+                    method=interp_method
                 )
             )
 
@@ -1531,7 +1560,7 @@ class GSUMDiagnostics:
             )
 
             if ax is None:
-                fig, ax = plt.subplots(figsize=(0.3, 2.2))
+                fig, ax = plt.subplots(figsize=(1.0, 2.2))
 
             self.gr_dgn.md_squared(
                 type="box",
@@ -1642,11 +1671,11 @@ class GSUMDiagnostics:
 
             with plt.rc_context({"text.usetex": True}):
                 if ax is None:
-                    fig, ax = plt.subplots(figsize=(3.0, 2.2))
+                    fig, ax = plt.subplots(figsize=(3.2, 2.2))
 
                 self.gr_dgn.pivoted_cholesky_errors(ax=ax, title=None)
-                ax.set_xticks(np.arange(2, self.n_test_pts + 1, 2))
-                ax.set_xticks(np.arange(1, self.n_test_pts + 1, 2), minor=True)
+                ax.set_xticks(np.arange(8, self.n_test_pts + 1, 8))
+                ax.set_xticks(np.arange(1, self.n_test_pts + 1, 1), minor=True)
                 ax.text(
                     0.05,
                     0.95,
@@ -2689,6 +2718,7 @@ def make_likelihood_filename(
     #         + str(len(random_var.var))
     #         + "pts"
     #     )
+    print(str(filename.replace("__", "_") + FileNameObj.filename_addendum + ".txt"))
 
     return str(filename.replace("__", "_") + FileNameObj.filename_addendum + ".txt")
 
@@ -3444,6 +3474,7 @@ def plot_posteriors_curvewise(
                             }
                         )
 
+                        input_space_unwarped = create_pairs(tlab_input, degrees_input)
                         # warps the input space
                         try:
                             input_space_warped = warping_fn(
@@ -3458,6 +3489,8 @@ def plot_posteriors_curvewise(
                                 ),
                                 **warping_fn_kwargs
                             )
+                        # print("input_space_warped has shape " + str(np.shape(input_space_warped)))
+                        # print("input_space_unwarped has shape " + str(np.shape(input_space_unwarped)))
 
                         warped_poly = Polygon(
                             np.concatenate(
@@ -3504,6 +3537,44 @@ def plot_posteriors_curvewise(
                             ...,
                         ]
 
+                        # # training data
+                        # obs_data_train = np.array([])
+                        # for norder in obs_data_full:
+                        #     obs_data_train = np.append(
+                        #         obs_data_train,
+                        #         griddata(
+                        #             np.reshape(
+                        #                 input_space_warped,
+                        #                 (np.prod(np.shape(input_space_warped)[0:-1]),)
+                        #                 + (np.shape(input_space_warped)[-1],),
+                        #             ),
+                        #             np.reshape(norder, np.prod(np.shape(norder))),
+                        #             grid_train,
+                        #         ),
+                        #     )
+
+                        # # reverse-warping function
+                        # def reverse_warping_fn(pts_array):
+                        #     pts_array_shape = np.shape(pts_array)
+                        #     pts_array = np.reshape(pts_array, (np.prod(pts_array_shape[:-1]),) + (pts_array_shape[-1],))
+                        #     try:
+                        #         # for pt_idx, pt in enumerate(pts_array):
+                        #         #     pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0],
+                        #         #                                      pts_array[pt_idx, 1]])
+                        #         # SMS 500 MeV
+                        #         for pt_idx, pt in enumerate(pts_array):
+                        #             pts_array[pt_idx, :] = np.array([pts_array[pt_idx, 0],
+                        #                                              pts_array[pt_idx, 1] / (
+                        #                                                          pts_array[pt_idx, 0] / 405) ** (1.0)])
+                        #     except:
+                        #         pass
+                        #
+                        #     pts_array = np.reshape(pts_array, pts_array_shape)
+                        #
+                        #     return pts_array
+                        #
+                        # grid_train = reverse_warping_fn(grid_train)
+
                         # training data
                         obs_data_train = np.array([])
                         for norder in obs_data_full:
@@ -3511,14 +3582,16 @@ def plot_posteriors_curvewise(
                                 obs_data_train,
                                 griddata(
                                     np.reshape(
-                                        input_space_warped,
-                                        (np.prod(np.shape(input_space_warped)[0:-1]),)
-                                        + (np.shape(input_space_warped)[-1],),
+                                        input_space_unwarped,
+                                        (np.prod(np.shape(input_space_unwarped)[0:-1]),)
+                                        + (np.shape(input_space_unwarped)[-1],),
                                     ),
                                     np.reshape(norder, np.prod(np.shape(norder))),
                                     grid_train,
+                                    method = 'nearest'
                                 ),
                             )
+
                         obs_data_train = np.reshape(
                             obs_data_train,
                             (np.shape(obs_data_full)[0],) + (np.shape(grid_train)[0],),

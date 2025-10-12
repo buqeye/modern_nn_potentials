@@ -245,7 +245,7 @@ GT0p9fm = ScaleSchemeBunch(
     "../observables_data/scattering_observables_Gezerlis-0p9fm.h5",
     np.array([0, 2, 3]),
     ["Oranges", "Greens"],
-    "GT",
+    "GT+",
     "0p9fm",
     orders_labels_dict={
         3: r"N$^{2}$LO",
@@ -260,7 +260,7 @@ GT1p0fm = ScaleSchemeBunch(
     "../observables_data/scattering_observables_Gezerlis-1p0fm.h5",
     np.array([0, 2, 3]),
     ["Oranges", "Greens"],
-    "GT",
+    "GT+",
     "1p0fm",
     orders_labels_dict={
         3: r"N$^{2}$LO",
@@ -275,7 +275,7 @@ GT1p1fm = ScaleSchemeBunch(
     "../observables_data/scattering_observables_Gezerlis-1p1fm.h5",
     np.array([0, 2, 3]),
     ["Oranges", "Greens"],
-    "GT",
+    "GT+",
     "1p1fm",
     orders_labels_dict={
         3: r"N$^{2}$LO",
@@ -290,7 +290,7 @@ GT1p2fm = ScaleSchemeBunch(
     "../observables_data/scattering_observables_Gezerlis-1p2fm.h5",
     np.array([0, 2, 3]),
     ["Oranges", "Greens"],
-    "GT",
+    "GT+",
     "1p2fm",
     orders_labels_dict={
         3: r"N$^{2}$LO",

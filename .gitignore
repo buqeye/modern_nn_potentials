@@ -160,7 +160,6 @@ scripts/ChEFT_GP_publication_script_refactored.py
 scripts/diagnostics_script.py
 scripts/posteriors_script.py
 # test scripts
-scripts/posteriors_script_warped_mpifixed.py
 scripts/posteriors_script_scaledcbarls_mpifixed.py
 scripts/posteriors_script_scaledls_sms500_spikes.py
 scripts/posteriors_script_unscaled_sms500_test.py
@@ -168,3 +167,5 @@ scripts/posteriors_script_scaledls_sms500_test.py
 scripts/posteriors_script_scaledcbarls_sms500_test.py
 scripts/posteriors_script_scaledcbar*.py
 scripts/posteriors_script_warpedcbar*.py
+scripts/posteriors_script_lorentzian.py
+tests/unit_tests_github.ipynb
